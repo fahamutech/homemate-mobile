@@ -1,4 +1,4 @@
-package tz.co.homemate.homemate_mobile
+package com.fahamutech.homemate
 
 import io.flutter.embedding.android.FlutterActivity
 

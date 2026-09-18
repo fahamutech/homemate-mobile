@@ -1,0 +1,11 @@
+# Copy to android/key.properties and fill in with your own upload key.
+# key.properties is gitignored — the passwords below must never be committed.
+#
+#   keytool -genkey -v -keystore ~/homemate-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias homemate
+#
+# storeFile is resolved relative to android/app, so an absolute path is safest.
+storeFile=/absolute/path/to/homemate-upload.jks
+storePassword=
+keyAlias=homemate
+keyPassword=

@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The debug and profile manifests declare this for the dev tooling; the
+         release build needs it in its own right, because the app is nothing
+         but a client of the API. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="homemate_mobile"
+        android:label="HomeMate"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
