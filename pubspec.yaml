@@ -1,0 +1,40 @@
+name: homemate_mobile
+description: HomeMate Africa — the customer app for finding, viewing and renting a home.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State: Riverpod throughout, so a screen never owns its own fetching.
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Routing, with the auth redirect in one place.
+  go_router: ^14.6.2
+
+  http: ^1.2.2
+  # Sessions survive a restart; the PIN never touches storage.
+  shared_preferences: ^2.3.3
+  intl: ^0.19.0
+  # OpenStreetMap, per the design — no proprietary map SDK.
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
