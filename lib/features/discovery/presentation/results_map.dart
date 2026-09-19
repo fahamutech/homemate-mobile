@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/config/env.dart';
+import '../../../core/i18n/app_text.dart';
 import '../../../core/location/location_providers.dart';
 import '../../../design/tokens.dart';
 import '../../shared/catalogue_repository.dart';
@@ -60,15 +61,26 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
     setState(() => _pannedTo = null);
   }
 
+  void _recentre(NearMeState state) {
+    _controller.move(LatLng(state.latitude!, state.longitude!), 14);
+    setState(() => _pannedTo = null);
+  }
+
+  /// Recentre on the point we already have, and only ask for location when we
+  /// have none. A manually chosen area counts as a position while permission is
+  /// still refused, so going through `enable()` here would answer "centre the
+  /// map" by dropping the customer in the OS settings app.
   Future<void> _goToMyPlaces() async {
-    final notifier = ref.read(nearMeProvider.notifier);
-    await notifier.enable();
+    final current = ref.read(nearMeProvider);
+    if (current.hasPosition) {
+      _recentre(current);
+      return;
+    }
+
+    await ref.read(nearMeProvider.notifier).enable();
     if (!mounted) return;
     final state = ref.read(nearMeProvider);
-    if (state.hasPosition) {
-      _controller.move(LatLng(state.latitude!, state.longitude!), 14);
-      setState(() => _pannedTo = null);
-    }
+    if (state.hasPosition) _recentre(state);
   }
 
   /// Only listings with coordinates can be pinned; the rest are still in the
@@ -175,8 +187,7 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
                   const SizedBox(width: HmSpace.xl),
                   Expanded(
                     child: Text(
-                      'No listings with a map location here yet. Try the list view, '
-                      'or move the map.',
+                      context.text.mapNoPins,
                       style: HmText.caption,
                     ),
                   ),
@@ -197,12 +208,12 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(nearMe.promptTitle, style: HmText.label.copyWith(fontSize: 14)),
+                  Text(nearMe.promptTitle(context.text), style: HmText.label.copyWith(fontSize: 14)),
                   const SizedBox(height: HmSpace.xs),
                   Text(
                     nearMe.canAskAgain
-                        ? 'Centre the map on where you are and see what is around you.'
-                        : nearMe.promptMessage,
+                        ? context.text.mapCentreHint
+                        : nearMe.promptMessage(context.text),
                     style: HmText.caption,
                   ),
                   const SizedBox(height: HmSpace.xl),
@@ -211,14 +222,14 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
                       Expanded(
                         child: FilledButton(
                           onPressed: nearMe.isBusy ? null : _goToMyPlaces,
-                          child: Text(nearMe.promptAction),
+                          child: Text(nearMe.promptAction(context.text)),
                         ),
                       ),
                       const SizedBox(width: HmSpace.md),
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () => showAreaPicker(context, ref),
-                          child: const Text('Ask me'),
+                          child: Text(context.text.askMe),
                         ),
                       ),
                     ],
@@ -262,7 +273,7 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
                         const Icon(Icons.search, size: 16, color: HmColors.brandPrimary),
                         const SizedBox(width: HmSpace.md),
                         Text(
-                          'Search this area',
+                          context.text.searchThisArea,
                           style: HmText.label.copyWith(
                             fontSize: 13,
                             color: HmColors.brandPrimary,
@@ -282,7 +293,7 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
             bottom: _selected == null ? 72 : 160,
             child: FloatingActionButton.small(
               onPressed: _goToMyPlaces,
-              tooltip: 'Centre on my location',
+              tooltip: context.text.recentre,
               backgroundColor: HmColors.bgPrimary,
               foregroundColor: HmColors.brandPrimary,
               child: const Icon(Icons.my_location),

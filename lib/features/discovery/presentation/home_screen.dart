@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/i18n/app_text.dart';
+import '../../../core/i18n/language_picker.dart';
 import '../../../core/location/location_providers.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
@@ -10,6 +12,7 @@ import '../../../design/widgets/hm_choice.dart';
 import '../../../design/widgets/hm_money.dart';
 import '../../../routing/app_router.dart';
 import '../../shared/catalogue_repository.dart';
+import '../../shared/customer_avatar.dart';
 import '../../shared/models.dart';
 import '../../shared/property_card.dart';
 import '../../shared/property_image.dart';
@@ -94,7 +97,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 child: _Greeting(
                   name: customer?.fullName?.split(' ').first,
-                  initials: customer?.initials ?? '#',
                   unread: summary.valueOrNull?.unreadNotifications ?? 0,
                 ),
               ),
@@ -122,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               _SectionHeader(
-                title: 'Featured Properties',
+                title: context.text.featured,
                 onSeeAll: () => context.go(Routes.search),
               ),
               HmAsync(
@@ -130,9 +132,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onRetry: () => ref.invalidate(featuredPropertiesProvider),
                 emptyWhen: (page) => page.isEmpty,
                 loading: const _RowLoading(),
-                empty: const HmEmpty(
-                  title: 'No listings yet',
-                  message: 'New homes are added every day — check back shortly.',
+                empty: HmEmpty(
+                  title: context.text.homeEmptyTitle,
+                  message: context.text.homeEmptyMessage,
                   icon: Icons.home_work_outlined,
                 ),
                 data: (page) => SizedBox(
@@ -155,7 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               _SectionHeader(
-                title: 'Near You',
+                title: context.text.nearYou,
                 onSeeAll: () => context.go(Routes.search),
               ),
               Padding(
@@ -177,12 +179,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 emptyWhen: (page) => page.isEmpty,
                 loading: const _RowLoading(),
                 empty: HmEmpty(
-                  title: _typeId == null ? 'Nothing nearby yet' : 'None of those nearby',
+                  title: _typeId == null
+                      ? context.text.nearbyEmptyTitle
+                      : context.text.nearbyEmptyTypeTitle,
                   message: nearMe.canSearchNearby
-                      ? 'Nothing within 10 km yet. Try another area, or widen your search.'
+                      ? context.text.nearbyEmptyRadius
                       : _typeId == null
-                          ? 'We will show homes around you as they are listed.'
-                          : 'Try another category, or search a different area.',
+                          ? context.text.nearbyEmptyMessage
+                          : context.text.nearbyEmptyOtherType,
                   icon: Icons.near_me_outlined,
                 ),
                 data: (page) => Column(
@@ -213,10 +217,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _Greeting extends StatelessWidget {
-  const _Greeting({required this.name, required this.initials, required this.unread});
+  const _Greeting({required this.name, required this.unread});
 
   final String? name;
-  final String initials;
   final int unread;
 
   @override
@@ -227,7 +230,7 @@ class _Greeting extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hi, ${name ?? 'there'} 👋',
+                  context.text.greeting(name),
                   style: HmText.heading,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -237,29 +240,19 @@ class _Greeting extends StatelessWidget {
                   children: [
                     const Icon(Icons.place_outlined, size: 14, color: HmColors.brandPrimary),
                     const SizedBox(width: HmSpace.xs),
-                    Text('Tanzania', style: HmText.caption),
+                    Text(context.text.country, style: HmText.caption),
                   ],
                 ),
               ],
             ),
           ),
+          const LanguageButton(),
           _NotificationBell(unread: unread),
           const SizedBox(width: HmSpace.md),
           InkWell(
             onTap: () => context.go(Routes.profile),
             customBorder: const CircleBorder(),
-            child: CircleAvatar(
-              radius: 19,
-              backgroundColor: HmColors.brandPrimarySoft,
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  color: HmColors.brandPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
-            ),
+            child: const CustomerAvatar(radius: 19, fontSize: 14),
           ),
         ],
       );
@@ -273,7 +266,9 @@ class _NotificationBell extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
         onPressed: () => context.go('${Routes.home}/notifications'),
-        tooltip: unread > 0 ? '$unread unread notifications' : 'Notifications',
+        tooltip: unread > 0
+            ? context.text.unreadNotifications(unread)
+            : context.text.notifications,
         icon: unread > 0
             ? Badge(
                 backgroundColor: HmColors.error,
@@ -297,7 +292,7 @@ class _SearchPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         button: true,
-        label: 'Search homes',
+        label: context.text.homeSearchSemantics,
         child: InkWell(
           onTap: onTap,
           borderRadius: HmRadius.card,
@@ -313,7 +308,7 @@ class _SearchPrompt extends StatelessWidget {
                 const Icon(Icons.search, color: HmColors.textSecondary),
                 const SizedBox(width: HmSpace.xl),
                 Expanded(
-                  child: Text('Search by area, price or type', style: HmText.body),
+                  child: Text(context.text.homeSearchPrompt, style: HmText.body),
                 ),
                 Container(
                   padding: const EdgeInsets.all(HmSpace.md),
@@ -391,7 +386,7 @@ class _SectionHeader extends StatelessWidget {
         child: Row(
           children: [
             Expanded(child: Text(title, style: HmText.title.copyWith(fontSize: 19))),
-            TextButton(onPressed: onSeeAll, child: const Text('See All')),
+            TextButton(onPressed: onSeeAll, child: Text(context.text.seeAll)),
           ],
         ),
       );

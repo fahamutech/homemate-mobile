@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/i18n/app_text.dart';
 import '../../../core/location/location_providers.dart';
 import '../../../core/location/location_service.dart';
 import '../../../design/tokens.dart';
@@ -33,6 +34,7 @@ class NearMePrompt extends ConsumerWidget {
     final state = ref.watch(nearMeProvider);
     if (!state.needsPrompt) return const SizedBox.shrink();
 
+    final text = context.text;
     final isBlocked = !state.canAskAgain;
 
     return Container(
@@ -70,12 +72,12 @@ class NearMePrompt extends ConsumerWidget {
               ),
               const SizedBox(width: HmSpace.xl),
               Expanded(
-                child: Text(state.promptTitle, style: HmText.heading.copyWith(fontSize: 15)),
+                child: Text(state.promptTitle(text), style: HmText.heading.copyWith(fontSize: 15)),
               ),
             ],
           ),
           const SizedBox(height: HmSpace.xl),
-          Text(state.promptMessage, style: HmText.caption.copyWith(fontSize: 13)),
+          Text(state.promptMessage(text), style: HmText.caption.copyWith(fontSize: 13)),
           const SizedBox(height: HmSpace.xxl),
           Row(
             children: [
@@ -93,14 +95,14 @@ class NearMePrompt extends ConsumerWidget {
                             color: HmColors.textOnBrand,
                           ),
                         )
-                      : Text(state.promptAction),
+                      : Text(state.promptAction(text)),
                 ),
               ),
               const SizedBox(width: HmSpace.xl),
               Expanded(
                 child: OutlinedButton(
                   onPressed: onChooseArea,
-                  child: const Text('Choose an area'),
+                  child: Text(text.chooseArea),
                 ),
               ),
             ],
@@ -113,7 +115,7 @@ class NearMePrompt extends ConsumerWidget {
             // blocked.
             TextButton(
               onPressed: () => ref.read(nearMeProvider.notifier).recheck(),
-              child: const Text('I have allowed it — check again'),
+              child: Text(text.recheckLocation),
             ),
           ],
         ],
@@ -148,8 +150,8 @@ class NearMeSource extends ConsumerWidget {
           Expanded(
             child: Text(
               state.isManual
-                  ? 'Near ${state.manualPlaceName}'
-                  : 'Sorted by distance from you',
+                  ? context.text.nearPlace(state.manualPlaceName!)
+                  : context.text.sortedByDistance,
               style: HmText.caption,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -164,7 +166,7 @@ class NearMeSource extends ConsumerWidget {
                 vertical: HmSpace.xxs,
               ),
               child: Text(
-                'Change',
+                context.text.change,
                 style: HmText.label.copyWith(fontSize: 12, color: HmColors.brandPrimary),
               ),
             ),
@@ -183,10 +185,13 @@ class DistanceLabel extends StatelessWidget {
 
   /// Below a kilometre people think in metres and above it in kilometres, and
   /// rounding to 100m avoids implying a precision the fix does not have.
-  static String format(double metres) {
-    if (metres < 950) return '${(metres / 100).round() * 100} m away';
+  ///
+  /// The unit is part of the translated phrase rather than appended to the
+  /// number, because Kiswahili puts it in front: "mita 300", not "300 mita".
+  static String format(AppText text, double metres) {
+    if (metres < 950) return text.metresAway('${(metres / 100).round() * 100}');
     final km = metres / 1000;
-    return '${km < 10 ? km.toStringAsFixed(1) : km.round()} km away';
+    return text.kilometresAway(km < 10 ? km.toStringAsFixed(1) : '${km.round()}');
   }
 
   @override
@@ -199,7 +204,7 @@ class DistanceLabel extends StatelessWidget {
         const Icon(Icons.near_me_outlined, size: 12, color: HmColors.brandPrimary),
         const SizedBox(width: HmSpace.xs),
         Text(
-          format(value),
+          format(context.text, value),
           style: HmText.caption.copyWith(fontSize: 11, color: HmColors.brandPrimary),
         ),
       ],
@@ -213,14 +218,43 @@ class DistanceLabel extends StatelessWidget {
 /// so a customer who never grants location gets exactly the same Near Me
 /// experience, centred wherever they say.
 Future<void> showAreaPicker(BuildContext context, WidgetRef ref) async {
-  final controller = TextEditingController();
-
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     shape: RoundedRectangleBorder(borderRadius: HmRadius.sheet),
-    builder: (sheetContext) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheetContext).bottom),
+    builder: (_) => _AreaPickerSheet(onSelected: (place) => _applyArea(ref, place)),
+  );
+}
+
+/// The sheet owns its own controller so the field's lifetime matches the
+/// sheet's element, not the `showModalBottomSheet` future: the sheet keeps
+/// rebuilding all through its dismissal animation, which is after that future
+/// completes.
+class _AreaPickerSheet extends StatefulWidget {
+  const _AreaPickerSheet({required this.onSelected});
+
+  final ValueChanged<GeoPlace> onSelected;
+
+  @override
+  State<_AreaPickerSheet> createState() => _AreaPickerSheetState();
+}
+
+class _AreaPickerSheetState extends State<_AreaPickerSheet> {
+  final _controller = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = context.text;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(HmSpace.huge),
@@ -228,76 +262,68 @@ Future<void> showAreaPicker(BuildContext context, WidgetRef ref) async {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Choose an area', style: HmText.heading),
+              Text(text.areaPickerTitle, style: HmText.heading),
               const SizedBox(height: HmSpace.md),
-              Text(
-                'We will show homes near this place instead of near you.',
-                style: HmText.caption,
-              ),
+              Text(text.areaPickerMessage, style: HmText.caption),
               const SizedBox(height: HmSpace.xxl),
               TextField(
-                controller: controller,
+                controller: _controller,
                 autofocus: true,
                 textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
-                  hintText: 'Masaki, Mikocheni, Arusha…',
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: text.areaPickerHint,
                 ),
-                onChanged: (_) => (sheetContext as Element).markNeedsBuild(),
+                onChanged: (value) => setState(() => _query = value.trim()),
               ),
               const SizedBox(height: HmSpace.xl),
-              SizedBox(
-                height: 240,
-                child: Consumer(
-                  builder: (context, innerRef, _) {
-                    final query = controller.text.trim();
-                    if (query.length < 3) {
-                      return Center(
-                        child: Text(
-                          'Type at least three letters.',
-                          style: HmText.caption,
+              // Loose so the results give way to the keyboard rather than
+              // overflowing the sheet.
+              Flexible(
+                child: SizedBox(
+                  height: 240,
+                  child: _query.length < 3
+                      ? Center(child: Text(text.areaPickerMinLetters, style: HmText.caption))
+                      : Consumer(
+                          builder: (context, innerRef, _) {
+                            final places = innerRef.watch(placeSearchProvider(_query));
+                            return places.when(
+                              loading: () => const Center(child: CircularProgressIndicator()),
+                              error: (_, __) => Center(
+                                child: Text(text.areaPickerFailed, style: HmText.caption),
+                              ),
+                              data: (results) => results.isEmpty
+                                  ? Center(child: Text(text.areaPickerNone, style: HmText.caption))
+                                  : ListView.builder(
+                                      itemCount: results.length,
+                                      itemBuilder: (_, index) {
+                                        final place = results[index];
+                                        return ListTile(
+                                          leading: const Icon(Icons.place_outlined),
+                                          title: Text(
+                                            place.displayName,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: HmText.body,
+                                          ),
+                                          onTap: () {
+                                            widget.onSelected(place);
+                                            Navigator.of(context).pop();
+                                          },
+                                        );
+                                      },
+                                    ),
+                            );
+                          },
                         ),
-                      );
-                    }
-                    final places = innerRef.watch(placeSearchProvider(query));
-                    return places.when(
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (_, __) => Center(
-                        child: Text('Could not search places.', style: HmText.caption),
-                      ),
-                      data: (results) => results.isEmpty
-                          ? Center(child: Text('No places found.', style: HmText.caption))
-                          : ListView.builder(
-                              itemCount: results.length,
-                              itemBuilder: (_, index) {
-                                final place = results[index];
-                                return ListTile(
-                                  leading: const Icon(Icons.place_outlined),
-                                  title: Text(
-                                    place.displayName,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: HmText.body,
-                                  ),
-                                  onTap: () {
-                                    _applyArea(ref, place);
-                                    Navigator.of(sheetContext).pop();
-                                  },
-                                );
-                              },
-                            ),
-                    );
-                  },
                 ),
               ),
             ],
           ),
         ),
       ),
-    ),
-  );
-
-  controller.dispose();
+    );
+  }
 }
 
 /// Points both Near Me and the shared search filters at the chosen place, so

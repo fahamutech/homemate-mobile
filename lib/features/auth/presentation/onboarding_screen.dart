@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/i18n/app_text.dart';
+import '../../../core/i18n/language_picker.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_scaffold.dart';
 import '../../../routing/app_router.dart';
@@ -17,25 +19,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  static const _pages = [
-    _Slide(
-      icon: Icons.search_rounded,
-      title: 'Find your home',
-      body: 'Browse verified listings across Tanzania, with real photos and honest prices.',
-    ),
-    _Slide(
-      icon: Icons.event_available_rounded,
-      title: 'Schedule viewings',
-      body: 'Ask the landlord a question and arrange to see the place, all in one app.',
-    ),
-    _Slide(
-      icon: Icons.vpn_key_rounded,
-      title: 'Move in',
-      body: 'Book it, pay securely, and keep every receipt and document in one place.',
-    ),
-  ];
+  static const _pageCount = 3;
 
-  bool get _isLast => _page == _pages.length - 1;
+  bool get _isLast => _page == _pageCount - 1;
 
   @override
   void dispose() {
@@ -56,32 +42,59 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final text = context.text;
+    // Built here rather than held in a `static const`: the slides are words,
+    // and the words change when the language does.
+    final pages = [
+      _Slide(
+        icon: Icons.search_rounded,
+        title: text.onboardingFindTitle,
+        body: text.onboardingFindBody,
+      ),
+      _Slide(
+        icon: Icons.event_available_rounded,
+        title: text.onboardingViewingsTitle,
+        body: text.onboardingViewingsBody,
+      ),
+      _Slide(
+        icon: Icons.vpn_key_rounded,
+        title: text.onboardingMoveInTitle,
+        body: text.onboardingMoveInBody,
+      ),
+    ];
+
     return HmScaffold(
       padded: false,
       backgroundColor: HmColors.bgPrimary,
       body: Column(
         children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.all(HmSpace.md),
-              child: TextButton(
-                onPressed: () => context.go(Routes.signIn),
-                child: const Text('Skip'),
-              ),
+          Padding(
+            padding: const EdgeInsets.all(HmSpace.md),
+            child: Row(
+              children: [
+                // First control on the first screen: somebody who does not read
+                // English must be able to change the language before being
+                // asked to understand anything else.
+                const LanguageButton(),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => context.go(Routes.signIn),
+                  child: Text(text.skip),
+                ),
+              ],
             ),
           ),
           Expanded(
             child: PageView(
               controller: _controller,
               onPageChanged: (index) => setState(() => _page = index),
-              children: _pages,
+              children: pages,
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              for (var i = 0; i < _pages.length; i++)
+              for (var i = 0; i < _pageCount; i++)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.symmetric(horizontal: HmSpace.xs),
@@ -98,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             padding: const EdgeInsets.all(HmSpace.huge),
             child: ElevatedButton(
               onPressed: _next,
-              child: Text(_isLast ? 'Get started' : 'Next'),
+              child: Text(_isLast ? text.getStarted : text.next),
             ),
           ),
         ],

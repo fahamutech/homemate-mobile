@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:homemate_mobile/core/i18n/app_locale.dart';
+import 'package:homemate_mobile/core/i18n/app_text.dart';
 import 'package:homemate_mobile/core/location/location_providers.dart';
 import 'package:homemate_mobile/core/location/location_service.dart';
 import 'package:homemate_mobile/features/discovery/presentation/home_screen.dart';
@@ -240,16 +242,26 @@ void main() {
   });
 
   group('the distance label', () {
+    const en = AppText(AppLocale.english);
+    const sw = AppText(AppLocale.swahili);
+
+    test('puts the unit where each language puts it', () {
+      // Kiswahili leads with the unit, which is why the whole phrase is
+      // translated rather than the number having a unit appended to it.
+      expect(sw.metresAway('300'), 'mita 300 kutoka hapa');
+      expect(sw.kilometresAway('2.4'), 'km 2.4 kutoka hapa');
+    });
+
     test('reads in metres up close and kilometres further out', () {
-      expect(DistanceLabel.format(120), '100 m away');
-      expect(DistanceLabel.format(940), '900 m away');
-      expect(DistanceLabel.format(1500), '1.5 km away');
-      expect(DistanceLabel.format(24000), '24 km away');
+      expect(DistanceLabel.format(en, 120), '100 m away');
+      expect(DistanceLabel.format(en, 940), '900 m away');
+      expect(DistanceLabel.format(en, 1500), '1.5 km away');
+      expect(DistanceLabel.format(en, 24000), '24 km away');
     });
 
     test('rounds to 100m rather than implying a precision the fix does not have', () {
-      expect(DistanceLabel.format(237), '200 m away');
-      expect(DistanceLabel.format(289), '300 m away');
+      expect(DistanceLabel.format(en, 237), '200 m away');
+      expect(DistanceLabel.format(en, 289), '300 m away');
     });
   });
 }

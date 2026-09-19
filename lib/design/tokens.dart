@@ -40,7 +40,7 @@ class HmColors {
   /// and grey on another.
   static Color forStatus(String status) => switch (status) {
         'approved' || 'confirmed' || 'verified' || 'successful' || 'paid' || 'completed' ||
-        'active' || 'accepted' =>
+        'active' || 'accepted' || 'booked' =>
           success,
         'pending' || 'requested' || 'pending_review' || 'awaiting_payment' ||
         'awaiting_verification' || 'in_review' || 'responded' =>

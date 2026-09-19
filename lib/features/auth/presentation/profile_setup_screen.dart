@@ -9,6 +9,7 @@ import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_choice.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_money.dart';
+import '../../shared/customer_avatar.dart';
 import '../../shared/models.dart';
 
 /// CUS-008a/b. "Complete your profile", in the three steps the designs draw.
@@ -288,6 +289,16 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
             contentType: picked.mimeType ?? 'image/jpeg',
             filename: picked.name,
           );
+
+      // The upload only changed the server. Re-read the account so the app
+      // knows a photo now exists, and move the cache key past the picture it
+      // replaced — without both, the avatar goes on showing initials or the
+      // old face, and the customer is looking at a save that appears to have
+      // done nothing.
+      final customer = await ref.read(authRepositoryProvider).me();
+      await ref.read(authControllerProvider.notifier).applyProfile(customer);
+      ref.read(profilePhotoRevisionProvider.notifier).state++;
+
       if (mounted) HmFeedback.success(context, 'Photo saved');
     } catch (error) {
       if (mounted) HmFeedback.failure(context, error);
@@ -309,7 +320,6 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
             const SizedBox(height: HmSpace.huge),
             Center(
               child: _PhotoPicker(
-                initials: customer?.initials ?? '#',
                 busy: _uploadingPhoto,
                 onTap: _uploadingPhoto ? null : _pickPhoto,
               ),
@@ -396,9 +406,8 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
 }
 
 class _PhotoPicker extends StatelessWidget {
-  const _PhotoPicker({required this.initials, required this.busy, required this.onTap});
+  const _PhotoPicker({required this.busy, required this.onTap});
 
-  final String initials;
   final bool busy;
   final VoidCallback? onTap;
 
@@ -408,20 +417,14 @@ class _PhotoPicker extends StatelessWidget {
           Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
-                radius: 44,
-                backgroundColor: HmColors.brandPrimarySoft,
-                child: busy
-                    ? const CircularProgressIndicator(strokeWidth: 2)
-                    : Text(
-                        initials,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: HmColors.brandPrimary,
-                        ),
-                      ),
-              ),
+              if (busy)
+                const CircleAvatar(
+                  radius: 44,
+                  backgroundColor: HmColors.brandPrimarySoft,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                const CustomerAvatar(radius: 44, fontSize: 28),
               Material(
                 color: HmColors.brandPrimary,
                 shape: const CircleBorder(),

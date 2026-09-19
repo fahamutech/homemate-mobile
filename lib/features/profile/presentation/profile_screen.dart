@@ -10,6 +10,7 @@ import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_status_chip.dart';
 import '../../../routing/app_router.dart';
+import '../../shared/customer_avatar.dart';
 
 /// CUS-019. The account: who you are, and the few things you can change.
 class ProfileScreen extends ConsumerWidget {
@@ -27,18 +28,7 @@ class ProfileScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: HmColors.brandPrimarySoft,
-                child: Text(
-                  customer?.initials ?? '#',
-                  style: const TextStyle(
-                    color: HmColors.brandPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
+              const CustomerAvatar(radius: 30, fontSize: 20),
               const SizedBox(width: HmSpace.xxl),
               Expanded(
                 child: Column(

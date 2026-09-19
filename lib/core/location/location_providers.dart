@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/env.dart';
+import '../i18n/app_text.dart';
 import 'location_service.dart';
 
 /// Where the app stands with the customer's location, and the one place that
@@ -46,29 +47,25 @@ class NearMeState {
 
   /// The heading on the prompt card. It says what is true, so that the button
   /// underneath it is never a lie.
-  String get promptTitle => switch (availability) {
-        LocationAvailability.serviceDisabled => 'Location is switched off',
-        LocationAvailability.deniedForever => 'Location is blocked for HomeMate',
-        LocationAvailability.denied => 'See homes near you',
-        _ => 'See homes near you',
+  String promptTitle(AppText text) => switch (availability) {
+        LocationAvailability.serviceDisabled => text.locationOffTitle,
+        LocationAvailability.deniedForever => text.locationBlockedTitle,
+        _ => text.locationDefaultTitle,
       };
 
-  String get promptMessage => switch (availability) {
-        LocationAvailability.serviceDisabled =>
-          'Turn on location in your device settings and we will sort listings from nearest to furthest.',
-        LocationAvailability.deniedForever =>
-          'HomeMate cannot ask again from here. Allow location in Settings, or pick an area instead.',
-        LocationAvailability.denied =>
-          'Allow location and we will sort listings from nearest to furthest.',
-        _ => 'Share your location and we will sort listings from nearest to furthest.',
+  String promptMessage(AppText text) => switch (availability) {
+        LocationAvailability.serviceDisabled => text.locationOffMessage,
+        LocationAvailability.deniedForever => text.locationBlockedMessage,
+        LocationAvailability.denied => text.locationDeniedMessage,
+        _ => text.locationDefaultMessage,
       };
 
   /// What the primary button says. It matches what will actually happen —
   /// "Allow location" on a permanent refusal would do nothing at all.
-  String get promptAction => switch (availability) {
-        LocationAvailability.serviceDisabled => 'Open location settings',
-        LocationAvailability.deniedForever => 'Open settings',
-        _ => 'Use my location',
+  String promptAction(AppText text) => switch (availability) {
+        LocationAvailability.serviceDisabled => text.openLocationSettings,
+        LocationAvailability.deniedForever => text.openSettings,
+        _ => text.useMyLocation,
       };
 
   NearMeState copyWith({

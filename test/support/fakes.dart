@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:homemate_mobile/core/i18n/app_locale.dart';
+import 'package:homemate_mobile/core/i18n/app_text.dart';
+import 'package:homemate_mobile/core/i18n/locale_controller.dart';
+import 'package:homemate_mobile/core/i18n/locale_store.dart';
 import 'package:homemate_mobile/core/network/api_exception.dart';
 import 'package:homemate_mobile/core/providers.dart';
 import 'package:homemate_mobile/design/theme.dart';
@@ -631,6 +636,7 @@ class TestHarness {
     FakeActivityRepository? activity,
     FakeJourneyRepository? journey,
     FakeLocationService? location,
+    this.locale = AppLocale.english,
   })  : auth = auth ?? FakeAuthRepository(),
         catalogue = catalogue ?? FakeCatalogueRepository(),
         activity = activity ?? FakeActivityRepository(),
@@ -647,6 +653,13 @@ class TestHarness {
   final FakeLocationService location;
   final SessionStore store = InMemorySessionStore();
 
+  /// The language the tree under test starts in.
+  ///
+  /// English, although the app itself opens in Kiswahili: these tests assert on
+  /// the English copy, and a test about the Kiswahili build says so by setting
+  /// this rather than by being the default everything else inherits.
+  AppLocale locale;
+
   List<Override> get overrides => [
         authRepositoryProvider.overrideWithValue(auth),
         catalogueRepositoryProvider.overrideWithValue(catalogue),
@@ -654,6 +667,7 @@ class TestHarness {
         journeyRepositoryProvider.overrideWithValue(journey),
         locationServiceProvider.overrideWithValue(location),
         sessionStoreProvider.overrideWithValue(store),
+        localeStoreProvider.overrideWithValue(InMemoryLocaleStore(locale)),
       ];
 
   /// The viewport the designs were drawn for. The test default is 800x600,
@@ -671,16 +685,16 @@ class TestHarness {
   /// owns.
   ProviderContainer? container;
 
-  Widget wrap(Widget child, {List<GoRoute> extraRoutes = const []}) {
+  Widget wrap(Widget child, {List<GoRoute> extraRoutes = const [], AppLocale? locale}) {
+    if (locale != null) this.locale = locale;
     final container = ProviderContainer(overrides: overrides);
     this.container = container;
     container.read(authControllerProvider.notifier).restore();
 
     return UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(
-        theme: buildHomeMateTheme(),
-        routerConfig: GoRouter(
+      child: testApp(
+        GoRouter(
           routes: [
             GoRoute(path: '/', builder: (_, __) => child),
             ...extraRoutes,
@@ -690,6 +704,33 @@ class TestHarness {
     );
   }
 }
+
+/// A session to hand to `AuthController.adopt`, for a test that needs to start
+/// with somebody already signed in.
+class AuthSessionStub extends AuthSession {
+  AuthSessionStub({required super.token, required super.customer});
+}
+
+/// The app under test, localised exactly as `HomeMateApp` localises it.
+///
+/// English by default: these tests assert on the English copy, and a test about
+/// the Kiswahili build should say so rather than inherit it.
+/// Watches [localeProvider] exactly as the real app does, so a test that
+/// changes the language sees the tree change with it.
+Widget testApp(RouterConfig<Object> router) => Consumer(
+      builder: (_, ref, __) => MaterialApp.router(
+        theme: buildHomeMateTheme(),
+        locale: ref.watch(localeProvider).locale,
+        supportedLocales: AppLocale.supportedLocales,
+        localizationsDelegates: const [
+          AppTextDelegate(),
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        routerConfig: router,
+      ),
+    );
 
 /// A stand-in for the payment screen, so a checkout that navigates on success
 /// lands somewhere rather than throwing.

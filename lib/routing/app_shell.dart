@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/i18n/app_text.dart';
 import '../core/providers.dart';
 import '../design/tokens.dart';
 
@@ -17,6 +18,7 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final text = context.text;
     final summary = ref.watch(activitySummaryProvider).valueOrNull;
     final activityBadge = (summary?.openInquiries ?? 0) +
         (summary?.upcomingViewings ?? 0) +
@@ -31,15 +33,15 @@ class AppShell extends ConsumerWidget {
         onDestinationSelected: (index) =>
             shell.goBranch(index, initialLocation: index == shell.currentIndex),
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+          NavigationDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: text.navHome,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Search',
+          NavigationDestination(
+            icon: const Icon(Icons.search_outlined),
+            selectedIcon: const Icon(Icons.search),
+            label: text.navSearch,
           ),
           NavigationDestination(
             // "Favourite", per the design's bottom bar. The tab holds more
@@ -51,17 +53,17 @@ class AppShell extends ConsumerWidget {
               child: const Icon(Icons.favorite_outline),
             ),
             selectedIcon: const Icon(Icons.favorite),
-            label: 'Favourite',
+            label: text.navFavourite,
           ),
           NavigationDestination(
             icon: _Badged(count: activityBadge, child: const Icon(Icons.receipt_long_outlined)),
             selectedIcon: const Icon(Icons.receipt_long),
-            label: 'Activity',
+            label: text.navActivity,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: text.navProfile,
           ),
         ],
       ),

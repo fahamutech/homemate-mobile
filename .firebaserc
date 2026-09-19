@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "homematetz"
+  },
+  "targets": {
+    "homematetz": {
+      "hosting": {
+        "pwa": [
+          "homematepwa"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

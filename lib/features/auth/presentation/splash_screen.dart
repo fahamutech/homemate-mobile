@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/app_text.dart';
 import '../../../design/tokens.dart';
 
 /// CUS-001a. Shown only while the stored session is being read, so it is
@@ -9,19 +10,19 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: HmColors.bgPrimary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _BrandMark(),
-            SizedBox(height: HmSpace.huge),
+            const _BrandMark(),
+            const SizedBox(height: HmSpace.huge),
             Text('HomeMate', style: HmText.display),
-            SizedBox(height: HmSpace.xs),
+            const SizedBox(height: HmSpace.xs),
             Text('AFRICA', style: HmText.caption),
-            SizedBox(height: HmSpace.section),
-            Text('Find a home you can trust', style: HmText.body),
+            const SizedBox(height: HmSpace.section),
+            Text(context.text.splashTagline, style: HmText.body),
           ],
         ),
       ),

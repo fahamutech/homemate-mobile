@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/i18n/app_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
@@ -122,19 +123,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Use a different number?'),
-        content: const Text(
-          'We will send a code to confirm the new number. Your PIN stays on the '
-          'account you already have.',
-        ),
+        title: Text(context.text.differentNumberTitle),
+        content: Text(context.text.differentNumberMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.text.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Continue'),
+            child: Text(context.text.continueLabel),
           ),
         ],
       ),
@@ -188,10 +186,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SizedBox(height: HmSpace.section),
               const _Logo(),
               const SizedBox(height: HmSpace.huge),
-              Text('Sign in', style: HmText.title, textAlign: TextAlign.center),
+              Text(context.text.signInTitle, style: HmText.title, textAlign: TextAlign.center),
               const SizedBox(height: HmSpace.md),
               Text(
-                'We will send a code to confirm your number.',
+                context.text.signInMessage,
                 style: HmText.body,
                 textAlign: TextAlign.center,
               ),
@@ -209,12 +207,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SizedBox(height: HmSpace.huge),
               ElevatedButton(
                 onPressed: _busy ? null : () => _sendCode(),
-                child: _busy ? const _ButtonSpinner() : const Text('Send code'),
+                child: _busy ? const _ButtonSpinner() : Text(context.text.sendCode),
               ),
               const SizedBox(height: HmSpace.xxl),
               Text(
-                'Once you have set a PIN, this phone will sign you in with it — '
-                'no more codes.',
+                context.text.signInPinHint,
                 style: HmText.caption,
                 textAlign: TextAlign.center,
               ),
@@ -237,7 +234,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const SizedBox(height: HmSpace.huge),
                   const _Logo(),
                   const SizedBox(height: HmSpace.huge),
-                  Text('Welcome back', style: HmText.title, textAlign: TextAlign.center),
+                  Text(context.text.welcomeBack, style: HmText.title, textAlign: TextAlign.center),
                   const SizedBox(height: HmSpace.xs),
                   Text(phoneNumber, style: HmText.caption, textAlign: TextAlign.center),
                   const SizedBox(height: HmSpace.section),
@@ -285,12 +282,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           if (_pin.length > _pinLength)
             ElevatedButton(
               onPressed: _busy ? null : () => _signInWithPin(phoneNumber),
-              child: _busy ? const _ButtonSpinner() : const Text('Sign in'),
+              child: _busy ? const _ButtonSpinner() : Text(context.text.signInTitle),
             ),
 
           TextButton(
             onPressed: _busy ? null : _forgetDevice,
-            child: const Text('Not you? Use a different number'),
+            child: Text(context.text.notYou),
           ),
           const SizedBox(height: HmSpace.md),
         ],

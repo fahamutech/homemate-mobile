@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:homemate_mobile/core/network/api_exception.dart';
 import 'package:homemate_mobile/core/providers.dart';
 import 'package:homemate_mobile/features/auth/data/auth_controller.dart';
-import 'package:homemate_mobile/features/auth/data/auth_repository.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
 import 'package:homemate_mobile/features/auth/data/session_store.dart';
 import 'package:homemate_mobile/features/auth/presentation/otp_screen.dart';
@@ -11,7 +10,6 @@ import 'package:homemate_mobile/features/auth/presentation/phone_field.dart';
 import 'package:homemate_mobile/features/auth/presentation/pin_setup_screen.dart';
 import 'package:homemate_mobile/features/auth/presentation/profile_setup_screen.dart';
 import 'package:homemate_mobile/features/auth/presentation/sign_in_screen.dart';
-import 'package:homemate_mobile/design/theme.dart';
 import 'package:homemate_mobile/routing/app_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -330,7 +328,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+          child: testApp(router),
         ),
       );
       await tester.pumpAndSettle();
@@ -356,7 +354,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+          child: testApp(router),
         ),
       );
       await tester.pumpAndSettle();
@@ -381,7 +379,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+          child: testApp(router),
         ),
       );
       await tester.pumpAndSettle();
@@ -405,7 +403,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+          child: testApp(router),
         ),
       );
       // Launch reads the stored session, exactly as HomeMateApp does.
@@ -433,7 +431,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+          child: testApp(router),
         ),
       );
       await tester.pumpAndSettle();
@@ -449,10 +447,6 @@ void main() {
 
 /// A session literal, so tests do not have to walk the whole OTP flow just to
 /// get one.
-class AuthSessionStub extends AuthSession {
-  AuthSessionStub({required super.token, required super.customer});
-}
-
 /// Taps a PIN into the on-device keypad, one digit at a time — which is what a
 /// customer does, and the only way to exercise the auto-submit on the fourth.
 Future<void> tapPin(WidgetTester tester, String pin) async {
