@@ -3,11 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:homemate_mobile/core/network/api_exception.dart';
 import 'package:homemate_mobile/features/booking/presentation/booking_detail_screen.dart';
+import 'package:homemate_mobile/features/discovery/data/search_providers.dart';
+import 'package:homemate_mobile/features/discovery/presentation/search_overlay.dart';
 import 'package:homemate_mobile/features/discovery/presentation/search_screen.dart';
 import 'package:homemate_mobile/features/inquiry/presentation/inquiry_form_screen.dart';
 import 'package:homemate_mobile/features/payment/presentation/payment_screen.dart';
 import 'package:homemate_mobile/features/property/presentation/property_screen.dart';
 import 'package:homemate_mobile/features/saved/presentation/saved_screen.dart';
+import 'package:homemate_mobile/features/shared/journey_models.dart';
 import 'package:homemate_mobile/features/viewing/presentation/schedule_viewing_screen.dart';
 
 import 'support/fakes.dart';
@@ -31,9 +34,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('2 homes'), findsOneWidget);
 
-      await tester.enterText(find.byKey(const Key('search-field')), 'Masaki');
-      // The field is debounced, so nothing happens until the pause elapses.
-      await tester.pump(const Duration(milliseconds: 400));
+      // The results screen reflects the shared filters; the overlay is what
+      // edits them (see "the search overlay" below).
+      harness.container!.read(searchFiltersProvider.notifier).setQuery('Masaki');
       await tester.pumpAndSettle();
 
       expect(find.text('1 home'), findsOneWidget);
@@ -46,11 +49,43 @@ void main() {
       await tester.pumpWidget(harness.wrap(const SearchScreen()));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byKey(const Key('search-field')), 'Zanzibar Villa');
-      await tester.pump(const Duration(milliseconds: 400));
+      harness.container!.read(searchFiltersProvider.notifier).setQuery('Zanzibar Villa');
       await tester.pumpAndSettle();
 
       expect(find.text('Nothing matches that'), findsOneWidget);
+    });
+
+    testWidgets('the search overlay publishes what was typed', (tester) async {
+      final harness = TestHarness();
+
+      await tester.pumpWidget(harness.wrap(const SearchOverlay()));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('search-field')), 'Masaki');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(harness.container!.read(searchFiltersProvider).query, 'Masaki');
+    });
+
+    testWidgets('the search overlay suggests matching homes as you type', (tester) async {
+      final harness = TestHarness(
+        catalogue: FakeCatalogueRepository(properties: [
+          fakeProperty(id: 'p1', title: 'Masaki 2BR Apartment'),
+          fakeProperty(id: 'p2', title: 'Mikocheni Family House'),
+        ]),
+      );
+
+      await tester.pumpWidget(harness.wrap(const SearchOverlay()));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('search-field')), 'Masaki');
+      // Typing is debounced, so nothing happens until the pause elapses.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Masaki 2BR Apartment'), findsOneWidget);
+      expect(find.text('Mikocheni Family House'), findsNothing);
     });
 
     testWidgets('a failure explains itself and can be retried', (tester) async {
@@ -64,7 +99,7 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Try again'), findsOneWidget);
     });
 
-    testWidgets('saving a property shows on the saved screen', (tester) async {
+    testWidgets('saving a property shows on the favourites screen', (tester) async {
       final harness = TestHarness();
 
       await tester.pumpWidget(harness.wrap(const SearchScreen()));
@@ -74,19 +109,112 @@ void main() {
       await tester.pumpAndSettle();
       expect(harness.catalogue.savedIds, {'prop-1'});
 
+      // The Favourites screen reads one assembled payload rather than the
+      // saved list alone, so the fake has to answer with what the server
+      // would now be returning.
+      harness.journey.overview = SavedOverview(
+        favorites: [fakeProperty(isSaved: true)],
+        favoriteCount: 1,
+      );
+
       await tester.pumpWidget(harness.wrap(const SavedScreen()));
       await tester.pumpAndSettle();
       expect(find.text('Masaki 2BR Apartment'), findsOneWidget);
+      expect(find.text('Saved Favorites'), findsOneWidget);
     });
 
-    testWidgets('an empty saved list says what to do about it', (tester) async {
+    testWidgets('the saved list refreshes when a heart is tapped elsewhere', (tester) async {
+      // The Saved tab is a branch of an IndexedStack, so its provider stays
+      // alive holding whatever it last fetched. Without an invalidation on
+      // save, a heart tapped on another tab left Saved still saying "Nothing
+      // saved" — which is what this test would have caught.
+      final harness = TestHarness();
+
+      await tester.pumpWidget(harness.wrap(const SearchScreen()));
+      await tester.pumpAndSettle();
+
+      // Resolve the saved list first, exactly as opening the tab would.
+      final container = harness.container!;
+      await container.read(savedPropertiesProvider.future);
+      expect(container.read(savedPropertiesProvider).value!.items, isEmpty);
+
+      await tester.tap(find.byTooltip('Save this property'));
+      await tester.pumpAndSettle();
+
+      final refreshed = await container.read(savedPropertiesProvider.future);
+      expect(refreshed.items.map((property) => property.id), ['prop-1']);
+    });
+
+    testWidgets('an empty favourites screen says what to do about it', (tester) async {
       final harness = TestHarness();
 
       await tester.pumpWidget(harness.wrap(const SavedScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Nothing saved yet'), findsOneWidget);
+      expect(find.text('Nothing here yet'), findsOneWidget);
       expect(find.widgetWithText(OutlinedButton, 'Browse homes'), findsOneWidget);
+    });
+
+    testWidgets('the favourites screen carries all four of its sections', (tester) async {
+      // CUS-013a is not a list of saved listings: a tenancy with rent falling
+      // due outranks anything a heart was once tapped on, and the enquiries
+      // and viewings belong on the same screen. A regression that quietly
+      // drops a section back to "saved only" fails here.
+      final harness = TestHarness();
+      harness.journey.overview = SavedOverview(
+        activeRentals: [fakeRental()],
+        activeRentalCount: 1,
+        favorites: [fakeProperty(isSaved: true)],
+        favoriteCount: 1,
+        recentInquiries: [fakeInquirySummary()],
+        inquiryCount: 1,
+        upcomingBookings: [fakeViewingSummary()],
+        upcomingBookingCount: 1,
+      );
+
+      await tester.pumpWidget(harness.wrap(const SavedScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Active Rents'), findsOneWidget);
+      expect(find.text('Saved Favorites'), findsOneWidget);
+      await reveal(tester, find.text('Recent Inquiries'));
+      await reveal(tester, find.text('Upcoming Bookings'));
+    });
+
+    testWidgets('an accepted enquiry reads as awaiting payment, not as accepted',
+        (tester) async {
+      // The customer's question is "what do I do now", and the answer for an
+      // approved enquiry is "pay". Showing the raw status would leave the chip
+      // and the enquiry screen giving two different answers.
+      final harness = TestHarness();
+      harness.journey.overview = SavedOverview(
+        recentInquiries: [
+          fakeInquirySummary(status: 'accepted', displayStatus: 'awaiting_payment'),
+        ],
+        inquiryCount: 1,
+      );
+
+      await tester.pumpWidget(harness.wrap(const SavedScreen()));
+      await tester.pumpAndSettle();
+
+      await reveal(tester, find.text('Awaiting payment'));
+      expect(find.text('Accepted'), findsNothing);
+    });
+
+    testWidgets('an active rental is the way into managing the tenancy', (tester) async {
+      final harness = TestHarness();
+      harness.journey.overview = SavedOverview(
+        activeRentals: [fakeRental()],
+        activeRentalCount: 1,
+      );
+
+      await tester.pumpWidget(harness.wrap(const SavedScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Masaki 2BR Apartment'), findsOneWidget);
+      expect(find.text('TZS 800,000/mo'), findsOneWidget);
+      expect(find.textContaining('Next payment'), findsOneWidget);
+      expect(find.text('9 months'), findsOneWidget);
     });
   });
 
@@ -105,14 +233,55 @@ void main() {
       expect(find.textContaining('TZS 1,600,000'), findsOneWidget);
     });
 
-    testWidgets('offers both actions, with booking a viewing as the primary one', (tester) async {
+    testWidgets('offers paying outright as well as enquiring and viewing', (tester) async {
+      // An enquiry is a courtesy, not a turnstile: somebody who knows this
+      // listing may reserve it without asking anybody first.
       final harness = TestHarness();
 
       await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
       await tester.pumpAndSettle();
 
+      expect(find.widgetWithText(FilledButton, 'Reserve & pay'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Enquire'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Book a viewing'), findsOneWidget);
+    });
+
+    testWidgets('falls back to viewing as the primary action when paying is not allowed',
+        (tester) async {
+      final harness = TestHarness();
+      harness.journey.eligibility = const CheckoutEligibility(
+        propertyId: 'prop-1',
+        available: false,
+        canPay: false,
+        route: 'blocked',
+      );
+
+      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FilledButton, 'Reserve & pay'), findsNothing);
       expect(find.widgetWithText(OutlinedButton, 'Enquire'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Book a viewing'), findsOneWidget);
+    });
+
+    testWidgets('says so rather than failing when someone else is mid-payment',
+        (tester) async {
+      final harness = TestHarness();
+      harness.journey.eligibility = const CheckoutEligibility(
+        propertyId: 'prop-1',
+        available: true,
+        canPay: true,
+        heldByOther: true,
+        holdSecondsRemaining: 240,
+      );
+
+      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
+      await tester.pumpAndSettle();
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Someone is paying for this'),
+      );
+      expect(button.onPressed, isNull, reason: 'a button that would 409 must not be tappable');
     });
 
     testWidgets('a listing that is gone says so rather than showing a blank page', (tester) async {

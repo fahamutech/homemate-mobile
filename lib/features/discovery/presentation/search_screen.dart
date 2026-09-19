@@ -1,10 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_async.dart';
+import '../../../routing/app_router.dart';
 import '../../shared/property_card.dart';
 import '../data/search_providers.dart';
 import 'filter_sheet.dart';
@@ -23,36 +23,26 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
-  final _queryController = TextEditingController();
-  Timer? _debounce;
   bool _mapView = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _queryController.text = ref.read(searchFiltersProvider).query ?? '';
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _queryController.dispose();
-    super.dispose();
-  }
-
-  /// Typing should not fire a request per keystroke — on a slow connection
-  /// that is a queue of answers arriving out of order.
-  void _onQueryChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 350), () {
-      ref.read(searchFiltersProvider.notifier).setQuery(value);
-    });
+  /// The bar here is a button too, for the same reason it is one on the home
+  /// screen: editing a query belongs in the overlay, where there is room for
+  /// suggestions, recent searches and areas. Two different search experiences
+  /// on two tabs is how they drift.
+  Future<void> _openSearch() async {
+    final current = ref.read(searchFiltersProvider).query ?? '';
+    await context.push<String>(
+      current.isEmpty
+          ? Routes.searchOverlay
+          : '${Routes.searchOverlay}?q=${Uri.encodeComponent(current)}',
+    );
   }
 
   Future<void> _openFilters() async {
     final applied = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => const FilterSheet(),
     );
     if (applied == true && mounted) setState(() {});
@@ -72,26 +62,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      key: const Key('search-field'),
-                      controller: _queryController,
-                      onChanged: _onQueryChanged,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        hintText: 'Area, title or reference',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _queryController.text.isEmpty
-                            ? null
-                            : IconButton(
-                                icon: const Icon(Icons.close),
-                                tooltip: 'Clear search',
-                                onPressed: () {
-                                  _queryController.clear();
-                                  ref.read(searchFiltersProvider.notifier).setQuery(null);
-                                  setState(() {});
-                                },
-                              ),
-                      ),
+                    child: _QueryBar(
+                      query: filters.query,
+                      onTap: _openSearch,
+                      onClear: () => ref.read(searchFiltersProvider.notifier).setQuery(null),
                     ),
                   ),
                   const SizedBox(width: HmSpace.xl),
@@ -164,6 +138,60 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The search bar as a button: it shows the current query, opens the overlay
+/// on tap, and clears in place.
+class _QueryBar extends StatelessWidget {
+  const _QueryBar({required this.query, required this.onTap, required this.onClear});
+
+  final String? query;
+  final VoidCallback onTap;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = (query ?? '').trim();
+
+    return Semantics(
+      button: true,
+      label: text.isEmpty ? 'Search homes' : 'Search: $text',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: HmRadius.card,
+        child: Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: HmSpace.xl),
+          decoration: BoxDecoration(
+            color: HmColors.surfaceInput,
+            borderRadius: HmRadius.card,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, size: 20, color: HmColors.textSecondary),
+              const SizedBox(width: HmSpace.xl),
+              Expanded(
+                child: Text(
+                  text.isEmpty ? 'Area, title or reference' : text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.isEmpty
+                      ? HmText.body
+                      : HmText.body.copyWith(color: HmColors.textPrimary),
+                ),
+              ),
+              if (text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  tooltip: 'Clear search',
+                  onPressed: onClear,
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -3,6 +3,18 @@
          release build needs it in its own right, because the app is nothing
          but a client of the API. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- "Near me" orders listings by distance. Coarse accuracy is enough for a
+         neighbourhood question and is the less intrusive of the two, so it is
+         declared first; fine location is requested alongside it because some
+         devices will not return a fix from coarse alone. Neither is required
+         to use the app: refusing leaves Near You working from a chosen area. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
+    <!-- The app is perfectly usable on a device with no GPS at all, so this
+         must not become an install-time filter on the Play Store. -->
+    <uses-feature android:name="android.hardware.location" android:required="false"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
     <application
         android:label="HomeMate"
         android:name="${applicationName}"

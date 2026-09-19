@@ -27,6 +27,33 @@ flutter run -d chrome --dart-define-from-file=.env.json
 Nothing here is a secret. The only credential the app ever holds is the session
 token, issued at sign-in and kept in `shared_preferences`.
 
+### Which server a build talks to
+
+`API_BASE_URL` is optional, and what happens when it is absent depends on the
+build mode:
+
+| Build | `API_BASE_URL` passed | Talks to |
+|---|---|---|
+| `flutter run` / `--debug` / `--profile` | no | `http://localhost:3001` |
+| `flutter build … --release` | no | `https://homemate-faas.bfast.smartstock.co.tz` |
+| any | yes | whatever was passed |
+
+So a release build can never ship pointed at a laptop, even if somebody
+forgets the flag — that failure would otherwise land on a customer's phone
+rather than on anyone's screen here. `.env.prod.json` still exists and still
+works; it now restates the default rather than being the only thing standing
+between the Play Store and `localhost`.
+
+```bash
+flutter build appbundle --release                                  # production
+flutter build appbundle --release --dart-define-from-file=.env.prod.json  # same, explicit
+flutter build apk --release --dart-define=API_BASE_URL=https://staging…    # staging
+```
+
+`Env.describe()` reports the resolved URL and the build mode, and the Profile
+screen shows a banner whenever a build is not talking to production — so a
+tester is never left guessing which server they are looking at.
+
 ## How it is put together
 
 ```

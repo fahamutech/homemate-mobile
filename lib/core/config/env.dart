@@ -1,17 +1,46 @@
+import 'package:flutter/foundation.dart';
+
 /// Everything that differs between a laptop, staging and a shop phone.
 ///
 /// Values arrive as compile-time `--dart-define`s rather than a bundled file:
 /// a Flutter web build is downloadable, so anything baked into an asset is
-/// public. Defaults point at a local backend so `flutter run` works with no
-/// arguments, and nothing here is a secret.
+/// public. Nothing here is a secret.
 class Env {
   const Env._();
 
-  /// Where the API lives, e.g. `--dart-define=API_BASE_URL=https://api.homemate.co.tz`.
-  static const String apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:3001',
-  );
+  /// The deployed backend. A release build that nobody configured must reach
+  /// this rather than `localhost` — a shipped APK pointed at a developer's
+  /// laptop is an app that simply does not work, and it fails on the customer's
+  /// phone rather than on anyone's screen here.
+  static const String _productionApiBaseUrl = 'https://homemate-faas.bfast.smartstock.co.tz';
+
+  /// A developer running `flutter run` with no arguments wants their own
+  /// backend, and only a debug or profile build can be that.
+  static const String _developmentApiBaseUrl = 'http://localhost:3001';
+
+  /// Explicitly supplied by the build, e.g.
+  /// `--dart-define=API_BASE_URL=https://staging.homemate.co.tz`. Empty when
+  /// nothing was passed, which is how the default below can depend on the
+  /// build mode — `String.fromEnvironment`'s own `defaultValue` must be a
+  /// compile-time constant and so cannot.
+  static const String _configuredApiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  /// Where the API lives.
+  ///
+  /// An explicit `--dart-define` always wins, so staging and the CI builds keep
+  /// working exactly as before. With nothing passed, the mode decides: release
+  /// goes to production, debug and profile to localhost.
+  ///
+  /// Spelled `== ''` rather than `.isNotEmpty` because this has to stay a
+  /// compile-time constant, and a property getter is not one.
+  static const String apiBaseUrl = _configuredApiBaseUrl == ''
+      ? (kReleaseMode ? _productionApiBaseUrl : _developmentApiBaseUrl)
+      : _configuredApiBaseUrl;
+
+  /// True when the app is talking to the deployed backend. The profile screen
+  /// shows the environment when it is not, so a tester can never be left
+  /// wondering which server they are looking at.
+  static bool get isProduction => apiBaseUrl == _productionApiBaseUrl;
 
   /// OpenStreetMap raster tiles. Overridable so a deployment can point at its
   /// own cache rather than hammering the public one.
@@ -46,6 +75,8 @@ class Env {
   /// back — without pretending any of it is private.
   static Map<String, Object> describe() => {
     'apiBaseUrl': apiBaseUrl,
+    'isProduction': isProduction,
+    'buildMode': kReleaseMode ? 'release' : (kProfileMode ? 'profile' : 'debug'),
     'mapTileUrl': mapTileUrl,
     'defaultLatitude': defaultLatitude,
     'defaultLongitude': defaultLongitude,

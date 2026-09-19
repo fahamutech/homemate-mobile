@@ -13,7 +13,13 @@ abstract class AuthRepository {
   Future<AuthSession> resetPin({required String verificationToken, required String pin, required String confirmPin});
   Future<AuthSession> login({required String phoneNumber, required String pin});
   Future<Customer> me();
-  Future<Customer> completeProfile({required String fullName, String? email, String preferredLanguage});
+  Future<Customer> completeProfile({
+    required String fullName,
+    String? email,
+    String preferredLanguage,
+    DateTime? dateOfBirth,
+    String? gender,
+  });
   Future<void> changePin({required String currentPin, required String pin, required String confirmPin});
 }
 
@@ -86,10 +92,24 @@ class HttpAuthRepository implements AuthRepository {
     required String fullName,
     String? email,
     String preferredLanguage = 'en',
+    DateTime? dateOfBirth,
+    String? gender,
   }) async =>
       Customer.fromJson(await _api.post(
         '/app/me/profile',
-        body: {'fullName': fullName, 'email': email, 'preferredLanguage': preferredLanguage},
+        body: {
+          'fullName': fullName,
+          'email': email,
+          'preferredLanguage': preferredLanguage,
+          // A birthday is a day, not an instant — sending it as a timestamp
+          // would let a timezone move somebody's date of birth.
+          'dateOfBirth': dateOfBirth == null
+              ? null
+              : '${dateOfBirth.year.toString().padLeft(4, '0')}-'
+                  '${dateOfBirth.month.toString().padLeft(2, '0')}-'
+                  '${dateOfBirth.day.toString().padLeft(2, '0')}',
+          'gender': gender,
+        },
       ));
 
   @override

@@ -74,7 +74,7 @@ class ProfileScreen extends ConsumerWidget {
           if (summary != null)
             Row(
               children: [
-                _Stat(label: 'Saved', value: '${summary.savedCount}'),
+                _Stat(label: 'Favourites', value: '${summary.savedCount}'),
                 _Stat(label: 'Enquiries', value: '${summary.openInquiries}'),
                 _Stat(label: 'Viewings', value: '${summary.upcomingViewings}'),
                 _Stat(label: 'Rentals', value: '${summary.activeBookings}'),
@@ -87,7 +87,17 @@ class ProfileScreen extends ConsumerWidget {
           _Item(
             icon: Icons.person_outline,
             label: 'Edit your details',
-            onTap: () => context.push(Routes.profileSetup),
+            onTap: () => context.push(Routes.profileEdit),
+          ),
+          _Item(
+            icon: Icons.verified_user_outlined,
+            label: 'Identity verification',
+            onTap: () => context.push(Routes.identity),
+          ),
+          _Item(
+            icon: Icons.tune,
+            label: 'What you are looking for',
+            onTap: () => context.push(Routes.preferences),
           ),
           _Item(
             icon: Icons.lock_outline,

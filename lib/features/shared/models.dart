@@ -72,6 +72,9 @@ class PropertySummary {
 
   String get priceLabel => HmMoney.perMonth(price, currency: currency);
 
+  /// The card version — see [HmMoney.perMonthShort].
+  String get priceLabelShort => HmMoney.perMonthShort(price, currency: currency);
+
   factory PropertySummary.fromJson(Map<String, dynamic> json) => PropertySummary(
         id: json['id'] as String? ?? '',
         referenceCode: json['reference_code'] as String? ?? '',
@@ -187,6 +190,9 @@ class PropertyDetail {
     this.landlordName,
     this.brokerName,
     this.agencyName,
+    this.contactRole,
+    this.contactVerified = false,
+    this.contactActiveListings = 0,
     this.isSaved = false,
     this.myInquiryId,
     this.myInquiryStatus,
@@ -211,6 +217,15 @@ class PropertyDetail {
   final String? landlordName;
   final String? brokerName;
   final String? agencyName;
+
+  /// 'broker' or 'landlord' — whose card the screen is showing. The server
+  /// decides, so the app and the backoffice cannot disagree about who fronts
+  /// a listing that has both.
+  final String? contactRole;
+
+  /// HomeMate's identity review of that person — not a claim about the home.
+  final bool contactVerified;
+  final int contactActiveListings;
   final bool isSaved;
   final String? myInquiryId;
   final String? myInquiryStatus;
@@ -228,6 +243,44 @@ class PropertyDetail {
   /// Once an enquiry is open the button changes from "Enquire" to "View
   /// enquiry", so the customer is not invited to ask the same thing twice.
   bool get hasOpenInquiry => myInquiryStatus == 'pending' || myInquiryStatus == 'responded';
+
+  /// The name on the card: the broker fronts a listing that has one.
+  String? get contactName => brokerName ?? landlordName;
+
+  /// "Broker" / "Landlord" / the agency, for the line under the name.
+  String get contactSubtitle =>
+      agencyName ?? (contactRole == 'broker' ? 'Broker' : 'Landlord');
+
+  double get _rent => summary.price ?? 0;
+
+  /// The deposit in money rather than in months, because a customer budgets
+  /// in shillings. Null when the listing does not ask for one.
+  double? get depositAmount =>
+      (depositMonths ?? 0) > 0 ? _rent * depositMonths! : null;
+
+  double? get advanceRentAmount =>
+      (advanceRentMonths ?? 0) > 0 ? _rent * advanceRentMonths! : null;
+
+  /// The charges billed every month, which belong in the monthly total rather
+  /// than in what is due on the day of the move.
+  Iterable<PropertyCharge> get monthlyCharges =>
+      charges.where((charge) => charge.frequency == 'monthly');
+
+  Iterable<PropertyCharge> get oneOffCharges =>
+      charges.where((charge) => charge.frequency != 'monthly');
+
+  /// Rent plus whatever recurs with it.
+  double get monthlyTotal =>
+      _rent + monthlyCharges.fold<double>(0, (sum, charge) => sum + charge.amount);
+
+  /// What actually has to be found before the keys change hands: the deposit,
+  /// the rent paid up front, and every one-off charge. This is the number the
+  /// design puts at the bottom of the breakdown, and the one a customer is
+  /// otherwise left to work out with a calculator.
+  double get moveInTotal =>
+      (depositAmount ?? 0) +
+      (advanceRentAmount ?? _rent) +
+      oneOffCharges.fold<double>(0, (sum, charge) => sum + charge.amount);
 
   factory PropertyDetail.fromJson(Map<String, dynamic> json) {
     final property = json['property'] as Map<String, dynamic>? ?? const {};
@@ -252,6 +305,9 @@ class PropertyDetail {
       landlordName: contact['landlordName'] as String?,
       brokerName: contact['brokerName'] as String?,
       agencyName: contact['agencyName'] as String?,
+      contactRole: contact['contactRole'] as String?,
+      contactVerified: contact['isVerified'] as bool? ?? false,
+      contactActiveListings: _int(contact['activeListings']),
       isSaved: json['isSaved'] as bool? ?? false,
       myInquiryId: inquiry?['id'] as String?,
       myInquiryStatus: inquiry?['status'] as String?,
@@ -683,5 +739,216 @@ class GeoPlace {
         displayName: json['displayName'] as String? ?? '',
         latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
         longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+/// One entry from a dictionary, with the parent that places it in the
+/// region → district → ward tree.
+class ReferenceItem {
+  const ReferenceItem({required this.id, required this.name, this.code, this.parentId});
+
+  final String id;
+  final String name;
+  final String? code;
+  final String? parentId;
+
+  factory ReferenceItem.fromJson(Map<String, dynamic> json) => ReferenceItem(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        code: json['code'] as String?,
+        parentId: json['parentId'] as String?,
+      );
+}
+
+/// Every list the app's pickers are built from, fetched once.
+///
+/// The filter sheet, the search overlay and the onboarding preferences step
+/// all draw from this, so a property type added in the backoffice appears in
+/// all three without a release.
+class ReferenceData {
+  const ReferenceData({
+    this.propertyTypes = const [],
+    this.amenities = const [],
+    this.regions = const [],
+    this.districts = const [],
+    this.wards = const [],
+  });
+
+  final List<ReferenceItem> propertyTypes;
+  final List<ReferenceItem> amenities;
+  final List<ReferenceItem> regions;
+  final List<ReferenceItem> districts;
+  final List<ReferenceItem> wards;
+
+  List<ReferenceItem> districtsIn(String? regionId) =>
+      regionId == null ? districts : districts.where((d) => d.parentId == regionId).toList();
+
+  static List<ReferenceItem> _list(Object? raw) => (raw as List? ?? const [])
+      .map((row) => ReferenceItem.fromJson(row as Map<String, dynamic>))
+      .toList();
+
+  factory ReferenceData.fromJson(Map<String, dynamic> json) => ReferenceData(
+        propertyTypes: _list(json['propertyTypes']),
+        amenities: _list(json['amenities']),
+        regions: _list(json['regions']),
+        districts: _list(json['districts']),
+        wards: _list(json['wards']),
+      );
+}
+
+/// What the customer has told us they are looking for — CUS-008a, step 2, and
+/// the source of the "new match" notifications.
+class CustomerPreferences {
+  const CustomerPreferences({
+    this.budgetMin,
+    this.budgetMax,
+    this.bedroomsMin,
+    this.preferredRegionId,
+    this.propertyTypeIds = const [],
+    this.amenityIds = const [],
+    this.furnishing,
+    this.moveInFrom,
+    this.notifyNewMatches = true,
+    this.notifyPriceDrops = true,
+    this.notifyBySms = false,
+  });
+
+  final double? budgetMin;
+  final double? budgetMax;
+  final int? bedroomsMin;
+  final String? preferredRegionId;
+  final List<String> propertyTypeIds;
+  final List<String> amenityIds;
+  final String? furnishing;
+  final DateTime? moveInFrom;
+  final bool notifyNewMatches;
+  final bool notifyPriceDrops;
+  final bool notifyBySms;
+
+  static List<String> _ids(Object? raw) =>
+      (raw as List? ?? const []).map((value) => '$value').toList();
+
+  factory CustomerPreferences.fromJson(Map<String, dynamic> json) => CustomerPreferences(
+        budgetMin: json['budget_min'] == null ? null : HmMoney.parse(json['budget_min']),
+        budgetMax: json['budget_max'] == null ? null : HmMoney.parse(json['budget_max']),
+        bedroomsMin: json['bedrooms_min'] == null ? null : _int(json['bedrooms_min']),
+        preferredRegionId: json['preferred_region_id'] as String?,
+        propertyTypeIds: _ids(json['property_type_ids']),
+        amenityIds: _ids(json['amenity_ids']),
+        furnishing: json['furnishing'] as String?,
+        moveInFrom: _date(json['move_in_from']),
+        notifyNewMatches: json['notify_new_matches'] as bool? ?? true,
+        notifyPriceDrops: json['notify_price_drops'] as bool? ?? true,
+        notifyBySms: json['notify_by_sms'] as bool? ?? false,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'budgetMin': budgetMin,
+        'budgetMax': budgetMax,
+        'bedroomsMin': bedroomsMin,
+        'preferredRegionId': preferredRegionId,
+        'propertyTypeIds': propertyTypeIds,
+        'amenityIds': amenityIds,
+        'furnishing': furnishing,
+        // A date, not a moment: "I can move in on the 3rd" has no time of day.
+        'moveInFrom': moveInFrom == null
+            ? null
+            : '${moveInFrom!.year.toString().padLeft(4, '0')}-'
+                '${moveInFrom!.month.toString().padLeft(2, '0')}-'
+                '${moveInFrom!.day.toString().padLeft(2, '0')}',
+        'notifyNewMatches': notifyNewMatches,
+        'notifyPriceDrops': notifyPriceDrops,
+        'notifyBySms': notifyBySms,
+      };
+
+  CustomerPreferences copyWith({
+    Object? budgetMin = _unset,
+    Object? budgetMax = _unset,
+    Object? bedroomsMin = _unset,
+    Object? preferredRegionId = _unset,
+    List<String>? propertyTypeIds,
+    List<String>? amenityIds,
+    Object? furnishing = _unset,
+    Object? moveInFrom = _unset,
+    bool? notifyNewMatches,
+    bool? notifyPriceDrops,
+    bool? notifyBySms,
+  }) =>
+      CustomerPreferences(
+        budgetMin: budgetMin == _unset ? this.budgetMin : budgetMin as double?,
+        budgetMax: budgetMax == _unset ? this.budgetMax : budgetMax as double?,
+        bedroomsMin: bedroomsMin == _unset ? this.bedroomsMin : bedroomsMin as int?,
+        preferredRegionId:
+            preferredRegionId == _unset ? this.preferredRegionId : preferredRegionId as String?,
+        propertyTypeIds: propertyTypeIds ?? this.propertyTypeIds,
+        amenityIds: amenityIds ?? this.amenityIds,
+        furnishing: furnishing == _unset ? this.furnishing : furnishing as String?,
+        moveInFrom: moveInFrom == _unset ? this.moveInFrom : moveInFrom as DateTime?,
+        notifyNewMatches: notifyNewMatches ?? this.notifyNewMatches,
+        notifyPriceDrops: notifyPriceDrops ?? this.notifyPriceDrops,
+        notifyBySms: notifyBySms ?? this.notifyBySms,
+      );
+
+  static const Object _unset = Object();
+}
+
+/// One piece of identity evidence the customer has uploaded.
+class IdentityDocument {
+  const IdentityDocument({
+    required this.id,
+    required this.documentType,
+    required this.status,
+    this.rejectionReason,
+  });
+
+  final String id;
+  final String documentType;
+  final String status;
+  final String? rejectionReason;
+
+  factory IdentityDocument.fromJson(Map<String, dynamic> json) => IdentityDocument(
+        id: json['id'] as String? ?? '',
+        documentType: json['document_type'] as String? ?? 'other',
+        status: json['status'] as String? ?? 'pending',
+        rejectionReason: json['rejection_reason'] as String?,
+      );
+}
+
+/// Where the customer stands with identity verification — CUS-008b.
+class IdentityStatus {
+  const IdentityStatus({
+    this.kycStatus = 'not_started',
+    this.rejectionReason,
+    this.hasPhoto = false,
+    this.documents = const [],
+  });
+
+  final String kycStatus;
+  final String? rejectionReason;
+  final bool hasPhoto;
+  final List<IdentityDocument> documents;
+
+  bool get isVerified => kycStatus == 'verified';
+
+  /// Whether a document of this kind has already been sent in. The screen
+  /// shows "not verified" against each slot until an operator has looked, so
+  /// this answers "has anything been uploaded", not "has it been accepted".
+  bool has(String documentType) =>
+      documents.any((document) => document.documentType == documentType);
+
+  String statusOf(String documentType) => documents
+      .firstWhere(
+        (document) => document.documentType == documentType,
+        orElse: () => const IdentityDocument(id: '', documentType: '', status: 'not_started'),
+      )
+      .status;
+
+  factory IdentityStatus.fromJson(Map<String, dynamic> json) => IdentityStatus(
+        kycStatus: json['kycStatus'] as String? ?? 'not_started',
+        rejectionReason: json['rejectionReason'] as String?,
+        hasPhoto: json['hasPhoto'] as bool? ?? false,
+        documents: (json['documents'] as List? ?? const [])
+            .map((row) => IdentityDocument.fromJson(row as Map<String, dynamic>))
+            .toList(),
       );
 }

@@ -14,13 +14,21 @@ import '../features/auth/presentation/splash_screen.dart';
 import '../features/booking/presentation/booking_detail_screen.dart';
 import '../features/booking/presentation/bookings_screen.dart';
 import '../features/discovery/presentation/home_screen.dart';
+import '../features/discovery/presentation/search_overlay.dart';
 import '../features/discovery/presentation/search_screen.dart';
 import '../features/inquiry/presentation/inquiries_screen.dart';
 import '../features/inquiry/presentation/inquiry_detail_screen.dart';
 import '../features/inquiry/presentation/inquiry_form_screen.dart';
+import '../features/activity/presentation/property_activity_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/payment/presentation/checkout_screen.dart';
 import '../features/payment/presentation/payment_screen.dart';
+import '../features/rental/presentation/lease_screen.dart';
+import '../features/rental/presentation/rental_detail_screen.dart';
+import '../features/rental/presentation/rentals_screen.dart';
+import '../features/profile/presentation/identity_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/property/presentation/gallery_screen.dart';
 import '../features/property/presentation/property_screen.dart';
 import '../features/saved/presentation/saved_screen.dart';
 import '../features/viewing/presentation/viewing_detail_screen.dart';
@@ -44,6 +52,15 @@ class Routes {
   static const forgotPin = '/forgot-pin';
   static const profileSetup = '/complete-profile';
 
+  /// Editing the same details later.
+  ///
+  /// Deliberately NOT [profileSetup]: that path is where the redirect *holds*
+  /// anyone whose profile is outstanding, and sends everyone else straight to
+  /// the home screen — which is exactly what "Edit your details" used to do.
+  static const profileEdit = '/profile/edit';
+  static const identity = '/profile/identity';
+  static const preferences = '/profile/preferences';
+
   static const home = '/home';
   static const search = '/search';
   static const saved = '/saved';
@@ -51,7 +68,11 @@ class Routes {
   static const profile = '/profile';
   static const notifications = '/notifications';
 
+  /// The full-screen search, pushed over whatever tab you were on.
+  static const searchOverlay = '/search-overlay';
+
   static String property(String id) => '/property/$id';
+  static String gallery(String id, {int index = 0}) => '/property/$id/photos?start=$index';
   static String inquiryForm(String propertyId) => '/property/$propertyId/enquire';
   static String scheduleViewing(String propertyId) => '/property/$propertyId/viewing';
   static const inquiries = '/activity/enquiries';
@@ -66,6 +87,23 @@ class Routes {
   static String viewing(String id) => '/viewing/$id';
   static String booking(String id) => '/booking/$id';
   static String payment(String id) => '/payment/$id';
+
+  /// Reserving and paying for a property (CUS-011 + CUS-014).
+  ///
+  /// Keyed on the *property* rather than on a booking, because that is what
+  /// the customer has in hand at every one of the three entry points — an
+  /// accepted enquiry, a completed viewing, or the listing itself. The server
+  /// works out whether a booking already exists.
+  static String checkout(String propertyId) => '/property/$propertyId/checkout';
+
+  /// The tenancies a customer is living under, reached from the Active Rents
+  /// section of the Favourites tab (CUS-012a/b/c).
+  static const rentals = '/rentals';
+  static String rental(String bookingId) => '/rentals/$bookingId';
+  static String lease(String bookingId) => '/rentals/$bookingId/lease';
+
+  /// One property's timeline — CUS-013b.
+  static String propertyActivity(String propertyId) => '/property/$propertyId/activity';
 
   /// The screens reachable without a session.
   ///
@@ -116,9 +154,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (!auth.isSignedIn) {
+        if (Routes.isPublic(location)) return null;
         // Anyone still on the splash has finished restoring and has no
-        // session, so they go on to the welcome screens.
-        return Routes.isPublic(location) ? null : Routes.onboarding;
+        // session, so they go on to the welcome screens — unless this device
+        // has already been through them and has a PIN, in which case walking
+        // somebody who just signed out back through three intro slides is
+        // three taps between them and the keypad.
+        return auth.isPinEnrolled ? Routes.signIn : Routes.onboarding;
       }
 
       // Signed in but the profile step is outstanding — CUS-008a. Everything
@@ -128,8 +170,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         return location == Routes.profileSetup ? null : Routes.profileSetup;
       }
 
-      // Signed in and complete: the entry screens have nothing left to offer.
-      if (Routes.isPublic(location) || location == Routes.profileSetup) {
+      // Signed in and complete: the entry screens have nothing left to offer
+      // — and neither does the splash.
+      //
+      // The splash has to be listed here explicitly. It is deliberately not a
+      // public route (see `_public`), so without this a customer who is
+      // already signed in when the app launches finishes restoring and then
+      // sits on the splash forever: nothing above matches, and the fallthrough
+      // is "stay where you are".
+      if (Routes.isPublic(location) ||
+          location == Routes.profileSetup ||
+          location == Routes.splash) {
         return Routes.home;
       }
       return null;
@@ -188,16 +239,35 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: Routes.profile, builder: (_, __) => const ProfileScreen()),
+            GoRoute(
+              path: Routes.profile,
+              builder: (_, __) => const ProfileScreen(),
+              routes: [
+                GoRoute(path: 'edit', builder: (_, __) => const ProfileEditScreen()),
+                GoRoute(path: 'identity', builder: (_, __) => const IdentityScreen()),
+                GoRoute(path: 'preferences', builder: (_, __) => const PreferencesScreen()),
+              ],
+            ),
           ]),
         ],
       ),
 
       // Full-screen routes that cover the tabs.
       GoRoute(
+        path: Routes.searchOverlay,
+        builder: (_, state) => SearchOverlay(initialQuery: state.uri.queryParameters['q']),
+      ),
+      GoRoute(
         path: '/property/:id',
         builder: (_, state) => PropertyScreen(propertyId: state.pathParameters['id']!),
         routes: [
+          GoRoute(
+            path: 'photos',
+            builder: (_, state) => GalleryScreen(
+              propertyId: state.pathParameters['id']!,
+              initialIndex: int.tryParse(state.uri.queryParameters['start'] ?? '') ?? 0,
+            ),
+          ),
           GoRoute(
             path: 'enquire',
             builder: (_, state) => InquiryFormScreen(propertyId: state.pathParameters['id']!),
@@ -205,6 +275,37 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'viewing',
             builder: (_, state) => ScheduleViewingScreen(propertyId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'checkout',
+            builder: (_, state) => CheckoutScreen(propertyId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'activity',
+            builder: (_, state) =>
+                PropertyActivityScreen(propertyId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+
+      // Tenancies live outside the tab shell for the same reason the other
+      // detail screens do: a lease is reachable from the Favourites tab, from
+      // a notification and from a payment, and nesting it inside one branch
+      // means pushing it from anywhere else collides with that branch's keys.
+      GoRoute(
+        path: Routes.rentals,
+        builder: (_, __) => const RentalsScreen(),
+        routes: [
+          GoRoute(
+            path: ':bookingId',
+            builder: (_, state) =>
+                RentalDetailScreen(bookingId: state.pathParameters['bookingId']!),
+            routes: [
+              GoRoute(
+                path: 'lease',
+                builder: (_, state) => LeaseScreen(bookingId: state.pathParameters['bookingId']!),
+              ),
+            ],
           ),
         ],
       ),

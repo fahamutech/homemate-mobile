@@ -42,12 +42,16 @@ class AppShell extends ConsumerWidget {
             label: 'Search',
           ),
           NavigationDestination(
+            // "Favourite", per the design's bottom bar. The tab holds more
+            // than saved listings now — active rents, enquiries and viewings
+            // as well — so "Saved" was also describing about a quarter of what
+            // is behind it.
             icon: _Badged(
               count: summary?.savedCount ?? 0,
               child: const Icon(Icons.favorite_outline),
             ),
             selectedIcon: const Icon(Icons.favorite),
-            label: 'Saved',
+            label: 'Favourite',
           ),
           NavigationDestination(
             icon: _Badged(count: activityBadge, child: const Icon(Icons.receipt_long_outlined)),

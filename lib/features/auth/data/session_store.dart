@@ -22,6 +22,20 @@ abstract class SessionStore {
   /// Remembered across sign-out so the login screen can greet them by number.
   Future<String?> lastPhoneNumber();
   Future<void> rememberPhoneNumber(String phoneNumber);
+
+  /// The number this device has actually been through OTP *and* PIN setup for.
+  ///
+  /// This is deliberately not [lastPhoneNumber]: that one is written the
+  /// moment a code is requested, so trusting it would send somebody who
+  /// abandoned the SMS step to a PIN pad for a PIN that does not exist. Only a
+  /// completed enrolment writes this one, and it is what decides whether the
+  /// app opens on the keypad or on the phone-number form.
+  Future<String?> pinEnrolledNumber();
+  Future<void> rememberPinEnrolment(String phoneNumber);
+
+  /// "Not my number" / "Re-verify this phone" — the device goes back to
+  /// needing an SMS.
+  Future<void> forgetPinEnrolment();
 }
 
 class SharedPreferencesSessionStore implements SessionStore {
@@ -30,6 +44,7 @@ class SharedPreferencesSessionStore implements SessionStore {
   static const _tokenKey = 'hm.session.token';
   static const _userKey = 'hm.session.user';
   static const _phoneKey = 'hm.session.lastPhone';
+  static const _enrolledKey = 'hm.session.pinEnrolledPhone';
 
   final SharedPreferences? _injected;
   SharedPreferences? _cached;
@@ -72,7 +87,9 @@ class SharedPreferencesSessionStore implements SessionStore {
     final prefs = await _prefs;
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
-    // The phone number deliberately survives: signing out is not forgetting.
+    // The phone number and the PIN enrolment deliberately survive: signing out
+    // is not forgetting the device, and making someone re-do an SMS because
+    // they tapped "sign out" is exactly what the PIN exists to avoid.
   }
 
   @override
@@ -81,6 +98,19 @@ class SharedPreferencesSessionStore implements SessionStore {
   @override
   Future<void> rememberPhoneNumber(String phoneNumber) async =>
       (await _prefs).setString(_phoneKey, phoneNumber);
+
+  @override
+  Future<String?> pinEnrolledNumber() async => (await _prefs).getString(_enrolledKey);
+
+  @override
+  Future<void> rememberPinEnrolment(String phoneNumber) async {
+    final prefs = await _prefs;
+    await prefs.setString(_enrolledKey, phoneNumber);
+    await prefs.setString(_phoneKey, phoneNumber);
+  }
+
+  @override
+  Future<void> forgetPinEnrolment() async => (await _prefs).remove(_enrolledKey);
 }
 
 /// In-memory store for tests and for the web preview, where there is no point
@@ -88,6 +118,7 @@ class SharedPreferencesSessionStore implements SessionStore {
 class InMemorySessionStore implements SessionStore {
   StoredSession? _session;
   String? _phone;
+  String? _enrolled;
 
   @override
   Future<StoredSession?> read() async => _session;
@@ -106,4 +137,16 @@ class InMemorySessionStore implements SessionStore {
 
   @override
   Future<void> rememberPhoneNumber(String phoneNumber) async => _phone = phoneNumber;
+
+  @override
+  Future<String?> pinEnrolledNumber() async => _enrolled;
+
+  @override
+  Future<void> rememberPinEnrolment(String phoneNumber) async {
+    _enrolled = phoneNumber;
+    _phone = phoneNumber;
+  }
+
+  @override
+  Future<void> forgetPinEnrolment() async => _enrolled = null;
 }

@@ -47,6 +47,20 @@ final featuredPropertiesProvider = FutureProvider<Paged<PropertySummary>>((ref) 
   return ref.watch(catalogueRepositoryProvider).search(const PropertyFilters(), limit: 10);
 });
 
+/// The "Near you" list on the home screen.
+///
+/// Keyed on the filters so the category chips narrow it, and separate from
+/// [featuredPropertiesProvider] so the two sections can hold different pages
+/// of results without fighting over one cache entry.
+///
+/// "Near" is by listing recency until the app has the customer's location; the
+/// server already orders by distance when it is given one, so this becomes
+/// genuinely local the moment a position is passed in the filters.
+final nearbyPropertiesProvider =
+    FutureProvider.family<Paged<PropertySummary>, PropertyFilters>((ref, filters) {
+  return ref.watch(catalogueRepositoryProvider).search(filters, limit: 6);
+});
+
 final savedPropertiesProvider = FutureProvider<Paged<PropertySummary>>((ref) {
   return ref.watch(catalogueRepositoryProvider).saved(limit: 50);
 });

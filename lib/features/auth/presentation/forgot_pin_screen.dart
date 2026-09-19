@@ -64,7 +64,9 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
         return;
       }
       context.go(
-        '${Routes.otp}?phone=$phoneNumber&challenge=${challenge.challengeId}&purpose=reset_pin',
+        // Encoded: a raw '+' in a query string decodes as a space.
+        '${Routes.otp}?phone=${Uri.encodeComponent(phoneNumber)}'
+        '&challenge=${challenge.challengeId}&purpose=reset_pin',
       );
     } on ApiException catch (error) {
       setState(() => _error = error.message);

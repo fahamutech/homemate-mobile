@@ -9,7 +9,11 @@ import 'package:homemate_mobile/features/auth/data/auth_repository.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
 import 'package:homemate_mobile/features/auth/data/session_store.dart';
 import 'package:homemate_mobile/features/shared/activity_repository.dart';
+import 'package:homemate_mobile/core/location/location_providers.dart';
+import 'package:homemate_mobile/core/location/location_service.dart';
 import 'package:homemate_mobile/features/shared/catalogue_repository.dart';
+import 'package:homemate_mobile/features/shared/journey_models.dart';
+import 'package:homemate_mobile/features/shared/journey_repository.dart';
 import 'package:homemate_mobile/features/shared/models.dart';
 
 /// A whole backend, in memory.
@@ -118,12 +122,16 @@ class FakeAuthRepository implements AuthRepository {
     required String fullName,
     String? email,
     String preferredLanguage = 'en',
+    DateTime? dateOfBirth,
+    String? gender,
   }) async {
     if (_takeFailure() case final failure?) throw failure;
     customer = customer.copyWith(
       fullName: fullName,
       email: email,
       preferredLanguage: preferredLanguage,
+      dateOfBirth: dateOfBirth,
+      gender: gender,
       onboardingComplete: true,
     );
     return customer;
@@ -154,6 +162,7 @@ PropertySummary fakeProperty({
   bool isSaved = false,
   double? latitude = -6.7576,
   double? longitude = 39.2768,
+  double? distanceMetres,
 }) =>
     PropertySummary(
       id: id,
@@ -169,6 +178,7 @@ PropertySummary fakeProperty({
       isSaved: isSaved,
       latitude: latitude,
       longitude: longitude,
+      distanceMetres: distanceMetres,
     );
 
 class FakeCatalogueRepository implements CatalogueRepository {
@@ -248,6 +258,40 @@ class FakeCatalogueRepository implements CatalogueRepository {
 
   @override
   Future<void> unsave(String propertyId) async => savedIds.remove(propertyId);
+
+  @override
+  Future<ReferenceData> reference() async => referenceData;
+
+  /// The dictionaries the pickers are built from. Two of each is enough for a
+  /// test to prove a chip filters; a fixture that mirrors the seed data would
+  /// just be the seed data, maintained twice.
+  ReferenceData referenceData = const ReferenceData(
+    propertyTypes: [
+      ReferenceItem(id: 'type-apartment', name: 'Apartment', code: 'apartment'),
+      ReferenceItem(id: 'type-house', name: 'House', code: 'house'),
+    ],
+    amenities: [
+      ReferenceItem(id: 'amenity-wifi', name: 'Wi-Fi', code: 'wifi'),
+      ReferenceItem(id: 'amenity-parking', name: 'Parking', code: 'parking'),
+    ],
+    regions: [ReferenceItem(id: 'region-dar', name: 'Dar es Salaam', code: 'dar')],
+    districts: [
+      ReferenceItem(
+        id: 'district-kinondoni',
+        name: 'Kinondoni',
+        code: 'kinondoni',
+        parentId: 'region-dar',
+      ),
+    ],
+    wards: [
+      ReferenceItem(
+        id: 'ward-masaki',
+        name: 'Masaki',
+        code: 'masaki',
+        parentId: 'district-kinondoni',
+      ),
+    ],
+  );
 
   @override
   Future<List<GeoPlace>> searchPlaces(String query) async => [
@@ -585,19 +629,30 @@ class TestHarness {
     FakeAuthRepository? auth,
     FakeCatalogueRepository? catalogue,
     FakeActivityRepository? activity,
+    FakeJourneyRepository? journey,
+    FakeLocationService? location,
   })  : auth = auth ?? FakeAuthRepository(),
         catalogue = catalogue ?? FakeCatalogueRepository(),
-        activity = activity ?? FakeActivityRepository();
+        activity = activity ?? FakeActivityRepository(),
+        journey = journey ?? FakeJourneyRepository(),
+        location = location ?? FakeLocationService();
 
   final FakeAuthRepository auth;
   final FakeCatalogueRepository catalogue;
   final FakeActivityRepository activity;
+  final FakeJourneyRepository journey;
+
+  /// Defaults to `unknown` — nobody has been asked — which is the state the
+  /// soft-ask card exists for, and the one a fresh install is really in.
+  final FakeLocationService location;
   final SessionStore store = InMemorySessionStore();
 
   List<Override> get overrides => [
         authRepositoryProvider.overrideWithValue(auth),
         catalogueRepositoryProvider.overrideWithValue(catalogue),
         activityRepositoryProvider.overrideWithValue(activity),
+        journeyRepositoryProvider.overrideWithValue(journey),
+        locationServiceProvider.overrideWithValue(location),
         sessionStoreProvider.overrideWithValue(store),
       ];
 
@@ -611,8 +666,14 @@ class TestHarness {
   /// The session is restored first, exactly as `HomeMateApp` does at launch —
   /// otherwise a screen under test sees a half-built world it never meets in
   /// the real app.
+  /// The container the last [wrap] built, so a test can seed or read shared
+  /// state — the search filters, say — that a screen only reflects rather than
+  /// owns.
+  ProviderContainer? container;
+
   Widget wrap(Widget child, {List<GoRoute> extraRoutes = const []}) {
     final container = ProviderContainer(overrides: overrides);
+    this.container = container;
     container.read(authControllerProvider.notifier).restore();
 
     return UncontrolledProviderScope(
@@ -629,6 +690,13 @@ class TestHarness {
     );
   }
 }
+
+/// A stand-in for the payment screen, so a checkout that navigates on success
+/// lands somewhere rather than throwing.
+GoRoute payScreenRoute() => GoRoute(
+      path: '/payment/:id',
+      builder: (_, __) => const Scaffold(body: Text('Payment instructions')),
+    );
 
 /// Finds a string whether it is rendered as [Text] or [SelectableText].
 ///
@@ -672,4 +740,372 @@ Future<void> tapAfterScroll(WidgetTester tester, Finder finder) async {
   await reveal(tester, finder);
   await tester.tap(finder);
   await tester.pumpAndSettle();
+}
+
+// ---------------------------------------------------------------------------
+// The journey: holds, checkout, tenancies
+// ---------------------------------------------------------------------------
+
+PropertyHold fakeHold({
+  String id = 'hold-1',
+  String propertyId = 'prop-1',
+  int secondsRemaining = 600,
+  bool isLive = true,
+  String? bookingId,
+  String? paymentId,
+}) =>
+    PropertyHold(
+      id: id,
+      reference: 'HM-HLD-000001',
+      propertyId: propertyId,
+      secondsRemaining: secondsRemaining,
+      isLive: isLive,
+      bookingId: bookingId,
+      paymentId: paymentId,
+    );
+
+/// A fake that refuses the same things the server refuses.
+///
+/// That is the whole point of it: a hold already taken by somebody else comes
+/// back as a 409, a nudge inside its cooldown fails, and `payNow` returns a
+/// payment that is still `pending`. A screen that ignores any of those fails
+/// here rather than in a customer's hands.
+class FakeJourneyRepository implements JourneyRepository {
+  FakeJourneyRepository({
+    SavedOverview? overview,
+    CheckoutEligibility? eligibility,
+    this.paymentMethodOptions = const [
+      PaymentMethodOption(id: 'pm-1', code: 'mpesa', name: 'M-Pesa', kind: 'mobile_money'),
+      PaymentMethodOption(id: 'pm-2', code: 'bank', name: 'Bank Transfer', kind: 'bank_transfer'),
+    ],
+  })  : overview = overview ?? const SavedOverview(),
+        eligibility = eligibility ??
+            const CheckoutEligibility(propertyId: 'prop-1', available: true, canPay: true);
+
+  SavedOverview overview;
+  CheckoutEligibility eligibility;
+  List<PaymentMethodOption> paymentMethodOptions;
+  List<JourneyEvent> events = const [];
+  List<Rental> rentalList = const [];
+  RentalDetail? rentalDetail;
+  LeaseAgreement? leaseAgreement;
+
+  /// Thrown by the next call that can fail, then cleared — so a test can make
+  /// exactly one request fail without holding the fake in a broken state.
+  ApiException? nextFailure;
+
+  /// What the screens actually did, for a test to assert against.
+  final List<String> heldPropertyIds = [];
+  final List<String> releasedHoldIds = [];
+  final List<String> nudgedInquiryIds = [];
+  final List<({String paymentId, String methodId, String? phone})> payments = [];
+  PropertyHold currentHold = fakeHold();
+
+  ApiException? _takeFailure() {
+    final failure = nextFailure;
+    nextFailure = null;
+    return failure;
+  }
+
+  @override
+  Future<SavedOverview> savedOverview({int sectionLimit = 6}) async {
+    if (_takeFailure() case final failure?) throw failure;
+    return overview;
+  }
+
+  @override
+  Future<CheckoutEligibility> checkoutEligibility(String propertyId) async {
+    if (_takeFailure() case final failure?) throw failure;
+    return eligibility;
+  }
+
+  @override
+  Future<PropertyHold> hold(String propertyId) async {
+    if (_takeFailure() case final failure?) throw failure;
+    heldPropertyIds.add(propertyId);
+    return currentHold;
+  }
+
+  @override
+  Future<List<PropertyHold>> myHolds() async => [if (currentHold.isLive) currentHold];
+
+  @override
+  Future<void> releaseHold(String holdId, {String? reason}) async {
+    releasedHoldIds.add(holdId);
+  }
+
+  @override
+  Future<CheckoutSession> startCheckout(
+    String propertyId, {
+    int? leaseMonths,
+    DateTime? moveInDate,
+    String? notes,
+  }) async {
+    if (_takeFailure() case final failure?) throw failure;
+    heldPropertyIds.add(propertyId);
+    return CheckoutSession(
+      hold: currentHold,
+      bookingId: 'booking-1',
+      paymentId: 'pay-1',
+      summary: fakeCheckoutSummary(),
+    );
+  }
+
+  @override
+  Future<CheckoutSummary> checkoutSummary(String bookingId) async => fakeCheckoutSummary();
+
+  @override
+  Future<List<PaymentMethodOption>> paymentMethods(String propertyId) async {
+    if (_takeFailure() case final failure?) throw failure;
+    return paymentMethodOptions;
+  }
+
+  @override
+  Future<PaymentAttempt> payNow(
+    String paymentId, {
+    required String paymentMethodId,
+    String? payerPhone,
+  }) async {
+    if (_takeFailure() case final failure?) throw failure;
+    payments.add((paymentId: paymentId, methodId: paymentMethodId, phone: payerPhone));
+    return PaymentAttempt(
+      // Still pending, and deliberately so: BR-005 means nothing here can
+      // settle a payment, and a screen that celebrates on this response is
+      // lying to the customer.
+      payment: fakePayment(id: paymentId, customerState: 'awaiting_payment'),
+      hold: currentHold,
+    );
+  }
+
+  @override
+  Future<List<JourneyEvent>> propertyJourney(String propertyId) async => events;
+
+  @override
+  Future<List<JourneyEvent>> inquiryJourney(String inquiryId) async => events;
+
+  @override
+  Future<Inquiry> nudgeInquiry(String inquiryId) async {
+    if (_takeFailure() case final failure?) throw failure;
+    nudgedInquiryIds.add(inquiryId);
+    return fakeInquiry(id: inquiryId);
+  }
+
+  @override
+  Future<Paged<Rental>> rentals({int limit = 20, int offset = 0}) async =>
+      Paged(items: rentalList, total: rentalList.length);
+
+  @override
+  Future<RentalDetail> rental(String bookingId) async =>
+      rentalDetail ?? RentalDetail(rental: fakeRental(id: bookingId));
+
+  @override
+  Future<LeaseAgreement> lease(String bookingId) async =>
+      leaseAgreement ?? const LeaseAgreement(bookingReference: 'HM-BK-000001');
+}
+
+Viewing fakeViewing({
+  String id = 'view-1',
+  String status = 'confirmed',
+  DateTime? scheduledFor,
+}) =>
+    Viewing(
+      id: id,
+      reference: 'HM-VW-000001',
+      status: status,
+      scheduledFor: scheduledFor ?? DateTime(2026, 1, 18, 10),
+      propertyId: 'prop-1',
+      propertyTitle: 'Masaki 2BR Apartment',
+      propertyAddress: 'Masaki, Dar es Salaam',
+      hostName: 'Baraka Landlord',
+      hostPhone: '+255 712 345 678',
+    );
+
+Inquiry fakeInquiry({
+  String id = 'inq-1',
+  String status = 'pending',
+  String message = 'Is this still available?',
+  String? response,
+  String? rejectionReason,
+}) =>
+    Inquiry(
+      id: id,
+      reference: 'HM-INQ-000001',
+      status: status,
+      message: message,
+      createdAt: DateTime(2026, 1, 8, 10, 30),
+      response: response,
+      rejectionReason: rejectionReason,
+      respondedAt: response == null && rejectionReason == null ? null : DateTime(2026, 1, 9),
+      propertyId: 'prop-1',
+      propertyTitle: 'Masaki 2BR Apartment',
+      propertyReference: 'HM-P-000001',
+    );
+
+CustomerPayment fakePayment({
+  String id = 'pay-1',
+  double amount = 2400000,
+  String status = 'pending',
+  String customerState = 'awaiting_payment',
+}) =>
+    CustomerPayment(
+      id: id,
+      reference: 'HM-PAY-000001',
+      amount: amount,
+      currency: 'TZS',
+      status: status,
+      customerState: customerState,
+      purpose: 'deposit',
+      bookingId: 'booking-1',
+      propertyTitle: 'Masaki 2BR Apartment',
+      payToName: 'HomeMate Collections',
+      payToAccountNumber: '0123456789',
+      payReference: 'HM-PAY-000001',
+      paymentMethodName: 'M-Pesa',
+      createdAt: DateTime(2026, 1, 10),
+    );
+
+Booking fakeBooking({
+  String id = 'booking-1',
+  String status = 'awaiting_payment',
+  double totalDue = 2400000,
+}) =>
+    Booking(
+      id: id,
+      reference: 'HM-BK-000001',
+      status: status,
+      monthlyRent: 800000,
+      totalDue: totalDue,
+      amountPaid: 0,
+      amountOutstanding: totalDue,
+      depositAmount: 1600000,
+      leaseMonths: 12,
+      moveInDate: DateTime(2026, 2, 1),
+      propertyId: 'prop-1',
+      propertyTitle: 'Masaki 2BR Apartment',
+      propertyAddress: 'Masaki, Dar es Salaam',
+      landlordName: 'Baraka Landlord',
+      createdAt: DateTime(2026, 1, 10),
+    );
+
+CheckoutSummary fakeCheckoutSummary({double totalDue = 2400000}) => CheckoutSummary(
+      booking: fakeBooking(),
+      breakdown: const [
+        CostLine(key: 'first_period', label: 'First month rent', amount: 800000),
+        CostLine(key: 'deposit', label: 'Security deposit (2x)', amount: 1600000),
+        CostLine(key: 'agency_fee', label: 'Agency fee', amount: 0, waived: true),
+      ],
+      totalDue: totalDue,
+      amountPaid: 0,
+      amountOutstanding: totalDue,
+      payments: [fakePayment()],
+    );
+
+Rental fakeRental({
+  String id = 'booking-1',
+  String title = 'Masaki 2BR Apartment',
+  double monthlyRent = 800000,
+  int? daysRemaining = 300,
+  int? monthsRemaining = 9,
+  DateTime? nextPaymentDate,
+}) =>
+    Rental(
+      id: id,
+      reference: 'HM-BK-000001',
+      status: 'active',
+      monthlyRent: monthlyRent,
+      propertyId: 'prop-1',
+      propertyTitle: title,
+      propertyAddress: 'Masaki, Dar es Salaam',
+      depositAmount: 1600000,
+      leaseMonths: 12,
+      leaseStartDate: DateTime(2026, 1, 1),
+      leaseEndDate: DateTime(2026, 12, 31),
+      nextPaymentDate: nextPaymentDate ?? DateTime(2026, 11, 1),
+      daysRemaining: daysRemaining,
+      monthsRemaining: monthsRemaining,
+      noticePeriodDays: 90,
+      landlordName: 'Baraka Landlord',
+      landlordPhone: '+255 712 345 678',
+    );
+
+InquirySummary fakeInquirySummary({
+  String id = 'inq-1',
+  String status = 'pending',
+  String? displayStatus,
+  String title = 'Masaki 2BR Apartment',
+}) =>
+    InquirySummary(
+      id: id,
+      reference: 'HM-INQ-000001',
+      status: status,
+      displayStatus: displayStatus ?? status,
+      createdAt: DateTime(2026, 1, 8),
+      propertyId: 'prop-1',
+      propertyTitle: title,
+    );
+
+ViewingSummary fakeViewingSummary({
+  String id = 'view-1',
+  String status = 'confirmed',
+  String title = 'Masaki 2BR Apartment',
+}) =>
+    ViewingSummary(
+      id: id,
+      reference: 'HM-VW-000001',
+      status: status,
+      scheduledFor: DateTime(2026, 1, 18, 10),
+      propertyId: 'prop-1',
+      propertyTitle: title,
+    );
+
+/// A location service a test can put into any of its five states without a
+/// device — which is the only way the permission screens get tested at all.
+class FakeLocationService implements LocationService {
+  FakeLocationService({
+    this.state = LocationAvailability.unknown,
+    this.grantOnRequest = true,
+    this.latitude = -6.7576,
+    this.longitude = 39.2768,
+  });
+
+  LocationAvailability state;
+
+  /// What the OS prompt "answers" when [request] is called.
+  bool grantOnRequest;
+  double latitude;
+  double longitude;
+
+  int requestCount = 0;
+  int settingsOpenedCount = 0;
+
+  @override
+  Future<LocationAvailability> availability() async => state;
+
+  @override
+  Future<LocationResult> request() async {
+    requestCount++;
+    if (state == LocationAvailability.serviceDisabled ||
+        state == LocationAvailability.deniedForever) {
+      return LocationResult.unavailable(state);
+    }
+    if (!grantOnRequest) {
+      state = LocationAvailability.denied;
+      return const LocationResult.unavailable(LocationAvailability.denied);
+    }
+    state = LocationAvailability.granted;
+    return current();
+  }
+
+  @override
+  Future<LocationResult> current() async => LocationResult(
+        availability: LocationAvailability.granted,
+        latitude: latitude,
+        longitude: longitude,
+      );
+
+  @override
+  Future<bool> openSettings({bool appSettings = true}) async {
+    settingsOpenedCount++;
+    return true;
+  }
 }

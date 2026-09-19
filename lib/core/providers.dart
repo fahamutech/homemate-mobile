@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/data/auth_controller.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/session_store.dart';
+import '../features/profile/data/identity_repository.dart';
 import '../features/shared/activity_repository.dart';
 import '../features/shared/catalogue_repository.dart';
+import '../features/shared/journey_repository.dart';
 import '../features/shared/models.dart';
 import 'config/env.dart';
 import 'network/api_client.dart';
@@ -57,6 +59,31 @@ final catalogueRepositoryProvider = Provider<CatalogueRepository>(
 
 final activityRepositoryProvider = Provider<ActivityRepository>(
   (ref) => HttpActivityRepository(ref.watch(apiClientProvider)),
+);
+
+final identityRepositoryProvider = Provider<IdentityRepository>(
+  (ref) => HttpIdentityRepository(ref.watch(apiClientProvider)),
+);
+
+/// Reserving, paying and tenancies — the half of the journey where an asking
+/// becomes a commitment.
+final journeyRepositoryProvider = Provider<JourneyRepository>(
+  (ref) => HttpJourneyRepository(ref.watch(apiClientProvider)),
+);
+
+/// The pickers' master data. Fetched once and shared by the filter sheet, the
+/// search overlay and the onboarding preferences step.
+final referenceDataProvider = FutureProvider<ReferenceData>(
+  (ref) => ref.watch(catalogueRepositoryProvider).reference(),
+);
+
+/// Where the customer stands with identity verification (CUS-008b).
+final identityStatusProvider = FutureProvider<IdentityStatus>(
+  (ref) => ref.watch(identityRepositoryProvider).identity(),
+);
+
+final customerPreferencesProvider = FutureProvider<CustomerPreferences>(
+  (ref) => ref.watch(identityRepositoryProvider).preferences(),
 );
 
 /// The signed-in customer, or null. Screens watch this rather than digging

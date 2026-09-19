@@ -24,7 +24,14 @@ dependencies:
   # OpenStreetMap, per the design — no proprietary map SDK.
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  # "Near me" needs a position and, more importantly, an honest answer about
+  # whether we are allowed one — geolocator distinguishes "denied", "denied
+  # forever" and "location is switched off", which are three different screens.
+  geolocator: ^14.0.3
   cached_network_image: ^3.4.1
+  # Identity documents and the profile photo (CUS-008b) come from the camera or
+  # the gallery; the bytes go straight to the API, never to a third party.
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_test:

@@ -23,7 +23,12 @@ enum AuthStage {
 }
 
 class AuthState {
-  const AuthState({required this.stage, this.customer, this.lastPhoneNumber});
+  const AuthState({
+    required this.stage,
+    this.customer,
+    this.lastPhoneNumber,
+    this.pinEnrolledNumber,
+  });
 
   final AuthStage stage;
   final Customer? customer;
@@ -31,13 +36,37 @@ class AuthState {
   /// Prefills the PIN screen for someone coming back.
   final String? lastPhoneNumber;
 
+  /// The number this device has completed OTP *and* PIN setup for, or null.
+  ///
+  /// When it is set, sign-in opens straight on the keypad — the whole point of
+  /// having a PIN. When it is not, the only way in is an SMS, even if a number
+  /// was typed here before: an abandoned verification must not be mistaken for
+  /// an enrolled device.
+  final String? pinEnrolledNumber;
+
   bool get isSignedIn => stage == AuthStage.needsProfile || stage == AuthStage.ready;
 
-  AuthState copyWith({AuthStage? stage, Customer? customer, String? lastPhoneNumber}) => AuthState(
+  /// Whether this device may sign in with a PIN alone.
+  bool get isPinEnrolled => (pinEnrolledNumber ?? '').isNotEmpty;
+
+  AuthState copyWith({
+    AuthStage? stage,
+    Customer? customer,
+    String? lastPhoneNumber,
+    Object? pinEnrolledNumber = _unset,
+  }) =>
+      AuthState(
         stage: stage ?? this.stage,
         customer: customer ?? this.customer,
         lastPhoneNumber: lastPhoneNumber ?? this.lastPhoneNumber,
+        // A sentinel, because forgetting the device is `null` meaning "clear
+        // it", not `null` meaning "leave it alone".
+        pinEnrolledNumber: pinEnrolledNumber == _unset
+            ? this.pinEnrolledNumber
+            : pinEnrolledNumber as String?,
       );
+
+  static const Object _unset = Object();
 }
 
 /// Owns the session: restoring it at launch, replacing it on sign-in, and
@@ -63,40 +92,74 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> restore() async {
     final stored = await _store.read();
     final phone = await _store.lastPhoneNumber();
+    final enrolled = await _store.pinEnrolledNumber();
 
     if (stored == null) {
-      state = AuthState(stage: AuthStage.signedOut, lastPhoneNumber: phone);
+      state = AuthState(
+        stage: AuthStage.signedOut,
+        lastPhoneNumber: phone,
+        pinEnrolledNumber: enrolled,
+      );
       return;
     }
 
     token = stored.token;
     try {
       final customer = await _repository.me();
-      state = AuthState(stage: _stageFor(customer), customer: customer, lastPhoneNumber: phone);
+      state = AuthState(
+        stage: _stageFor(customer),
+        customer: customer,
+        lastPhoneNumber: phone,
+        pinEnrolledNumber: enrolled,
+      );
     } catch (_) {
       // Expired, revoked, or the backend is unreachable. Either way the safe
       // landing is the sign-in screen, with their number remembered.
       token = null;
       await _store.clear();
-      state = AuthState(stage: AuthStage.signedOut, lastPhoneNumber: phone);
+      state = AuthState(
+        stage: AuthStage.signedOut,
+        lastPhoneNumber: phone,
+        pinEnrolledNumber: enrolled,
+      );
     }
   }
 
+  /// Every path that reaches here — setting a PIN, resetting one, signing in
+  /// with one — means this phone number has a working PIN, so this is the one
+  /// place the device gets marked as enrolled.
   Future<void> adopt(AuthSession session) async {
     token = session.token;
     await _store.write(
       StoredSession(token: session.token, userJson: session.customer.toJson()),
     );
+    await _store.rememberPinEnrolment(session.customer.phoneNumber);
     state = AuthState(
       stage: _stageFor(session.customer),
       customer: session.customer,
       lastPhoneNumber: session.customer.phoneNumber,
+      pinEnrolledNumber: session.customer.phoneNumber,
     );
   }
 
   Future<void> rememberPhoneNumber(String phoneNumber) async {
     await _store.rememberPhoneNumber(phoneNumber);
     state = state.copyWith(lastPhoneNumber: phoneNumber);
+  }
+
+  /// "Not you?" / "Use a different number" — drops the PIN shortcut so the
+  /// next sign-in has to prove the phone by SMS again. It does not touch the
+  /// server: the PIN is still the account's, this device just stops offering
+  /// it.
+  Future<void> forgetDevice() async {
+    await _store.forgetPinEnrolment();
+    token = null;
+    await _store.clear();
+    state = AuthState(
+      stage: AuthStage.signedOut,
+      lastPhoneNumber: state.lastPhoneNumber,
+      pinEnrolledNumber: null,
+    );
   }
 
   /// After the profile step, so the router stops holding them there.
@@ -110,7 +173,13 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     token = null;
     await _store.clear();
-    state = AuthState(stage: AuthStage.signedOut, lastPhoneNumber: state.lastPhoneNumber);
+    // The enrolment survives on purpose: signing out should land on the
+    // keypad, not on an SMS that costs credit to send.
+    state = AuthState(
+      stage: AuthStage.signedOut,
+      lastPhoneNumber: state.lastPhoneNumber,
+      pinEnrolledNumber: state.pinEnrolledNumber,
+    );
   }
 
   static AuthStage _stageFor(Customer customer) =>

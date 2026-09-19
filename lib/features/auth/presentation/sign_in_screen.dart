@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,14 +9,20 @@ import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_scaffold.dart';
 import '../../../routing/app_router.dart';
 import 'phone_field.dart';
+import 'pin_keypad.dart';
 
 /// CUS-006a. One screen for both people who have been here before and people
 /// who have not.
 ///
-/// A returning customer types their PIN and is in — no SMS, which is the whole
-/// point of having a PIN. A new number goes to the code screen instead. The
-/// app decides which by remembering the last number used on this device, and
-/// the customer can always switch.
+/// Which one you get is decided by the device, not by a guess: a device that
+/// has completed OTP *and* chosen a PIN opens straight on the keypad, and
+/// everything else opens on the phone-number form and an SMS. That distinction
+/// matters — the app used to remember the number as soon as a code was
+/// requested, so abandoning the SMS step left the next launch asking for a PIN
+/// that had never been created.
+///
+/// From the keypad there is always a way back out: "Not you?" forgets the
+/// device and re-runs the SMS, and "Forgot PIN?" re-verifies the same number.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -28,57 +33,81 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phone = TextEditingController();
-  final _pin = TextEditingController();
+
+  /// The digits typed on the keypad. Never rendered — only counted, so the
+  /// dots can show progress without the PIN being on screen.
+  String _pin = '';
 
   bool _busy = false;
   String? _error;
 
-  /// True once we believe this number already has a PIN, so the PIN field is
-  /// worth showing. It starts from the remembered number rather than asking
-  /// the server, which would leak whether a number is registered.
-  bool _usePin = false;
+  /// The PIN is at most 6 digits, but 4 is what the pad submits on: anything
+  /// longer is confirmed with the button, because we cannot know when a
+  /// 5-digit PIN is finished.
+  static const _pinLength = 4;
 
   @override
   void initState() {
     super.initState();
-    final remembered = ref.read(authControllerProvider).lastPhoneNumber;
-    if (remembered != null) {
-      _phone.text = remembered;
-      _usePin = true;
-    }
+    final enrolled = ref.read(authControllerProvider).pinEnrolledNumber;
+    _phone.text = enrolled ?? ref.read(authControllerProvider).lastPhoneNumber ?? '';
   }
 
   @override
   void dispose() {
     _phone.dispose();
-    _pin.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final phoneNumber = PhoneField.normalise(_phone.text)!;
+  // --- the two ways in -------------------------------------------------------
 
+  Future<void> _signInWithPin(String phoneNumber) async {
     setState(() {
       _busy = true;
       _error = null;
     });
-
     try {
-      if (_usePin) {
-        final session = await ref
-            .read(authRepositoryProvider)
-            .login(phoneNumber: phoneNumber, pin: _pin.text);
-        await ref.read(authControllerProvider.notifier).adopt(session);
-        // The router's redirect takes it from here.
-        return;
-      }
+      final session =
+          await ref.read(authRepositoryProvider).login(phoneNumber: phoneNumber, pin: _pin);
+      await ref.read(authControllerProvider.notifier).adopt(session);
+      // The router's redirect takes it from here.
+    } on ApiException catch (error) {
+      setState(() {
+        _error = error.message;
+        _pin = '';
+      });
+    } catch (_) {
+      setState(() {
+        _error = ApiException.unexpected().message;
+        _pin = '';
+      });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
+  Future<void> _sendCode({String? purpose}) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final phoneNumber = PhoneField.normalise(_phone.text)!;
+    await _requestOtp(phoneNumber, purpose: purpose ?? 'login');
+  }
+
+  Future<void> _requestOtp(String phoneNumber, {String purpose = 'login'}) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
       final challenge =
-          await ref.read(authRepositoryProvider).requestOtp(phoneNumber: phoneNumber);
+          await ref.read(authRepositoryProvider).requestOtp(phoneNumber: phoneNumber, purpose: purpose);
       await ref.read(authControllerProvider.notifier).rememberPhoneNumber(phoneNumber);
       if (!mounted) return;
-      context.go('${Routes.otp}?phone=$phoneNumber&challenge=${challenge.challengeId}');
+      // Encoded, not interpolated: a raw '+' in a query string decodes as a
+      // space, so the verify screen greeted people as "255712345678".
+      context.go(
+        '${Routes.otp}?phone=${Uri.encodeComponent(phoneNumber)}'
+        '&challenge=${challenge.challengeId}&purpose=$purpose',
+      );
     } on ApiException catch (error) {
       setState(() => _error = error.message);
     } catch (_) {
@@ -88,40 +117,81 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
+  /// "Not you?" — this device stops offering the PIN and goes back to SMS.
+  Future<void> _forgetDevice() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Use a different number?'),
+        content: const Text(
+          'We will send a code to confirm the new number. Your PIN stays on the '
+          'account you already have.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await ref.read(authControllerProvider.notifier).forgetDevice();
+    if (!mounted) return;
+    setState(() {
+      _pin = '';
+      _error = null;
+      _phone.clear();
+    });
+  }
+
+  // --- keypad plumbing -------------------------------------------------------
+
+  void _onDigit(String digit, String phoneNumber) {
+    if (_pin.length >= 6) return;
+    setState(() {
+      _pin = _pin + digit;
+      _error = null;
+    });
+    if (_pin.length == _pinLength) _signInWithPin(phoneNumber);
+  }
+
+  void _onBackspace() {
+    if (_pin.isEmpty) return;
+    setState(() => _pin = _pin.substring(0, _pin.length - 1));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final enrolled = ref.watch(authControllerProvider).pinEnrolledNumber;
+
     return HmScaffold(
       backgroundColor: HmColors.bgPrimary,
       showBack: false,
-      body: SingleChildScrollView(
+      body: enrolled == null ? _phoneForm() : _pinPad(enrolled),
+    );
+  }
+
+  // --- the SMS path ----------------------------------------------------------
+
+  Widget _phoneForm() => SingleChildScrollView(
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: HmSpace.section),
-              Center(
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: HmColors.brandPrimary,
-                    borderRadius: BorderRadius.circular(HmRadius.lg),
-                  ),
-                  child: const Icon(Icons.home_rounded, color: HmColors.textOnBrand),
-                ),
-              ),
+              const _Logo(),
               const SizedBox(height: HmSpace.huge),
-              Text(
-                _usePin ? 'Welcome back' : 'Sign in',
-                style: HmText.title,
-                textAlign: TextAlign.center,
-              ),
+              Text('Sign in', style: HmText.title, textAlign: TextAlign.center),
               const SizedBox(height: HmSpace.md),
               Text(
-                _usePin
-                    ? 'Enter your PIN to continue.'
-                    : 'We will send a code to confirm your number.',
+                'We will send a code to confirm your number.',
                 style: HmText.body,
                 textAlign: TextAlign.center,
               ),
@@ -132,63 +202,125 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               PhoneField(
                 controller: _phone,
                 enabled: !_busy,
-                autofocus: !_usePin,
-                onSubmitted: (_) => _usePin ? null : _submit(),
+                autofocus: true,
+                onSubmitted: (_) => _sendCode(),
               ),
-
-              if (_usePin) ...[
-                const SizedBox(height: HmSpace.xxl),
-                TextFormField(
-                  key: const Key('pin-field'),
-                  controller: _pin,
-                  enabled: !_busy,
-                  autofocus: true,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(6),
-                  ],
-                  onFieldSubmitted: (_) => _submit(),
-                  validator: (value) =>
-                      (value ?? '').length < 4 ? 'Your PIN is at least 4 digits' : null,
-                  decoration: const InputDecoration(labelText: 'PIN'),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: _busy ? null : () => context.go(Routes.forgotPin),
-                    child: const Text('Forgot PIN?'),
-                  ),
-                ),
-              ],
 
               const SizedBox(height: HmSpace.huge),
               ElevatedButton(
-                onPressed: _busy ? null : _submit,
-                child: _busy
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text(_usePin ? 'Sign in' : 'Send code'),
+                onPressed: _busy ? null : () => _sendCode(),
+                child: _busy ? const _ButtonSpinner() : const Text('Send code'),
               ),
               const SizedBox(height: HmSpace.xxl),
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => setState(() {
-                          _usePin = !_usePin;
-                          _error = null;
-                          _pin.clear();
-                        }),
-                child: Text(_usePin ? 'Use a different number' : 'I already have a PIN'),
+              Text(
+                'Once you have set a PIN, this phone will sign you in with it — '
+                'no more codes.',
+                style: HmText.caption,
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
+
+  // --- the PIN path ----------------------------------------------------------
+
+  Widget _pinPad(String phoneNumber) => Column(
+        children: [
+          // The greeting scrolls and the keypad does not: on a short screen
+          // (or with the text scaled up) it is the welcome that should give
+          // way, never the keys someone is trying to reach.
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: HmSpace.huge),
+                  const _Logo(),
+                  const SizedBox(height: HmSpace.huge),
+                  Text('Welcome back', style: HmText.title, textAlign: TextAlign.center),
+                  const SizedBox(height: HmSpace.xs),
+                  Text(phoneNumber, style: HmText.caption, textAlign: TextAlign.center),
+                  const SizedBox(height: HmSpace.section),
+
+                  PinDots(length: _pin.length, of: _pinLength, error: _error != null),
+                  const SizedBox(height: HmSpace.xxl),
+
+                  SizedBox(
+                    height: 40,
+                    child: _busy
+                        ? const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : Center(
+                            child: Text(
+                              _error ?? 'Enter your PIN',
+                              style: _error == null
+                                  ? HmText.caption
+                                  : HmText.caption.copyWith(color: HmColors.error),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          PinKeypad(
+            enabled: !_busy,
+            onDigit: (digit) => _onDigit(digit, phoneNumber),
+            onBackspace: _onBackspace,
+            // A PIN nobody can remember must not be a dead end: the same
+            // number re-verified by SMS gets a new one.
+            actionIcon: Icons.help_outline,
+            actionLabel: 'Forgot your PIN',
+            onAction: () => _requestOtp(phoneNumber, purpose: 'reset_pin'),
+          ),
+          const SizedBox(height: HmSpace.md),
+
+          if (_pin.length > _pinLength)
+            ElevatedButton(
+              onPressed: _busy ? null : () => _signInWithPin(phoneNumber),
+              child: _busy ? const _ButtonSpinner() : const Text('Sign in'),
+            ),
+
+          TextButton(
+            onPressed: _busy ? null : _forgetDevice,
+            child: const Text('Not you? Use a different number'),
+          ),
+          const SizedBox(height: HmSpace.md),
+        ],
+      );
+}
+
+class _Logo extends StatelessWidget {
+  const _Logo();
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: HmColors.brandPrimary,
+            borderRadius: BorderRadius.circular(HmRadius.lg),
+          ),
+          child: const Icon(Icons.home_rounded, color: HmColors.textOnBrand),
+        ),
+      );
+}
+
+class _ButtonSpinner extends StatelessWidget {
+  const _ButtonSpinner();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+      );
 }

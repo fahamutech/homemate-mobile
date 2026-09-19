@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>HomeMate needs the camera so you can photograph your ID and take the selfie that verifies your account.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>HomeMate needs your photos so you can upload an existing picture of your ID or your profile photo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>HomeMate uses your location to show homes near you, nearest first, and to centre the map on where you are. You can also pick an area by hand instead.</string>
 </dict>
 </plist>

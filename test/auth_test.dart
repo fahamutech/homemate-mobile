@@ -5,11 +5,14 @@ import 'package:homemate_mobile/core/providers.dart';
 import 'package:homemate_mobile/features/auth/data/auth_controller.dart';
 import 'package:homemate_mobile/features/auth/data/auth_repository.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
+import 'package:homemate_mobile/features/auth/data/session_store.dart';
 import 'package:homemate_mobile/features/auth/presentation/otp_screen.dart';
 import 'package:homemate_mobile/features/auth/presentation/phone_field.dart';
 import 'package:homemate_mobile/features/auth/presentation/pin_setup_screen.dart';
 import 'package:homemate_mobile/features/auth/presentation/profile_setup_screen.dart';
 import 'package:homemate_mobile/features/auth/presentation/sign_in_screen.dart';
+import 'package:homemate_mobile/design/theme.dart';
+import 'package:homemate_mobile/routing/app_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'support/fakes.dart';
@@ -35,34 +38,45 @@ void main() {
   });
 
   group('signing in', () {
-    testWidgets('a returning customer signs in with a PIN and no SMS is sent', (tester) async {
+    testWidgets('an enrolled device signs in on the keypad and no SMS is sent', (tester) async {
       final harness = TestHarness();
       harness.auth.pins['+255712345678'] = '4820';
+      await harness.store.rememberPinEnrolment('+255712345678');
+
+      await tester.pumpWidget(harness.wrap(const SignInScreen()));
+      await tester.pumpAndSettle();
+
+      // An enrolled device opens straight on the keypad.
+      expect(find.text('Welcome back'), findsOneWidget);
+      await tapPin(tester, '4820');
+
+      expect(harness.auth.sentTo, isEmpty, reason: 'signing in must not cost an SMS');
+    });
+
+    testWidgets('a number remembered from an abandoned code still asks for a code',
+        (tester) async {
+      // The number is written the moment a code is requested. Treating that as
+      // "this device has a PIN" left anyone who never finished the SMS staring
+      // at a keypad for a PIN that was never created.
+      final harness = TestHarness();
       await harness.store.rememberPhoneNumber('+255712345678');
 
       await tester.pumpWidget(harness.wrap(const SignInScreen()));
       await tester.pumpAndSettle();
 
-      // The remembered number puts them straight on the PIN path.
-      expect(find.text('Welcome back'), findsOneWidget);
-      await tester.enterText(find.byKey(const Key('pin-field')), '4820');
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
-      await tester.pumpAndSettle();
-
-      expect(harness.auth.sentTo, isEmpty, reason: 'signing in must not cost an SMS');
+      expect(find.text('Welcome back'), findsNothing);
+      expect(find.widgetWithText(ElevatedButton, 'Send code'), findsOneWidget);
     });
 
     testWidgets('a wrong PIN shows the message and stays put', (tester) async {
       final harness = TestHarness();
       harness.auth.pins['+255712345678'] = '4820';
-      await harness.store.rememberPhoneNumber('+255712345678');
+      await harness.store.rememberPinEnrolment('+255712345678');
 
       await tester.pumpWidget(harness.wrap(const SignInScreen()));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byKey(const Key('pin-field')), '9999');
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Sign in'));
-      await tester.pumpAndSettle();
+      await tapPin(tester, '9999');
 
       expect(find.text('That phone number and PIN do not match'), findsOneWidget);
     });
@@ -297,6 +311,139 @@ void main() {
 
       expect(container.read(authControllerProvider).stage, AuthStage.needsProfile);
     });
+
+    testWidgets('a finished profile can still open the edit screen', (tester) async {
+      // "Edit your details" used to point at /complete-profile — the path the
+      // redirect uses to *hold* anyone whose profile is outstanding, and which
+      // it sends everyone else away from. Tapping it landed on the home
+      // screen. The edit screen is its own route for exactly that reason.
+      final harness = TestHarness();
+      final container = ProviderContainer(overrides: harness.overrides);
+      addTearDown(container.dispose);
+
+      await container.read(authControllerProvider.notifier).adopt(
+            AuthSessionStub(token: 'session-token', customer: harness.auth.customer),
+          );
+      expect(container.read(authControllerProvider).stage, AuthStage.ready);
+
+      final router = container.read(routerProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      router.go(Routes.profileEdit);
+      await tester.pumpAndSettle();
+
+      expect(router.state.matchedLocation, Routes.profileEdit);
+      expect(find.text('Edit your details'), findsOneWidget);
+    });
+
+    testWidgets('an enrolled device signing out lands on the keypad, not onboarding',
+        (tester) async {
+      final harness = TestHarness();
+      final container = ProviderContainer(overrides: harness.overrides);
+      addTearDown(container.dispose);
+
+      await container.read(authControllerProvider.notifier).adopt(
+            AuthSessionStub(token: 'session-token', customer: harness.auth.customer),
+          );
+
+      final router = container.read(routerProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await container.read(authControllerProvider.notifier).signOut();
+      await tester.pumpAndSettle();
+
+      // Signing out is not forgetting the device: the PIN still works, so the
+      // intro slides have nothing left to tell them.
+      expect(router.state.matchedLocation, Routes.signIn);
+      expect(find.text('Welcome back'), findsOneWidget);
+    });
+
+    testWidgets('a device with no PIN still gets the intro first', (tester) async {
+      final harness = TestHarness();
+      final container = ProviderContainer(overrides: harness.overrides);
+      addTearDown(container.dispose);
+
+      await container.read(authControllerProvider.notifier).restore();
+
+      final router = container.read(routerProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(router.state.matchedLocation, Routes.onboarding);
+    });
+
+    testWidgets('a signed-in customer does not get stranded on the splash', (tester) async {
+      // The splash is correct only while the stored session is being read. It
+      // is not a public route, so the "you are signed in, move along" branch
+      // has to name it — otherwise restoring finishes and nothing moves.
+      final harness = TestHarness();
+      final container = ProviderContainer(overrides: harness.overrides);
+      addTearDown(container.dispose);
+
+      await container.read(sessionStoreProvider).write(
+            StoredSession(token: 'session-token', userJson: harness.auth.customer.toJson()),
+          );
+
+      final router = container.read(routerProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+        ),
+      );
+      // Launch reads the stored session, exactly as HomeMateApp does.
+      await container.read(authControllerProvider.notifier).restore();
+      await tester.pumpAndSettle();
+
+      expect(router.state.matchedLocation, Routes.home);
+    });
+
+    testWidgets('an unfinished profile is still held at the wizard', (tester) async {
+      final harness = TestHarness();
+      harness.auth.customer = const Customer(
+        id: 'cust-1',
+        phoneNumber: '+255712345678',
+        hasPin: true,
+      );
+      final container = ProviderContainer(overrides: harness.overrides);
+      addTearDown(container.dispose);
+
+      await container.read(authControllerProvider.notifier).adopt(
+            AuthSessionStub(token: 'session-token', customer: harness.auth.customer),
+          );
+
+      final router = container.read(routerProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(theme: buildHomeMateTheme(), routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      router.go(Routes.home);
+      await tester.pumpAndSettle();
+
+      expect(router.state.matchedLocation, Routes.profileSetup);
+      expect(find.text('Complete Your Profile'), findsOneWidget);
+    });
   });
 }
 
@@ -304,4 +451,14 @@ void main() {
 /// get one.
 class AuthSessionStub extends AuthSession {
   AuthSessionStub({required super.token, required super.customer});
+}
+
+/// Taps a PIN into the on-device keypad, one digit at a time — which is what a
+/// customer does, and the only way to exercise the auto-submit on the fourth.
+Future<void> tapPin(WidgetTester tester, String pin) async {
+  for (final digit in pin.split('')) {
+    await tester.tap(find.widgetWithText(TextButton, digit));
+    await tester.pump();
+  }
+  await tester.pumpAndSettle();
 }

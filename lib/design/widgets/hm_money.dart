@@ -21,7 +21,13 @@ class HmMoney {
   static String format(Object? value, {String currency = 'TZS'}) =>
       '$currency ${_whole.format(parse(value))}';
 
-  /// "TZS 800,000/month" — the phrasing the listing cards use.
+  /// "TZS 800,000/month" — the phrasing the property screen uses, where
+  /// there is room to say it in full.
   static String perMonth(Object? value, {String currency = 'TZS'}) =>
       '${format(value, currency: currency)}/month';
+
+  /// "TZS 800,000/mo" — the same thing on a card, where the full word pushes
+  /// the price onto a second line and the layout with it.
+  static String perMonthShort(Object? value, {String currency = 'TZS'}) =>
+      '${format(value, currency: currency)}/mo';
 }

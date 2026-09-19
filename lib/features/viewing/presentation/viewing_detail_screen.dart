@@ -11,8 +11,11 @@ import '../../../design/widgets/hm_async.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_prompt.dart';
 import '../../../design/widgets/hm_scaffold.dart';
+import '../../../design/widgets/hm_section.dart';
 import '../../../design/widgets/hm_status_chip.dart';
 import '../../../routing/app_router.dart';
+import '../../shared/journey_providers.dart';
+import '../../shared/models.dart';
 import '../data/viewing_providers.dart';
 
 /// CUS-010b/c/d. One viewing: when, where, who, and how to call it off.
@@ -162,22 +165,108 @@ class ViewingDetailScreen extends ConsumerWidget {
             ],
 
             const SizedBox(height: HmSpace.section),
-            if (data.canCancel)
+            if (data.propertyId != null) _AfterTheViewing(viewing: data),
+            if (data.canCancel) ...[
+              const SizedBox(height: HmSpace.xl),
               OutlinedButton(
                 onPressed: () => _cancel(context, ref),
                 style: OutlinedButton.styleFrom(foregroundColor: HmColors.error),
                 child: const Text('Cancel viewing'),
               ),
-            if (data.status == 'completed' && data.propertyId != null) ...[
-              const SizedBox(height: HmSpace.xl),
-              ElevatedButton(
-                onPressed: () => context.push(Routes.property(data.propertyId!)),
-                child: const Text('Book this property'),
-              ),
             ],
           ],
         ),
       ),
+    );
+  }
+}
+
+/// What happens once the tour is over.
+///
+/// The design stops at "Booking — Confirmed", but a viewing that has been and
+/// gone is the moment a customer decides. So once the appointment has passed —
+/// whether or not the landlord has got round to marking it completed, which
+/// they frequently have not — this offers the payment flow, provided the home
+/// is still going.
+///
+/// Whether it *is* still going is the server's answer, not a guess from the
+/// viewing's own status: somebody else may have taken it in the meantime, and
+/// telling this customer so plainly is far better than a button that fails.
+class _AfterTheViewing extends ConsumerWidget {
+  const _AfterTheViewing({required this.viewing});
+
+  final Viewing viewing;
+
+  /// The tour day is done. `completed` is the landlord saying so; the time
+  /// having passed on a confirmed appointment is the same fact, arrived at
+  /// without waiting for them.
+  bool get _hasHappened =>
+      viewing.status == 'completed' ||
+      (viewing.status == 'confirmed' && viewing.scheduledFor.isBefore(DateTime.now()));
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_hasHappened) return const SizedBox.shrink();
+
+    final propertyId = viewing.propertyId!;
+    final eligibility = ref.watch(checkoutEligibilityProvider(propertyId));
+
+    return eligibility.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: HmSpace.xxl),
+        child: HmLoading(),
+      ),
+      // If we cannot tell, offer the way back to the listing rather than
+      // nothing at all — the property screen asks the same question again.
+      error: (_, __) => OutlinedButton(
+        onPressed: () => context.push(Routes.property(propertyId)),
+        child: const Text('View this property'),
+      ),
+      data: (data) {
+        if (!data.available) {
+          return Column(
+            children: [
+              const HmNotice(
+                message: 'This home has been let to someone else since your viewing.',
+                icon: Icons.do_not_disturb_on_outlined,
+                colour: HmColors.error,
+              ),
+              const SizedBox(height: HmSpace.xl),
+              OutlinedButton(
+                onPressed: () => context.go(Routes.search),
+                child: const Text('Find something similar'),
+              ),
+            ],
+          );
+        }
+
+        return Column(
+          children: [
+            HmNotice(
+              message: data.isBlockedByHold
+                  ? 'Someone is paying for this home right now. If they do not finish, '
+                      'it becomes available again within ten minutes.'
+                  : 'You have seen this home. Reserve it now and nobody else can pay '
+                      'for it while you do.',
+              icon: data.isBlockedByHold
+                  ? Icons.hourglass_top_outlined
+                  : Icons.check_circle_outline,
+              colour: data.isBlockedByHold ? HmColors.warning : HmColors.brandPrimary,
+            ),
+            const SizedBox(height: HmSpace.xl),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: data.canPay && !data.isBlockedByHold
+                    ? () => context.push(Routes.checkout(propertyId))
+                    : null,
+                icon: const Icon(Icons.lock_outline, size: 18),
+                label: Text(data.hasStarted ? 'Continue payment' : 'Reserve & pay'),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

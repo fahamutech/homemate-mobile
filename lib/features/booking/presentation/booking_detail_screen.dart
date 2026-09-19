@@ -92,6 +92,20 @@ class BookingDetailScreen extends ConsumerWidget {
                 ),
               ),
 
+            if (data.propertyId != null) ...[
+              const SizedBox(height: HmSpace.xl),
+              // CUS-013b, reached from My Activity. The booking is only one
+              // step of a longer story — the enquiry, the viewing, the
+              // payments and the lease are the rest of it, and "where am I
+              // with that house" is what someone opening this screen is
+              // really asking.
+              OutlinedButton.icon(
+                onPressed: () => context.push(Routes.propertyActivity(data.propertyId!)),
+                icon: const Icon(Icons.timeline_outlined, size: 18),
+                label: const Text('View the full journey'),
+              ),
+            ],
+
             const SizedBox(height: HmSpace.huge),
             _MoneySummary(booking: data),
 

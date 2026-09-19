@@ -13,6 +13,9 @@ class Customer {
     this.onboardingComplete = false,
     this.kycStatus = 'not_started',
     this.status = 'active',
+    this.dateOfBirth,
+    this.gender,
+    this.hasPhoto = false,
   });
 
   final String id;
@@ -24,6 +27,9 @@ class Customer {
   final bool onboardingComplete;
   final String kycStatus;
   final String status;
+  final DateTime? dateOfBirth;
+  final String? gender;
+  final bool hasPhoto;
 
   /// What the profile screen shows before a name has been given.
   String get displayName =>
@@ -47,6 +53,9 @@ class Customer {
         onboardingComplete: json['onboardingComplete'] as bool? ?? false,
         kycStatus: json['kycStatus'] as String? ?? 'not_started',
         status: json['status'] as String? ?? 'active',
+        dateOfBirth: DateTime.tryParse('${json['dateOfBirth'] ?? ''}'),
+        gender: json['gender'] as String?,
+        hasPhoto: json['profilePhoto'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -59,9 +68,24 @@ class Customer {
         'onboardingComplete': onboardingComplete,
         'kycStatus': kycStatus,
         'status': status,
+        'dateOfBirth': dateOfBirth == null
+            ? null
+            : '${dateOfBirth!.year.toString().padLeft(4, '0')}-'
+                '${dateOfBirth!.month.toString().padLeft(2, '0')}-'
+                '${dateOfBirth!.day.toString().padLeft(2, '0')}',
+        'gender': gender,
+        'profilePhoto': hasPhoto,
       };
 
-  Customer copyWith({String? fullName, String? email, String? preferredLanguage, bool? onboardingComplete}) =>
+  Customer copyWith({
+    String? fullName,
+    String? email,
+    String? preferredLanguage,
+    bool? onboardingComplete,
+    DateTime? dateOfBirth,
+    String? gender,
+    bool? hasPhoto,
+  }) =>
       Customer(
         id: id,
         phoneNumber: phoneNumber,
@@ -72,6 +96,9 @@ class Customer {
         onboardingComplete: onboardingComplete ?? this.onboardingComplete,
         kycStatus: kycStatus,
         status: status,
+        dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+        gender: gender ?? this.gender,
+        hasPhoto: hasPhoto ?? this.hasPhoto,
       );
 }
 
