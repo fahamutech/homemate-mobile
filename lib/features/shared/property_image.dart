@@ -1,4 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart'
+    show ImageRenderMethodForWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,6 +47,11 @@ class PropertyImage extends ConsumerWidget {
       child: CachedNetworkImage(
         imageUrl: url,
         httpHeaders: {if (token != null) 'authorization': 'Bearer $token'},
+        // On web, the default HtmlImage loader renders via a plain <img> tag,
+        // which cannot carry the authorization header above — every request
+        // comes back 401. HttpGet routes through fetch() instead, which does.
+        imageRenderMethodForWeb:
+            kIsWeb ? ImageRenderMethodForWeb.HttpGet : ImageRenderMethodForWeb.HtmlImage,
         height: height,
         width: width ?? double.infinity,
         fit: fit,

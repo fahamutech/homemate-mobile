@@ -1,4 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart'
+    show ImageRenderMethodForWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,6 +43,9 @@ class CustomerAvatar extends ConsumerWidget {
         imageUrl: '${Env.apiBaseUrl}/app/me/photo/raw?thumbnail=1',
         cacheKey: 'me-photo-$revision',
         httpHeaders: {if (token != null) 'authorization': 'Bearer $token'},
+        // See PropertyImage: web's default <img>-tag loader drops this header.
+        imageRenderMethodForWeb:
+            kIsWeb ? ImageRenderMethodForWeb.HttpGet : ImageRenderMethodForWeb.HtmlImage,
         width: radius * 2,
         height: radius * 2,
         fit: BoxFit.cover,
