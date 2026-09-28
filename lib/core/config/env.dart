@@ -66,6 +66,12 @@ class Env {
   static double get defaultLatitude => double.tryParse(_latitude) ?? -6.7924;
   static double get defaultLongitude => double.tryParse(_longitude) ?? 39.2083;
 
+  /// The build this binary is, as CI numbers it (`--dart-define=APP_BUILD_NUMBER`,
+  /// the same value as `--build-number`). The web build compares it with the
+  /// deployed `version.json` to notice a newer release; 0 — a local build —
+  /// switches that check off, since there is nothing to compare against.
+  static const int buildNumber = int.fromEnvironment('APP_BUILD_NUMBER');
+
   static const int requestTimeoutSeconds = int.fromEnvironment(
     'REQUEST_TIMEOUT_SECONDS',
     defaultValue: 20,
@@ -81,5 +87,6 @@ class Env {
     'defaultLatitude': defaultLatitude,
     'defaultLongitude': defaultLongitude,
     'requestTimeoutSeconds': requestTimeoutSeconds,
+    'buildNumber': buildNumber,
   };
 }

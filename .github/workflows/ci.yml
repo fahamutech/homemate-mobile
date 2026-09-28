@@ -68,8 +68,17 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Number the build
+        run: echo "BUILD_NUMBER=$(( ${{ github.run_number }} + BUILD_NUMBER_OFFSET ))" >> "$GITHUB_ENV"
+
+      # The number lands in version.json *and* in the code (APP_BUILD_NUMBER);
+      # an open tab compares the two to notice that a newer build is live.
       - name: Build web (release, wasm)
-        run: flutter build web --wasm --release --dart-define-from-file=.env.prod.json
+        run: |
+          flutter build web --wasm --release \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define=APP_BUILD_NUMBER="$BUILD_NUMBER" \
+            --dart-define-from-file=.env.prod.json
 
       - name: Deploy to Firebase Hosting (pwa)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -122,10 +131,14 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
+      - name: Number the build
+        run: echo "BUILD_NUMBER=$(( ${{ github.run_number }} + BUILD_NUMBER_OFFSET ))" >> "$GITHUB_ENV"
+
       - name: Build app bundle (release)
         run: |
           flutter build appbundle --release \
-            --build-number=$(( ${{ github.run_number }} + BUILD_NUMBER_OFFSET )) \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define=APP_BUILD_NUMBER="$BUILD_NUMBER" \
             --dart-define-from-file=.env.prod.json
 
       - name: Upload to Google Play (internal)

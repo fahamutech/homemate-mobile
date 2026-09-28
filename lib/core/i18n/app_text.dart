@@ -129,6 +129,28 @@ class AppText {
   // --- distance -------------------------------------------------------------
   String metresAway(String value) => _s('distance.metres', {'value': value});
   String kilometresAway(String value) => _s('distance.kilometres', {'value': value});
+
+  // --- app updates ----------------------------------------------------------
+  String get updateAvailable => _s('update.available');
+  String get updateDownloading => _s('update.downloading');
+  String get updateReady => _s('update.ready');
+  String get updateAction => _s('update.action.update');
+  String get updateRestart => _s('update.action.restart');
+  String get updateReload => _s('update.action.reload');
+
+  // --- install the web app --------------------------------------------------
+  String get installCardTitle => _s('install.cardTitle');
+  String get installCardBody => _s('install.cardBody');
+  String get installAction => _s('install.action');
+  String get installNotNow => _s('install.notNow');
+  String get installProfileItem => _s('install.profileItem');
+  String get installInstalled => _s('install.installed');
+  String get installIosTitle => _s('install.ios.title');
+  List<String> get installIosSteps =>
+      [_s('install.ios.step1'), _s('install.ios.step2'), _s('install.ios.step3')];
+  String get installMenuTitle => _s('install.menu.title');
+  List<String> get installMenuSteps =>
+      [_s('install.menu.step1'), _s('install.menu.step2'), _s('install.menu.step3')];
 }
 
 /// Hands [AppText] to the widget tree through `Localizations`, so a language

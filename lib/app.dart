@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/app_update/app_update_banner.dart';
 import 'core/i18n/app_locale.dart';
 import 'core/i18n/app_text.dart';
 import 'core/i18n/locale_controller.dart';
@@ -50,6 +51,9 @@ class _HomeMateAppState extends ConsumerState<HomeMateApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: ref.watch(routerProvider),
+      // Above the navigator, so the offer of a newer build follows the
+      // customer across every screen.
+      builder: (context, child) => AppUpdateBanner(child: child ?? const SizedBox.shrink()),
     );
   }
 }

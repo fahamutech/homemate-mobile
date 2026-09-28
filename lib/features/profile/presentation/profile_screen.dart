@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/env.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
+import '../../../core/i18n/app_text.dart';
+import '../../../core/pwa/install_controller.dart';
+import '../../../core/pwa/install_widgets.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_status_chip.dart';
@@ -98,6 +101,13 @@ class ProfileScreen extends ConsumerWidget {
             label: 'Notifications',
             onTap: () => context.push('${Routes.home}/notifications'),
           ),
+          // Stays after "Not now" on the home card: this is where to find it later.
+          if (ref.watch(installProvider).canInstall)
+            _Item(
+              icon: Icons.install_mobile,
+              label: context.text.installProfileItem,
+              onTap: () => startInstall(context, ref),
+            ),
 
           const SizedBox(height: HmSpace.huge),
           const Text('Support', style: HmText.label),

@@ -123,6 +123,30 @@ const Map<String, String> _en = {
   // --- distance -------------------------------------------------------------
   'distance.metres': '{value} m away',
   'distance.kilometres': '{value} km away',
+
+  // --- app updates ----------------------------------------------------------
+  'update.available': 'A new version of HomeMate is available.',
+  'update.downloading': 'Downloading the new version…',
+  'update.ready': 'The new version is ready.',
+  'update.action.update': 'Update',
+  'update.action.restart': 'Restart',
+  'update.action.reload': 'Reload',
+
+  // --- install the web app --------------------------------------------------
+  'install.cardTitle': 'Install HomeMate',
+  'install.cardBody': 'Add HomeMate to your home screen. It opens full screen, like any other app.',
+  'install.action': 'Install',
+  'install.notNow': 'Not now',
+  'install.profileItem': 'Install the app',
+  'install.installed': 'HomeMate is on your home screen.',
+  'install.ios.title': 'Add HomeMate to your Home Screen',
+  'install.ios.step1': 'Tap the Share button in Safari: the square with an arrow pointing up.',
+  'install.ios.step2': 'Scroll down and tap "Add to Home Screen".',
+  'install.ios.step3': 'Tap "Add". HomeMate appears with your other apps.',
+  'install.menu.title': 'Install HomeMate',
+  'install.menu.step1': 'Open your browser menu: ⋮ or ☰, usually at the top or bottom.',
+  'install.menu.step2': 'Tap "Install app" or "Add to Home screen".',
+  'install.menu.step3': 'Confirm. HomeMate appears with your other apps.',
 };
 
 const Map<String, String> _sw = {
@@ -235,6 +259,30 @@ const Map<String, String> _sw = {
   // --- distance -------------------------------------------------------------
   'distance.metres': 'mita {value} kutoka hapa',
   'distance.kilometres': 'km {value} kutoka hapa',
+
+  // --- app updates ----------------------------------------------------------
+  'update.available': 'Toleo jipya la HomeMate linapatikana.',
+  'update.downloading': 'Inapakua toleo jipya…',
+  'update.ready': 'Toleo jipya liko tayari.',
+  'update.action.update': 'Sasisha',
+  'update.action.restart': 'Anzisha upya',
+  'update.action.reload': 'Pakia upya',
+
+  // --- install the web app --------------------------------------------------
+  'install.cardTitle': 'Sakinisha HomeMate',
+  'install.cardBody': 'Weka HomeMate kwenye skrini yako ya mwanzo. Itafunguka skrini nzima, kama programu nyingine.',
+  'install.action': 'Sakinisha',
+  'install.notNow': 'Si sasa',
+  'install.profileItem': 'Sakinisha programu',
+  'install.installed': 'HomeMate iko kwenye skrini yako ya mwanzo.',
+  'install.ios.title': 'Weka HomeMate kwenye skrini ya mwanzo',
+  'install.ios.step1': 'Gusa kitufe cha Shiriki kwenye Safari: mraba wenye mshale unaoelekea juu.',
+  'install.ios.step2': 'Sogeza chini kisha gusa "Add to Home Screen".',
+  'install.ios.step3': 'Gusa "Add". HomeMate itaonekana pamoja na programu zako nyingine.',
+  'install.menu.title': 'Sakinisha HomeMate',
+  'install.menu.step1': 'Fungua menyu ya kivinjari chako: ⋮ au ☰, mara nyingi juu au chini.',
+  'install.menu.step2': 'Gusa "Install app" au "Add to Home screen".',
+  'install.menu.step3': 'Thibitisha. HomeMate itaonekana pamoja na programu zako nyingine.',
 };
 
 /// Fails a debug build when a language is missing a key English has, so an

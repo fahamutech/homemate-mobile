@@ -1,46 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="sw">
 <head>
   <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
+    Replaced by the value of `--base-href` at build time; it must start and
+    end with a slash.
   -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Find, enquire about and rent verified homes in Tanzania. Pay with mobile money.">
 
-  <!-- iOS meta tags & icons -->
+  <!--
+    Status bar and browser chrome. The brand green tints Chrome's toolbar on
+    Android and the status bar of the installed app; the splash below is white,
+    matching the manifest's background_color, so launch never flashes.
+  -->
+  <meta name="theme-color" content="#059676">
+  <meta name="color-scheme" content="light">
+
+  <!-- Installed-app behaviour on iOS, which ignores most of the manifest. -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="homemate_mobile">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HomeMate">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>homemate_mobile</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
+
+  <title>HomeMate Africa</title>
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #ffffff; }
+
+    /*
+      The loading screen mirrors the Flutter splash (SplashScreen) so the
+      handover on the first frame is invisible: same mark, same words, same
+      place. Only the progress bar is extra — the engine download is the one
+      wait long enough to need it.
+    */
+    #hm-loader {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: opacity 240ms ease-out;
+    }
+    #hm-loader.hm-done { opacity: 0; pointer-events: none; }
+    #hm-loader .hm-mark {
+      width: 96px; height: 96px; border-radius: 24px; background: #059676;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #hm-loader .hm-name { margin-top: 24px; font-size: 28px; font-weight: 700; color: #0f1729; }
+    #hm-loader .hm-region { margin-top: 4px; font-size: 12px; letter-spacing: 0.2em; color: #64748b; }
+    #hm-loader .hm-bar {
+      position: relative; overflow: hidden;
+      width: 120px; height: 3px; margin-top: 32px; border-radius: 3px; background: #e2e8f0;
+    }
+    #hm-loader .hm-bar::after {
+      content: ''; position: absolute; top: 0; left: -40%; width: 40%; height: 100%;
+      border-radius: 3px; background: #059676;
+      animation: hm-slide 1.1s ease-in-out infinite;
+    }
+    @keyframes hm-slide { to { left: 100%; } }
+    @media (prefers-reduced-motion: reduce) {
+      #hm-loader .hm-bar::after { animation: none; left: 0; width: 100%; opacity: 0.4; }
+    }
+  </style>
+
+  <script>
+    // Captured here rather than in Dart: Chrome fires beforeinstallprompt
+    // once, early, usually before the Flutter engine has even downloaded.
+    // The app reads window.hmPwa through JS interop (lib/core/pwa).
+    (function () {
+      var deferred = null;
+      var nav = window.navigator;
+      var ua = nav.userAgent || '';
+      // iPadOS reports itself as a Mac; the touch points give it away.
+      var isIos = /iphone|ipad|ipod/i.test(ua) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1 && !/android/i.test(ua));
+      var pwa = {
+        isIos: isIos,
+        isMobile: isIos || /android|mobi/i.test(ua),
+        isStandalone: function () {
+          return window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true;
+        },
+        canPrompt: function () { return deferred !== null; },
+        // Resolves 'accepted', 'dismissed' or 'unavailable'.
+        prompt: function () {
+          if (!deferred) return Promise.resolve('unavailable');
+          var event = deferred;
+          deferred = null;
+          event.prompt();
+          return event.userChoice.then(function (choice) { return choice.outcome; });
+        },
+      };
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        deferred = event;
+        window.dispatchEvent(new Event('hm-pwa-change'));
+      });
+      window.addEventListener('appinstalled', function () {
+        deferred = null;
+        window.dispatchEvent(new Event('hm-pwa-change'));
+      });
+      window.hmPwa = pwa;
+
+      // The engine dispatches flutter-first-frame once the app has painted.
+      window.addEventListener('flutter-first-frame', function () {
+        var loader = document.getElementById('hm-loader');
+        if (!loader) return;
+        loader.classList.add('hm-done');
+        setTimeout(function () { loader.remove(); }, 300);
+      });
+    })();
+  </script>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <div id="hm-loader" role="progressbar" aria-label="HomeMate Africa inapakia">
+    <div class="hm-mark">
+      <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#ffffff" d="M12 3.2 2.6 11a1 1 0 0 0 1.3 1.5l.6-.5V20a1 1 0 0 0 1 1h4.5v-5.5h4V21H18.5a1 1 0 0 0 1-1v-8l.6.5A1 1 0 0 0 21.4 11Z"/>
+      </svg>
+    </div>
+    <div class="hm-name">HomeMate</div>
+    <div class="hm-region">AFRICA</div>
+    <div class="hm-bar"></div>
+  </div>
+  <noscript>HomeMate Africa inahitaji JavaScript. / HomeMate Africa needs JavaScript.</noscript>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
