@@ -13,9 +13,11 @@ import '../../../design/widgets/hm_money.dart';
 import '../../../design/widgets/hm_scaffold.dart';
 import '../../../design/widgets/hm_section.dart';
 import '../../../routing/app_router.dart';
-import '../../booking/data/booking_providers.dart';
+import '../../inquiry/data/inquiry_providers.dart';
+import '../data/payment_providers.dart';
 import '../../shared/journey_models.dart';
 import '../../shared/journey_providers.dart';
+import '../../shared/service_fee_card.dart';
 import 'hold_banner.dart';
 
 /// CUS-011 and CUS-014 — reserving a home and paying for it.
@@ -179,7 +181,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
 
     final payment = _summary.payable;
     if (payment == null) {
-      setState(() => _error = 'There is nothing left to pay on this booking');
+      setState(() => _error = 'There is nothing left to pay for this home');
       return;
     }
 
@@ -198,11 +200,10 @@ class _CheckoutState extends ConsumerState<_Checkout> {
       // Everything that could be looking at this money now needs to look
       // again, on one line, so no screen is left saying "unpaid".
       ref.invalidate(paymentProvider(payment.id));
-      ref.invalidate(bookingsProvider(null));
+      ref.invalidate(inquiriesProvider(null));
       ref.invalidate(activitySummaryProvider);
       ref.invalidate(savedOverviewProvider);
       if (widget.session.bookingId case final bookingId?) {
-        ref.invalidate(bookingProvider(bookingId));
         ref.invalidate(checkoutSummaryProvider(bookingId));
       }
 
@@ -307,11 +308,29 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                   child: Column(
                     children: [
                       for (final line in _summary.breakdown)
-                        HmDetailRow(
-                          label: line.label,
-                          value: line.amountLabel(_currency),
-                          valueColor: line.waived ? HmColors.textSecondary : null,
-                        ),
+                        if (line.highlight && !line.waived)
+                          // The HomeMate fee is tinted so the platform's own
+                          // charge is never a line the customer has to hunt for.
+                          Container(
+                            key: const Key('checkout-fee-line'),
+                            margin: const EdgeInsets.symmetric(vertical: HmSpace.xs),
+                            padding: const EdgeInsets.symmetric(horizontal: HmSpace.md),
+                            decoration: BoxDecoration(
+                              color: HmColors.brandPrimarySoft,
+                              borderRadius: BorderRadius.circular(HmRadius.sm),
+                            ),
+                            child: HmDetailRow(
+                              label: line.label,
+                              value: line.amountLabel(_currency),
+                              valueColor: HmColors.brandPrimary,
+                            ),
+                          )
+                        else
+                          HmDetailRow(
+                            label: line.label,
+                            value: line.amountLabel(_currency),
+                            valueColor: line.waived ? HmColors.textSecondary : null,
+                          ),
                       const Divider(height: HmSpace.huge),
                       HmDetailRow(
                         label: 'Total Payment Due',
@@ -322,6 +341,10 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                     ],
                   ),
                 ),
+                if (_summary.serviceFee case final fee? when fee.isCharged) ...[
+                  const SizedBox(height: HmSpace.xl),
+                  ServiceFeeCard(fee: fee, currency: _currency, inFirstPayment: true),
+                ],
                 const SizedBox(height: HmSpace.huge),
 
                 const HmSectionHeader(title: 'Select Payment Method'),
@@ -438,7 +461,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                     ),
                     const SizedBox(height: HmSpace.md),
                     Text(
-                      'Your reservation is confirmed once the payment is verified.',
+                      'This home is yours once we verify your payment.',
                       style: HmText.caption.copyWith(fontSize: 11),
                       textAlign: TextAlign.center,
                     ),

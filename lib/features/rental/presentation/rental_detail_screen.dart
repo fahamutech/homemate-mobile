@@ -154,7 +154,7 @@ class _Loaded extends ConsumerWidget {
         HmSectionHeader(
           title: 'Payment History',
           action: detail.payments.isEmpty ? null : 'View All',
-          onAction: detail.payments.isEmpty ? null : () => context.go(Routes.bookings),
+          onAction: detail.payments.isEmpty ? null : () => context.go(Routes.activity),
         ),
         if (detail.payments.isEmpty)
           Text('No payments recorded yet.', style: HmText.caption)

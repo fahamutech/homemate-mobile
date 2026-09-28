@@ -90,7 +90,7 @@ class InquiryTile extends StatelessWidget {
                       const SizedBox(height: HmSpace.md),
                       Row(
                         children: [
-                          HmStatusChip(inquiry.status, dense: true),
+                          HmStatusChip(inquiry.displayStatus, dense: true),
                           const SizedBox(width: HmSpace.md),
                           Text(inquiry.reference, style: HmText.caption),
                         ],

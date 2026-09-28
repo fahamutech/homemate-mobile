@@ -536,7 +536,7 @@ class _MyActivity extends StatelessWidget {
           label: 'To pay',
           value: HmMoney.format(summary.amountOutstanding),
           accent: HmColors.warning,
-          onTap: () => context.go(Routes.bookings),
+          onTap: () => context.go(Routes.activity),
         ),
       if (summary.paymentsAwaitingVerification > 0)
         _ActivityTile(
@@ -544,15 +544,7 @@ class _MyActivity extends StatelessWidget {
           label: 'Being checked',
           value: '${summary.paymentsAwaitingVerification}',
           accent: HmColors.info,
-          onTap: () => context.go(Routes.bookings),
-        ),
-      if (summary.upcomingViewings > 0)
-        _ActivityTile(
-          icon: Icons.event_available_outlined,
-          label: 'Viewings',
-          value: '${summary.upcomingViewings}',
-          accent: HmColors.brandPrimary,
-          onTap: () => context.go(Routes.viewings),
+          onTap: () => context.go(Routes.activity),
         ),
       if (summary.openInquiries > 0)
         _ActivityTile(
@@ -575,7 +567,7 @@ class _MyActivity extends StatelessWidget {
             children: [
               Expanded(child: Text('My Activity', style: HmText.title.copyWith(fontSize: 19))),
               TextButton(
-                onPressed: () => context.go(Routes.bookings),
+                onPressed: () => context.go(Routes.activity),
                 child: const Text('See All'),
               ),
             ],

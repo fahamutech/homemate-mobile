@@ -179,6 +179,43 @@ class PropertyCharge {
 }
 
 /// Everything the property screen shows — CUS-005, in one response.
+/// The HomeMate fee: a share of one month's rent, charged once in the first
+/// payment instead of the full month an agent usually takes — and what that
+/// saves the customer. Shown on the listing, and highlighted at checkout.
+class ServiceFee {
+  const ServiceFee({
+    this.amount = 0,
+    this.percentage = 0,
+    this.benchmarkAmount = 0,
+    this.benchmarkLabel = "Usual agent fee (one month's rent)",
+    this.saving = 0,
+  });
+
+  final double amount;
+  final double percentage;
+  final double benchmarkAmount;
+  final String benchmarkLabel;
+  final double saving;
+
+  bool get isCharged => amount > 0;
+  bool get savesSomething => saving > 0;
+
+  /// "50%", without a trailing ".0" nobody asked for.
+  String get percentageLabel =>
+      '${percentage == percentage.roundToDouble() ? percentage.toStringAsFixed(0) : percentage.toStringAsFixed(1)}%';
+
+  static ServiceFee? fromJsonOrNull(Object? json) =>
+      json is Map<String, dynamic> ? ServiceFee.fromJson(json) : null;
+
+  factory ServiceFee.fromJson(Map<String, dynamic> json) => ServiceFee(
+        amount: HmMoney.parse(json['amount']),
+        percentage: HmMoney.parse(json['percentage']),
+        benchmarkAmount: HmMoney.parse(json['benchmarkAmount']),
+        benchmarkLabel: json['benchmarkLabel'] as String? ?? "Usual agent fee (one month's rent)",
+        saving: HmMoney.parse(json['saving']),
+      );
+}
+
 class PropertyDetail {
   const PropertyDetail({
     required this.summary,
@@ -206,6 +243,7 @@ class PropertyDetail {
     this.parkingSpaces,
     this.petsAllowed,
     this.availableFrom,
+    this.serviceFee,
   });
 
   final PropertySummary summary;
@@ -239,6 +277,10 @@ class PropertyDetail {
   final int? parkingSpaces;
   final bool? petsAllowed;
   final DateTime? availableFrom;
+
+  /// The HomeMate fee this listing will carry in the first payment, and what
+  /// it saves against the usual month's agent fee.
+  final ServiceFee? serviceFee;
 
   /// Once an enquiry is open the button changes from "Enquire" to "View
   /// enquiry", so the customer is not invited to ask the same thing twice.
@@ -280,7 +322,12 @@ class PropertyDetail {
   double get moveInTotal =>
       (depositAmount ?? 0) +
       (advanceRentAmount ?? _rent) +
+      (serviceFee?.amount ?? 0) +
       oneOffCharges.fold<double>(0, (sum, charge) => sum + charge.amount);
+
+  /// The landlord has accepted this customer's enquiry, so the home can be
+  /// paid for — the only road to paying there is.
+  bool get isAccepted => myInquiryStatus == 'accepted';
 
   factory PropertyDetail.fromJson(Map<String, dynamic> json) {
     final property = json['property'] as Map<String, dynamic>? ?? const {};
@@ -323,6 +370,7 @@ class PropertyDetail {
       parkingSpaces: property['parking_spaces'] == null ? null : _int(property['parking_spaces']),
       petsAllowed: property['pets_allowed'] as bool?,
       availableFrom: _date(property['available_from']),
+      serviceFee: ServiceFee.fromJsonOrNull(json['serviceFee']),
     );
   }
 }
@@ -374,13 +422,19 @@ class Inquiry {
     this.coverMediaId,
     this.moveInDate,
     this.occupants,
-    this.hasViewing = false,
     this.hasBooking = false,
-  });
+    this.bookingId,
+    String? displayStatus,
+  }) : displayStatus = displayStatus ?? status;
 
   final String id;
   final String reference;
   final String status;
+
+  /// Where the whole journey stands, as the customer reads it: the landlord's
+  /// answer until they accept, then the money — `awaiting_payment`,
+  /// `awaiting_verification`, `paid`. The server works it out.
+  final String displayStatus;
   final String message;
   final DateTime createdAt;
   final String? response;
@@ -392,8 +446,14 @@ class Inquiry {
   final String? coverMediaId;
   final DateTime? moveInDate;
   final int? occupants;
-  final bool hasViewing;
   final bool hasBooking;
+
+  /// The reservation this enquiry turned into once the customer started
+  /// paying — and, once verified, the tenancy.
+  final String? bookingId;
+
+  bool get isPaid => displayStatus == 'paid';
+  bool get isBeingVerified => displayStatus == 'awaiting_verification';
 
   bool get isOpen => status == 'pending' || status == 'responded';
   bool get wasAnswered => response != null && response!.isNotEmpty;
@@ -413,74 +473,9 @@ class Inquiry {
         coverMediaId: json['cover_media_id'] as String?,
         moveInDate: _date(json['move_in_date']),
         occupants: json['occupants'] == null ? null : _int(json['occupants']),
-        hasViewing: json['has_viewing'] as bool? ?? false,
         hasBooking: json['has_booking'] as bool? ?? false,
-      );
-}
-
-class Viewing {
-  const Viewing({
-    required this.id,
-    required this.reference,
-    required this.status,
-    required this.scheduledFor,
-    this.durationMinutes = 30,
-    this.meetingPoint,
-    this.customerNote,
-    this.hostNote,
-    this.cancellationReason,
-    this.propertyId,
-    this.propertyTitle,
-    this.propertyAddress,
-    this.coverMediaId,
-    this.hostName,
-    this.hostPhone,
-    this.latitude,
-    this.longitude,
-    this.isUpcoming = false,
-  });
-
-  final String id;
-  final String reference;
-  final String status;
-  final DateTime scheduledFor;
-  final int durationMinutes;
-  final String? meetingPoint;
-  final String? customerNote;
-  final String? hostNote;
-  final String? cancellationReason;
-  final String? propertyId;
-  final String? propertyTitle;
-  final String? propertyAddress;
-  final String? coverMediaId;
-  final String? hostName;
-  final String? hostPhone;
-  final double? latitude;
-  final double? longitude;
-  final bool isUpcoming;
-
-  bool get canCancel => status == 'requested' || status == 'confirmed';
-  bool get hasLocation => latitude != null && longitude != null;
-
-  factory Viewing.fromJson(Map<String, dynamic> json) => Viewing(
-        id: json['id'] as String? ?? '',
-        reference: json['reference'] as String? ?? '',
-        status: json['status'] as String? ?? 'requested',
-        scheduledFor: _date(json['scheduled_for']) ?? DateTime.now(),
-        durationMinutes: _int(json['duration_minutes']),
-        meetingPoint: json['meeting_point'] as String?,
-        customerNote: json['customer_note'] as String?,
-        hostNote: json['host_note'] as String?,
-        cancellationReason: json['cancellation_reason'] as String?,
-        propertyId: json['property_id'] as String?,
-        propertyTitle: json['property_title'] as String?,
-        propertyAddress: json['property_address'] as String?,
-        coverMediaId: json['cover_media_id'] as String?,
-        hostName: json['host_name'] as String?,
-        hostPhone: json['host_phone'] as String?,
-        latitude: (json['property_latitude'] as num?)?.toDouble(),
-        longitude: (json['property_longitude'] as num?)?.toDouble(),
-        isUpcoming: json['is_upcoming'] as bool? ?? false,
+        bookingId: json['booking_id'] as String?,
+        displayStatus: json['display_status'] as String?,
       );
 }
 
@@ -701,7 +696,6 @@ class ActivitySummary {
   const ActivitySummary({
     this.savedCount = 0,
     this.openInquiries = 0,
-    this.upcomingViewings = 0,
     this.activeBookings = 0,
     this.amountOutstanding = 0,
     this.paymentsAwaitingVerification = 0,
@@ -710,7 +704,6 @@ class ActivitySummary {
 
   final int savedCount;
   final int openInquiries;
-  final int upcomingViewings;
   final int activeBookings;
   final double amountOutstanding;
   final int paymentsAwaitingVerification;
@@ -719,7 +712,6 @@ class ActivitySummary {
   factory ActivitySummary.fromJson(Map<String, dynamic> json) => ActivitySummary(
         savedCount: _int(json['savedCount']),
         openInquiries: _int(json['openInquiries']),
-        upcomingViewings: _int(json['upcomingViewings']),
         activeBookings: _int(json['activeBookings']),
         amountOutstanding: HmMoney.parse(json['amountOutstanding']),
         paymentsAwaitingVerification: _int(json['paymentsAwaitingVerification']),

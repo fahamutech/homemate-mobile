@@ -20,9 +20,8 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = context.text;
     final summary = ref.watch(activitySummaryProvider).valueOrNull;
-    final activityBadge = (summary?.openInquiries ?? 0) +
-        (summary?.upcomingViewings ?? 0) +
-        (summary?.paymentsAwaitingVerification ?? 0);
+    final activityBadge =
+        (summary?.openInquiries ?? 0) + (summary?.paymentsAwaitingVerification ?? 0);
 
     return Scaffold(
       body: shell,
@@ -45,9 +44,8 @@ class AppShell extends ConsumerWidget {
           ),
           NavigationDestination(
             // "Favourite", per the design's bottom bar. The tab holds more
-            // than saved listings now — active rents, enquiries and viewings
-            // as well — so "Saved" was also describing about a quarter of what
-            // is behind it.
+            // than saved listings — active rents and enquiries as well — so
+            // "Saved" would describe only a third of what is behind it.
             icon: _Badged(
               count: summary?.savedCount ?? 0,
               child: const Icon(Icons.favorite_outline),

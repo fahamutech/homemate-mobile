@@ -9,7 +9,9 @@ import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_prompt.dart';
 import '../../../design/widgets/hm_scaffold.dart';
 import '../../../design/widgets/hm_status_chip.dart';
-import '../../booking/data/booking_providers.dart';
+import '../../inquiry/data/inquiry_providers.dart';
+import '../../shared/journey_providers.dart';
+import '../data/payment_providers.dart';
 import '../../shared/models.dart';
 
 /// CUS-014 / CUS-015. Paying for a booking.
@@ -62,10 +64,9 @@ class _LoadedState extends ConsumerState<_Loaded> {
             reference: reference.isEmpty ? null : reference,
           );
       ref.invalidate(paymentProvider(widget.payment.id));
-      if (widget.payment.bookingId case final bookingId?) {
-        ref.invalidate(bookingProvider(bookingId));
-      }
-      ref.invalidate(bookingsProvider(null));
+      // The enquiry that led here now reads "payment being verified".
+      ref.invalidate(inquiriesProvider(null));
+      ref.invalidate(savedOverviewProvider);
       ref.invalidate(activitySummaryProvider);
 
       if (mounted) HmFeedback.success(context, 'Thank you — we are checking your payment');

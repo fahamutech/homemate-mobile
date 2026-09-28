@@ -53,7 +53,9 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
   void _searchHere() {
     final centre = _pannedTo;
     if (centre == null) return;
-    ref.read(searchFiltersProvider.notifier).setArea(
+    ref
+        .read(searchFiltersProvider.notifier)
+        .setArea(
           latitude: centre.latitude,
           longitude: centre.longitude,
           radiusMetres: PropertyFilters.defaultRadiusMetres,
@@ -101,9 +103,11 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
     }
     // The average of the pins, so every result is roughly in frame.
     final latitude =
-        mappable.map((p) => p.latitude!).reduce((a, b) => a + b) / mappable.length;
+        mappable.map((p) => p.latitude!).reduce((a, b) => a + b) /
+        mappable.length;
     final longitude =
-        mappable.map((p) => p.longitude!).reduce((a, b) => a + b) / mappable.length;
+        mappable.map((p) => p.longitude!).reduce((a, b) => a + b) /
+        mappable.length;
     return LatLng(latitude, longitude);
   }
 
@@ -183,68 +187,18 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
             child: _Floating(
               child: Row(
                 children: [
-                  const Icon(Icons.map_outlined, size: 18, color: HmColors.textSecondary),
+                  const Icon(
+                    Icons.map_outlined,
+                    size: 18,
+                    color: HmColors.textSecondary,
+                  ),
                   const SizedBox(width: HmSpace.xl),
                   Expanded(
-                    child: Text(
-                      context.text.mapNoPins,
-                      style: HmText.caption,
-                    ),
+                    child: Text(context.text.mapNoPins, style: HmText.caption),
                   ),
                 ],
               ),
             ),
-          ),
-
-        // The explain-and-ask card, on the map this time. Same rule as the
-        // home screen: the OS is never asked until this is tapped.
-        if (nearMe.needsPrompt)
-          Positioned(
-            left: HmSpace.xxl,
-            right: HmSpace.xxl,
-            bottom: _selected == null ? HmSpace.xxl : 150,
-            child: _Floating(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(nearMe.promptTitle(context.text), style: HmText.label.copyWith(fontSize: 14)),
-                  const SizedBox(height: HmSpace.xs),
-                  Text(
-                    nearMe.canAskAgain
-                        ? context.text.mapCentreHint
-                        : nearMe.promptMessage(context.text),
-                    style: HmText.caption,
-                  ),
-                  const SizedBox(height: HmSpace.xl),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: nearMe.isBusy ? null : _goToMyPlaces,
-                          child: Text(nearMe.promptAction(context.text)),
-                        ),
-                      ),
-                      const SizedBox(width: HmSpace.md),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => showAreaPicker(context, ref),
-                          child: Text(context.text.askMe),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        if (_selected != null)
-          Positioned(
-            left: HmSpace.xxl,
-            right: HmSpace.xxl,
-            bottom: HmSpace.xxl,
-            child: PropertyCard(property: _selected!, compact: true),
           ),
 
         // "Search this area", which appears only once the customer has moved
@@ -270,7 +224,11 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.search, size: 16, color: HmColors.brandPrimary),
+                        const Icon(
+                          Icons.search,
+                          size: 16,
+                          color: HmColors.brandPrimary,
+                        ),
                         const SizedBox(width: HmSpace.md),
                         Text(
                           context.text.searchThisArea,
@@ -287,16 +245,84 @@ class _ResultsMapState extends ConsumerState<ResultsMap> {
             ),
           ),
 
-        if (nearMe.hasPosition)
+        // Everything anchored to the bottom of the map, stacked in one column
+        // so each item sits above the next whatever its height: the recentre
+        // button, the explain-and-ask card, and the selected listing. Placing
+        // them separately at guessed offsets is how the recentre button ended
+        // up on top of the listing card.
+        if (nearMe.hasPosition || nearMe.needsPrompt || _selected != null)
           Positioned(
+            left: HmSpace.xxl,
             right: HmSpace.xxl,
-            bottom: _selected == null ? 72 : 160,
-            child: FloatingActionButton.small(
-              onPressed: _goToMyPlaces,
-              tooltip: context.text.recentre,
-              backgroundColor: HmColors.bgPrimary,
-              foregroundColor: HmColors.brandPrimary,
-              child: const Icon(Icons.my_location),
+            bottom: HmSpace.xxl,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (nearMe.hasPosition)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FloatingActionButton.small(
+                      key: const Key('map-recentre'),
+                      onPressed: _goToMyPlaces,
+                      tooltip: context.text.recentre,
+                      backgroundColor: HmColors.bgPrimary,
+                      foregroundColor: HmColors.brandPrimary,
+                      child: const Icon(Icons.my_location),
+                    ),
+                  ),
+                // The explain-and-ask card, on the map this time. Same rule as
+                // the home screen: the OS is never asked until this is tapped.
+                if (nearMe.needsPrompt) ...[
+                  if (nearMe.hasPosition) const SizedBox(height: HmSpace.xl),
+                  _Floating(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          nearMe.promptTitle(context.text),
+                          style: HmText.label.copyWith(fontSize: 14),
+                        ),
+                        const SizedBox(height: HmSpace.xs),
+                        Text(
+                          nearMe.canAskAgain
+                              ? context.text.mapCentreHint
+                              : nearMe.promptMessage(context.text),
+                          style: HmText.caption,
+                        ),
+                        const SizedBox(height: HmSpace.xl),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton(
+                                onPressed: nearMe.isBusy ? null : _goToMyPlaces,
+                                child: Text(nearMe.promptAction(context.text)),
+                              ),
+                            ),
+                            const SizedBox(width: HmSpace.md),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => showAreaPicker(context, ref),
+                                child: Text(context.text.askMe),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (_selected != null) ...[
+                  if (nearMe.hasPosition || nearMe.needsPrompt)
+                    const SizedBox(height: HmSpace.xl),
+                  PropertyCard(
+                    key: const Key('map-selected-card'),
+                    property: _selected!,
+                    compact: true,
+                  ),
+                ],
+              ],
             ),
           ),
 
@@ -318,22 +344,30 @@ class _Floating extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(HmSpace.xl),
-        decoration: BoxDecoration(
-          color: HmColors.bgPrimary,
-          borderRadius: HmRadius.card,
-          boxShadow: const [
-            BoxShadow(color: Color(0x1F000000), blurRadius: 12, offset: Offset(0, 4)),
-          ],
+    padding: const EdgeInsets.all(HmSpace.xl),
+    decoration: BoxDecoration(
+      color: HmColors.bgPrimary,
+      borderRadius: HmRadius.card,
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x1F000000),
+          blurRadius: 12,
+          offset: Offset(0, 4),
         ),
-        child: child,
-      );
+      ],
+    ),
+    child: child,
+  );
 }
 
 /// The price as the pin, which is what the designs show — a generic dot makes
 /// a customer tap every one to find out what it costs.
 class _PriceMarker extends StatelessWidget {
-  const _PriceMarker({required this.property, required this.selected, required this.onTap});
+  const _PriceMarker({
+    required this.property,
+    required this.selected,
+    required this.onTap,
+  });
 
   final PropertySummary property;
   final bool selected;
@@ -345,20 +379,27 @@ class _PriceMarker extends StatelessWidget {
     final label = price == null
         ? '—'
         : price >= 1000000
-            ? '${(price / 1000000).toStringAsFixed(price % 1000000 == 0 ? 0 : 1)}M'
-            : '${(price / 1000).round()}K';
+        ? '${(price / 1000000).toStringAsFixed(price % 1000000 == 0 ? 0 : 1)}M'
+        : '${(price / 1000).round()}K';
 
     return GestureDetector(
       onTap: onTap,
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: HmSpace.xl, vertical: HmSpace.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: HmSpace.xl,
+            vertical: HmSpace.sm,
+          ),
           decoration: BoxDecoration(
             color: selected ? HmColors.brandPrimary : HmColors.bgPrimary,
             borderRadius: BorderRadius.circular(HmRadius.pill),
             border: Border.all(color: HmColors.brandPrimary),
             boxShadow: const [
-              BoxShadow(color: Color(0x1A000000), blurRadius: 6, offset: Offset(0, 2)),
+              BoxShadow(
+                color: Color(0x1A000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           child: Text(
@@ -379,11 +420,14 @@ class _PriceMarker extends StatelessWidget {
 class _Attribution extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: HmSpace.md, vertical: HmSpace.xxs),
-        decoration: BoxDecoration(
-          color: HmColors.bgPrimary.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(HmRadius.sm),
-        ),
-        child: const Text('© OpenStreetMap', style: TextStyle(fontSize: 10)),
-      );
+    padding: const EdgeInsets.symmetric(
+      horizontal: HmSpace.md,
+      vertical: HmSpace.xxs,
+    ),
+    decoration: BoxDecoration(
+      color: HmColors.bgPrimary.withValues(alpha: 0.85),
+      borderRadius: BorderRadius.circular(HmRadius.sm),
+    ),
+    child: const Text('© OpenStreetMap', style: TextStyle(fontSize: 10)),
+  );
 }

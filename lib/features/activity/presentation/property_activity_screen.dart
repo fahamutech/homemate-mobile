@@ -59,8 +59,8 @@ class PropertyActivityScreen extends ConsumerWidget {
               emptyWhen: (events) => events.isEmpty,
               empty: const HmEmpty(
                 title: 'Nothing here yet',
-                message: 'Enquire about this home or book a viewing and every step '
-                    'will be recorded here.',
+                message: 'Enquire about this home and every step — the landlord’s answer, '
+                    'your payment, its verification — will be recorded here.',
                 icon: Icons.timeline_outlined,
               ),
               data: (events) => HmCard(child: HmTimeline(events: events)),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:homemate_mobile/core/network/api_exception.dart';
-import 'package:homemate_mobile/features/booking/presentation/booking_detail_screen.dart';
 import 'package:homemate_mobile/features/discovery/data/search_providers.dart';
 import 'package:homemate_mobile/features/discovery/presentation/search_overlay.dart';
 import 'package:homemate_mobile/features/discovery/presentation/search_screen.dart';
@@ -11,7 +10,6 @@ import 'package:homemate_mobile/features/payment/presentation/payment_screen.dar
 import 'package:homemate_mobile/features/property/presentation/property_screen.dart';
 import 'package:homemate_mobile/features/saved/presentation/saved_screen.dart';
 import 'package:homemate_mobile/features/shared/journey_models.dart';
-import 'package:homemate_mobile/features/viewing/presentation/schedule_viewing_screen.dart';
 
 import 'support/fakes.dart';
 
@@ -155,11 +153,11 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Browse homes'), findsOneWidget);
     });
 
-    testWidgets('the favourites screen carries all four of its sections', (tester) async {
+    testWidgets('the favourites screen carries all three of its sections', (tester) async {
       // CUS-013a is not a list of saved listings: a tenancy with rent falling
       // due outranks anything a heart was once tapped on, and the enquiries
-      // and viewings belong on the same screen. A regression that quietly
-      // drops a section back to "saved only" fails here.
+      // belong on the same screen. A regression that quietly drops a section
+      // back to "saved only" fails here.
       final harness = TestHarness();
       harness.journey.overview = SavedOverview(
         activeRentals: [fakeRental()],
@@ -168,8 +166,6 @@ void main() {
         favoriteCount: 1,
         recentInquiries: [fakeInquirySummary()],
         inquiryCount: 1,
-        upcomingBookings: [fakeViewingSummary()],
-        upcomingBookingCount: 1,
       );
 
       await tester.pumpWidget(harness.wrap(const SavedScreen()));
@@ -178,7 +174,22 @@ void main() {
       expect(find.text('Active Rents'), findsOneWidget);
       expect(find.text('Saved Favorites'), findsOneWidget);
       await reveal(tester, find.text('Recent Inquiries'));
-      await reveal(tester, find.text('Upcoming Bookings'));
+      expect(find.text('Upcoming Bookings'), findsNothing, reason: 'viewings are gone');
+    });
+
+    testWidgets('an enquiry being paid for says the payment is being verified', (tester) async {
+      final harness = TestHarness();
+      harness.journey.overview = SavedOverview(
+        recentInquiries: [
+          fakeInquirySummary(status: 'accepted', displayStatus: 'awaiting_verification'),
+        ],
+        inquiryCount: 1,
+      );
+
+      await tester.pumpWidget(harness.wrap(const SavedScreen()));
+      await tester.pumpAndSettle();
+
+      await reveal(tester, find.text('Awaiting verification'));
     });
 
     testWidgets('an accepted enquiry reads as awaiting payment, not as accepted',
@@ -233,35 +244,70 @@ void main() {
       expect(find.textContaining('TZS 1,600,000'), findsOneWidget);
     });
 
-    testWidgets('offers paying outright as well as enquiring and viewing', (tester) async {
-      // An enquiry is a courtesy, not a turnstile: somebody who knows this
-      // listing may reserve it without asking anybody first.
-      final harness = TestHarness();
-
-      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
-      await tester.pumpAndSettle();
-
-      expect(find.widgetWithText(FilledButton, 'Reserve & pay'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Enquire'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Book a viewing'), findsOneWidget);
-    });
-
-    testWidgets('falls back to viewing as the primary action when paying is not allowed',
-        (tester) async {
+    testWidgets('before anything is asked, the only thing on offer is to enquire', (tester) async {
+      // One road to a home: enquire, be accepted, pay. Nothing to pay for yet.
       final harness = TestHarness();
       harness.journey.eligibility = const CheckoutEligibility(
         propertyId: 'prop-1',
-        available: false,
-        canPay: false,
-        route: 'blocked',
+        available: true,
+        route: 'no_inquiry',
       );
 
       await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(FilledButton, 'Reserve & pay'), findsNothing);
-      expect(find.widgetWithText(OutlinedButton, 'Enquire'), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Book a viewing'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Enquire'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Pay to secure it'), findsNothing);
+      expect(find.textContaining('Book a viewing'), findsNothing);
+      expect(find.textContaining('Reserve & pay'), findsNothing);
+    });
+
+    testWidgets('while the landlord decides, it points back at the enquiry', (tester) async {
+      final harness = TestHarness();
+      harness.catalogue.myInquiry = (id: 'inq-1', status: 'pending');
+      harness.journey.eligibility = const CheckoutEligibility(
+        propertyId: 'prop-1',
+        available: true,
+        route: 'inquiry_pending',
+      );
+
+      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(OutlinedButton, 'View enquiry'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Pay to secure it'), findsNothing);
+    });
+
+    testWidgets('once the landlord accepts, paying is the next step', (tester) async {
+      final harness = TestHarness();
+      harness.catalogue.myInquiry = (id: 'inq-1', status: 'accepted');
+
+      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FilledButton, 'Pay to secure it'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'View enquiry'), findsOneWidget);
+    });
+
+    testWidgets('shows the HomeMate fee before anyone enquires, with what it saves',
+        (tester) async {
+      final harness = TestHarness();
+
+      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1')));
+      await tester.pumpAndSettle();
+
+      // It is counted in what has to be found before moving in:
+      // 1,600,000 deposit + 800,000 first month + 400,000 fee.
+      await reveal(tester, find.text('TZS 2,800,000'));
+      expect(find.text('HomeMate fee · 50% of a month'), findsOneWidget);
+
+      await reveal(tester, find.byKey(const Key('service-fee-card')));
+      expect(find.text('HomeMate fee: TZS 400,000'), findsOneWidget);
+      expect(find.text("Usual agent fee (one month's rent)"), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('service-fee-saving'))).data,
+        'TZS 400,000',
+      );
     });
 
     testWidgets('says so rather than failing when someone else is mid-payment',
@@ -349,51 +395,10 @@ void main() {
     });
   });
 
-  group('booking a viewing', () {
-    testWidgets('needs a day and a time before it will send', (tester) async {
-      final harness = TestHarness();
-
-      await tester.pumpWidget(harness.wrap(const ScheduleViewingScreen(propertyId: 'prop-1')));
-      await tester.pumpAndSettle();
-
-      await tapAfterScroll(tester, find.widgetWithText(ElevatedButton, 'Request viewing'));
-
-      expect(find.text('Choose a day and a time'), findsOneWidget);
-      expect(harness.activity.viewingList, isEmpty);
-    });
-
-    testWidgets('books a slot and records the time', (tester) async {
-      final harness = TestHarness();
-
-      await tester.pumpWidget(harness.wrap(
-        const ScheduleViewingScreen(propertyId: 'prop-1'),
-        extraRoutes: [
-          GoRoute(
-            path: '/viewing/:id',
-            builder: (_, __) => const Scaffold(body: Text('Viewing requested')),
-          ),
-        ],
-      ));
-      await tester.pumpAndSettle();
-
-      // Tomorrow, so the slot cannot already have passed.
-      await tester.tap(find.text('${DateTime.now().add(const Duration(days: 1)).day}'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(ChoiceChip).first);
-      await tester.pumpAndSettle();
-
-      await tapAfterScroll(tester, find.widgetWithText(ElevatedButton, 'Request viewing'));
-
-      expect(harness.activity.viewingList, hasLength(1));
-      expect(harness.activity.viewingList.single.status, 'requested');
-    });
-  });
-
-  group('paying for a booking', () {
+  group('paying once accepted', () {
     testWidgets('before an operator publishes details, the app says to wait', (tester) async {
       final harness = TestHarness();
-      final booking = await harness.activity.createBooking(propertyId: 'prop-1');
-      final payment = booking.payments.single;
+      final payment = harness.activity.seedCheckoutPayment();
 
       await tester.pumpWidget(harness.wrap(PaymentScreen(paymentId: payment.id)));
       await tester.pumpAndSettle();
@@ -404,8 +409,7 @@ void main() {
 
     testWidgets('shows the account details exactly as configured', (tester) async {
       final harness = TestHarness();
-      final booking = await harness.activity.createBooking(propertyId: 'prop-1');
-      final payment = booking.payments.single;
+      final payment = harness.activity.seedCheckoutPayment();
       harness.activity.publishInstructions(payment.id);
 
       await tester.pumpWidget(harness.wrap(PaymentScreen(paymentId: payment.id)));
@@ -424,8 +428,7 @@ void main() {
     testWidgets('"I have paid" records a claim and does not pretend it is confirmed',
         (tester) async {
       final harness = TestHarness();
-      final booking = await harness.activity.createBooking(propertyId: 'prop-1');
-      final payment = booking.payments.single;
+      final payment = harness.activity.seedCheckoutPayment();
       harness.activity.publishInstructions(payment.id);
 
       await tester.pumpWidget(harness.wrap(PaymentScreen(paymentId: payment.id)));
@@ -446,15 +449,5 @@ void main() {
       expect(find.text('Payment received'), findsNothing);
     });
 
-    testWidgets('the booking shows the money as being checked, not as paid', (tester) async {
-      final harness = TestHarness();
-      final booking = await harness.activity.createBooking(propertyId: 'prop-1');
-
-      await tester.pumpWidget(harness.wrap(BookingDetailScreen(bookingId: booking.id)));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Left to pay'), findsOneWidget);
-      expect(find.text('TZS 2,400,000'), findsWidgets);
-    });
   });
 }

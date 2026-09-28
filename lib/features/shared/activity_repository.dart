@@ -1,8 +1,8 @@
 import '../../core/network/api_client.dart';
 import 'models.dart';
 
-/// Everything a customer has in flight: what they asked, what they arranged,
-/// what they booked, what they owe, and what they were told.
+/// Everything a customer has in flight: what they asked, what they owe, and
+/// what they were told.
 ///
 /// These belong together because the screens do — the activity timeline
 /// (CUS-013b) and the transaction dashboard (CUS-016) each draw on more than
@@ -21,30 +21,6 @@ abstract class ActivityRepository {
     String? preferredContactTime,
   });
   Future<Inquiry> withdrawInquiry(String id);
-
-  Future<Paged<Viewing>> viewings({String? status, bool upcomingOnly, int limit, int offset});
-  Future<Viewing> viewing(String id);
-  Future<Viewing> requestViewing({
-    required String propertyId,
-    required DateTime scheduledFor,
-    String? inquiryId,
-    int? durationMinutes,
-    String? meetingPoint,
-    String? note,
-  });
-  Future<Viewing> cancelViewing(String id, String reason);
-
-  Future<Paged<Booking>> bookings({String? status, int limit, int offset});
-  Future<Booking> booking(String id);
-  Future<Booking> createBooking({
-    required String propertyId,
-    String? inquiryId,
-    String? viewingId,
-    DateTime? moveInDate,
-    int? leaseMonths,
-    String? notes,
-  });
-  Future<Booking> cancelBooking(String id, String reason);
 
   Future<Paged<CustomerPayment>> payments({String? state, int limit, int offset});
   Future<CustomerPayment> payment(String id);
@@ -101,85 +77,6 @@ class HttpActivityRepository implements ActivityRepository {
   @override
   Future<Inquiry> withdrawInquiry(String id) async =>
       Inquiry.fromJson(await _api.post('/app/inquiries/$id/withdraw'));
-
-  // --- viewings --------------------------------------------------------------
-
-  @override
-  Future<Paged<Viewing>> viewings({
-    String? status,
-    bool upcomingOnly = false,
-    int limit = 20,
-    int offset = 0,
-  }) async =>
-      Paged.fromJson(
-        await _api.get('/app/viewings', query: {
-          'status': status,
-          'upcomingOnly': upcomingOnly ? 'true' : null,
-          'limit': limit,
-          'offset': offset,
-        }),
-        Viewing.fromJson,
-      );
-
-  @override
-  Future<Viewing> viewing(String id) async => Viewing.fromJson(await _api.get('/app/viewings/$id'));
-
-  @override
-  Future<Viewing> requestViewing({
-    required String propertyId,
-    required DateTime scheduledFor,
-    String? inquiryId,
-    int? durationMinutes,
-    String? meetingPoint,
-    String? note,
-  }) async =>
-      Viewing.fromJson(await _api.post('/app/viewings', body: {
-        'propertyId': propertyId,
-        // An appointment is a moment, so this one really is a timestamp.
-        'scheduledFor': scheduledFor.toUtc().toIso8601String(),
-        'inquiryId': inquiryId,
-        'durationMinutes': durationMinutes,
-        'meetingPoint': meetingPoint,
-        'note': note,
-      }));
-
-  @override
-  Future<Viewing> cancelViewing(String id, String reason) async =>
-      Viewing.fromJson(await _api.post('/app/viewings/$id/cancel', body: {'reason': reason}));
-
-  // --- bookings --------------------------------------------------------------
-
-  @override
-  Future<Paged<Booking>> bookings({String? status, int limit = 20, int offset = 0}) async =>
-      Paged.fromJson(
-        await _api.get('/app/bookings', query: {'status': status, 'limit': limit, 'offset': offset}),
-        Booking.fromJson,
-      );
-
-  @override
-  Future<Booking> booking(String id) async => Booking.fromJson(await _api.get('/app/bookings/$id'));
-
-  @override
-  Future<Booking> createBooking({
-    required String propertyId,
-    String? inquiryId,
-    String? viewingId,
-    DateTime? moveInDate,
-    int? leaseMonths,
-    String? notes,
-  }) async =>
-      Booking.fromJson(await _api.post('/app/bookings', body: {
-        'propertyId': propertyId,
-        'inquiryId': inquiryId,
-        'viewingId': viewingId,
-        'moveInDate': _day(moveInDate),
-        'leaseMonths': leaseMonths,
-        'notes': notes,
-      }));
-
-  @override
-  Future<Booking> cancelBooking(String id, String reason) async =>
-      Booking.fromJson(await _api.post('/app/bookings/$id/cancel', body: {'reason': reason}));
 
   // --- payments --------------------------------------------------------------
 

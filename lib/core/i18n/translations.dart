@@ -45,12 +45,12 @@ const Map<String, String> _en = {
   'onboarding.find.title': 'Find your home',
   'onboarding.find.body':
       'Browse verified listings across Tanzania, with real photos and honest prices.',
-  'onboarding.viewings.title': 'Schedule viewings',
-  'onboarding.viewings.body':
-      'Ask the landlord a question and arrange to see the place, all in one app.',
+  'onboarding.enquire.title': 'Ask and get accepted',
+  'onboarding.enquire.body':
+      'Send the landlord an enquiry and hear back in the app. Once they accept, the home is yours to secure.',
   'onboarding.moveIn.title': 'Move in',
   'onboarding.moveIn.body':
-      'Book it, pay securely, and keep every receipt and document in one place.',
+      'Pay securely — we verify it, and every receipt and document stays in one place.',
 
   // --- sign in --------------------------------------------------------------
   'signIn.title': 'Sign in',
@@ -154,12 +154,12 @@ const Map<String, String> _sw = {
   'onboarding.find.title': 'Pata nyumba yako',
   'onboarding.find.body':
       'Pitia nyumba zilizothibitishwa kote Tanzania, zikiwa na picha za kweli na bei za uwazi.',
-  'onboarding.viewings.title': 'Panga siku ya kuiona',
-  'onboarding.viewings.body':
-      'Muulize mwenye nyumba swali na upange siku ya kuiona, yote katika app moja.',
+  'onboarding.enquire.title': 'Uliza na ukubaliwe',
+  'onboarding.enquire.body':
+      'Tuma ombi kwa mwenye nyumba na upate jibu ndani ya app. Akikubali, unaweza kulipia ili uipate.',
   'onboarding.moveIn.title': 'Ingia kuishi',
   'onboarding.moveIn.body':
-      'Iweke, lipa kwa usalama, na uhifadhi risiti na nyaraka zote katika sehemu moja.',
+      'Lipa kwa usalama — tunathibitisha malipo, na risiti na nyaraka zote zinabaki sehemu moja.',
 
   // --- sign in --------------------------------------------------------------
   'signIn.title': 'Ingia',

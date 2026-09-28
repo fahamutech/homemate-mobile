@@ -57,8 +57,8 @@ class AppText {
   String get getStarted => _s('onboarding.getStarted');
   String get onboardingFindTitle => _s('onboarding.find.title');
   String get onboardingFindBody => _s('onboarding.find.body');
-  String get onboardingViewingsTitle => _s('onboarding.viewings.title');
-  String get onboardingViewingsBody => _s('onboarding.viewings.body');
+  String get onboardingEnquireTitle => _s('onboarding.enquire.title');
+  String get onboardingEnquireBody => _s('onboarding.enquire.body');
   String get onboardingMoveInTitle => _s('onboarding.moveIn.title');
   String get onboardingMoveInBody => _s('onboarding.moveIn.body');
 

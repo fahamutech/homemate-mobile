@@ -189,11 +189,11 @@ class _PropertyCard extends StatelessWidget {
                           ),
                           const SizedBox(width: HmSpace.md),
                           HmStatusChip(
-                            // An accepted enquiry is, to the customer, one
-                            // waiting for their money — and saying "Accepted"
-                            // here while the timeline says "Awaiting Payment"
-                            // is two answers to one question.
-                            inquiry.status == 'accepted' ? 'awaiting_payment' : inquiry.status,
+                            // The server's reading of the whole journey: an
+                            // accepted enquiry is "awaiting payment", then
+                            // "awaiting verification", then "paid" — so this
+                            // chip and the timeline give one answer.
+                            inquiry.displayStatus,
                             dense: true,
                           ),
                         ],
@@ -265,6 +265,40 @@ class _NextStepState extends ConsumerState<_NextStep> {
       );
     }
 
+    // Paid and verified: the journey is over and the home is theirs.
+    if (inquiry.isPaid) {
+      return Column(
+        children: [
+          const HmNotice(
+            message: 'Your payment has been verified. This home is yours.',
+            icon: Icons.check_circle_outline,
+            colour: HmColors.success,
+          ),
+          if (inquiry.bookingId case final bookingId?) ...[
+            const SizedBox(height: HmSpace.xl),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => context.push(Routes.rental(bookingId)),
+                icon: const Icon(Icons.vpn_key_outlined, size: 18),
+                label: const Text('View your rental'),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    // Paid, and a person is checking the money arrived.
+    if (inquiry.isBeingVerified) {
+      return const HmNotice(
+        message: 'Thank you — we are verifying your payment. The home is confirmed as '
+            'soon as it clears, and we will notify you.',
+        icon: Icons.hourglass_top_outlined,
+        colour: HmColors.info,
+      );
+    }
+
     if (inquiry.status == 'accepted' && propertyId != null) {
       return _PayNow(inquiry: inquiry, propertyId: propertyId);
     }
@@ -303,14 +337,6 @@ class _NextStepState extends ConsumerState<_NextStep> {
             style: HmText.caption.copyWith(fontSize: 11),
             textAlign: TextAlign.center,
           ),
-          if (propertyId != null) ...[
-            const SizedBox(height: HmSpace.huge),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.event_available_outlined, size: 18),
-              label: const Text('Book a viewing instead'),
-              onPressed: () => context.push(Routes.scheduleViewing(propertyId)),
-            ),
-          ],
         ],
       );
     }

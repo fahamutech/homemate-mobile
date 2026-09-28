@@ -52,9 +52,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         body: text.onboardingFindBody,
       ),
       _Slide(
-        icon: Icons.event_available_rounded,
-        title: text.onboardingViewingsTitle,
-        body: text.onboardingViewingsBody,
+        icon: Icons.mark_chat_read_rounded,
+        title: text.onboardingEnquireTitle,
+        body: text.onboardingEnquireBody,
       ),
       _Slide(
         icon: Icons.vpn_key_rounded,

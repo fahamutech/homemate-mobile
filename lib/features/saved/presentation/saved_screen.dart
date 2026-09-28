@@ -18,20 +18,19 @@ import '../../discovery/data/search_providers.dart';
 /// CUS-013a. Favourites — and everything else the customer has going on.
 ///
 /// The screen is named for the tab it sits behind, but it is deliberately not
-/// just a list of saved listings. The design puts four things here in this
-/// order, and the order is the argument:
+/// just a list of saved listings. It holds three things in this order, and the
+/// order is the argument:
 ///
 ///   1. **Active Rents** — a tenancy with rent falling due beats anything you
 ///      once tapped a heart on. This is also the only way into the lease and
 ///      its paperwork (CUS-012a/b/c).
 ///   2. **Saved Favorites** — what the tab is called, scrolling sideways so it
 ///      costs one screen rather than five.
-///   3. **Recent Inquiries** — what you asked and what came back, including the
-///      ones now waiting for money.
-///   4. **Upcoming Bookings** — viewings you have arranged.
+///   3. **Recent Inquiries** — what you asked and where it has got to: with
+///      the landlord, awaiting payment, being verified, or paid.
 ///
-/// All four arrive in one call, because a returning customer opening this
-/// screen should not be looking at four spinners.
+/// All three arrive in one call, because a returning customer opening this
+/// screen should not be looking at three spinners.
 class SavedScreen extends ConsumerWidget {
   const SavedScreen({super.key});
 
@@ -68,7 +67,7 @@ class SavedScreen extends ConsumerWidget {
           empty: HmEmpty(
             title: 'Nothing here yet',
             message: 'Tap the heart on a listing to keep it here, and anything you '
-                'enquire about or book will show up too.',
+                'enquire about will show up too.',
             icon: Icons.favorite_outline,
             action: OutlinedButton(
               onPressed: () => context.go(Routes.search),
@@ -164,26 +163,6 @@ class _Sections extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: HmSpace.xl),
               child: _InquiryRow(inquiry: inquiry),
             ),
-        const SizedBox(height: HmSpace.xxl),
-
-        HmSectionHeader(
-          title: 'Upcoming Bookings',
-          action: overview.upcomingBookings.isEmpty ? null : 'See All',
-          onAction: overview.upcomingBookings.isEmpty
-              ? null
-              : () => context.go(Routes.viewings),
-        ),
-        if (overview.upcomingBookings.isEmpty)
-          const _EmptySection(
-            icon: Icons.event_available_outlined,
-            message: 'Arrange a viewing and it will be listed here.',
-          )
-        else
-          for (final viewing in overview.upcomingBookings)
-            Padding(
-              padding: const EdgeInsets.only(bottom: HmSpace.xl),
-              child: _ViewingRow(viewing: viewing),
-            ),
       ],
     );
   }
@@ -242,26 +221,6 @@ class _InquiryRow extends StatelessWidget {
         // `display_status` is the server's, so an accepted enquiry reads as
         // "Awaiting payment" here without the app inventing that mapping.
         trailing: HmStatusChip(inquiry.displayStatus, dense: true),
-      );
-}
-
-class _ViewingRow extends StatelessWidget {
-  const _ViewingRow({required this.viewing});
-
-  final ViewingSummary viewing;
-
-  @override
-  Widget build(BuildContext context) => HmListRow(
-        onTap: () => context.push(Routes.viewing(viewing.id)),
-        leading: PropertyImage(
-          mediaId: viewing.coverMediaId,
-          height: 48,
-          width: 48,
-          borderRadius: BorderRadius.circular(HmRadius.sm),
-        ),
-        title: viewing.propertyTitle ?? 'Property',
-        subtitle: DateFormat('d MMM yyyy • h:mm a').format(viewing.scheduledFor),
-        trailing: HmStatusChip(viewing.status, dense: true),
       );
 }
 

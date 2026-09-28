@@ -246,8 +246,21 @@ class FakeCatalogueRepository implements CatalogueRepository {
       depositMonths: 2,
       minLeaseMonths: 12,
       paymentFrequency: 'monthly',
+      myInquiryId: myInquiry?.id,
+      myInquiryStatus: myInquiry?.status,
+      // What the server adds to every listing: half a month's rent, and the
+      // other half kept against the usual one-month agent fee.
+      serviceFee: ServiceFee(
+        amount: (property.price ?? 0) * 0.5,
+        percentage: 50,
+        benchmarkAmount: property.price ?? 0,
+        saving: (property.price ?? 0) * 0.5,
+      ),
     );
   }
+
+  /// The customer's own enquiry on the listing, as the property screen sees it.
+  ({String id, String status})? myInquiry;
 
   @override
   Future<Paged<PropertySummary>> saved({int limit = 20, int offset = 0}) async {
@@ -309,12 +322,27 @@ class FakeCatalogueRepository implements CatalogueRepository {
 
 class FakeActivityRepository implements ActivityRepository {
   final List<Inquiry> inquiryList = [];
-  final List<Viewing> viewingList = [];
-  final List<Booking> bookingList = [];
   final List<CustomerPayment> paymentList = [];
   final List<AppNotification> notificationList = [];
 
   ActivitySummary summaryValue = const ActivitySummary();
+
+  /// Puts an unpaid first payment in place — what a checkout leaves behind
+  /// once the landlord has accepted and the customer has started paying.
+  CustomerPayment seedCheckoutPayment({double amount = 2800000}) {
+    final payment = CustomerPayment(
+      id: 'pay-${++sequence}',
+      reference: 'HM-PAY-00000$sequence',
+      amount: amount,
+      currency: 'TZS',
+      status: 'pending',
+      customerState: 'awaiting_instructions',
+      purpose: 'deposit',
+      bookingId: 'bk-$sequence',
+    );
+    paymentList.add(payment);
+    return payment;
+  }
   ApiException? nextFailure;
   int sequence = 0;
 
@@ -383,143 +411,6 @@ class FakeActivityRepository implements ActivityRepository {
       propertyTitle: existing.propertyTitle,
     );
     inquiryList[index] = updated;
-    return updated;
-  }
-
-  @override
-  Future<Paged<Viewing>> viewings({
-    String? status,
-    bool upcomingOnly = false,
-    int limit = 20,
-    int offset = 0,
-  }) async {
-    if (_takeFailure() case final failure?) throw failure;
-    final items =
-        viewingList.where((v) => !upcomingOnly || v.scheduledFor.isAfter(DateTime.now())).toList();
-    return Paged(items: items, total: items.length);
-  }
-
-  @override
-  Future<Viewing> viewing(String id) async =>
-      viewingList.firstWhere((candidate) => candidate.id == id);
-
-  @override
-  Future<Viewing> requestViewing({
-    required String propertyId,
-    required DateTime scheduledFor,
-    String? inquiryId,
-    int? durationMinutes,
-    String? meetingPoint,
-    String? note,
-  }) async {
-    if (_takeFailure() case final failure?) throw failure;
-    if (scheduledFor.isBefore(DateTime.now())) {
-      throw ApiException(
-        code: 'VALIDATION_FAILED',
-        message: 'A viewing cannot be scheduled in the past',
-        statusCode: 422,
-      );
-    }
-    final viewing = Viewing(
-      id: 'vw-${++sequence}',
-      reference: 'HM-VW-00000$sequence',
-      status: 'requested',
-      scheduledFor: scheduledFor,
-      propertyId: propertyId,
-      propertyTitle: 'Masaki 2BR Apartment',
-      hostName: 'Baraka Mushi',
-      meetingPoint: meetingPoint,
-      isUpcoming: true,
-    );
-    viewingList.add(viewing);
-    return viewing;
-  }
-
-  @override
-  Future<Viewing> cancelViewing(String id, String reason) async {
-    final index = viewingList.indexWhere((candidate) => candidate.id == id);
-    final existing = viewingList[index];
-    final updated = Viewing(
-      id: existing.id,
-      reference: existing.reference,
-      status: 'cancelled',
-      scheduledFor: existing.scheduledFor,
-      propertyId: existing.propertyId,
-      propertyTitle: existing.propertyTitle,
-      cancellationReason: reason,
-    );
-    viewingList[index] = updated;
-    return updated;
-  }
-
-  @override
-  Future<Paged<Booking>> bookings({String? status, int limit = 20, int offset = 0}) async {
-    if (_takeFailure() case final failure?) throw failure;
-    return Paged(items: bookingList, total: bookingList.length);
-  }
-
-  @override
-  Future<Booking> booking(String id) async =>
-      bookingList.firstWhere((candidate) => candidate.id == id);
-
-  @override
-  Future<Booking> createBooking({
-    required String propertyId,
-    String? inquiryId,
-    String? viewingId,
-    DateTime? moveInDate,
-    int? leaseMonths,
-    String? notes,
-  }) async {
-    if (_takeFailure() case final failure?) throw failure;
-    final payment = CustomerPayment(
-      id: 'pay-${++sequence}',
-      reference: 'HM-PAY-00000$sequence',
-      amount: 2400000,
-      currency: 'TZS',
-      status: 'pending',
-      customerState: 'awaiting_instructions',
-      purpose: 'deposit',
-      bookingId: 'bk-$sequence',
-    );
-    paymentList.add(payment);
-
-    final booking = Booking(
-      id: 'bk-$sequence',
-      reference: 'HM-BK-00000$sequence',
-      status: 'awaiting_payment',
-      monthlyRent: 800000,
-      totalDue: 2400000,
-      amountPaid: 0,
-      amountOutstanding: 2400000,
-      depositAmount: 1600000,
-      propertyId: propertyId,
-      propertyTitle: 'Masaki 2BR Apartment',
-      moveInDate: moveInDate,
-      leaseMonths: leaseMonths,
-      payments: [payment],
-    );
-    bookingList.add(booking);
-    return booking;
-  }
-
-  @override
-  Future<Booking> cancelBooking(String id, String reason) async {
-    final index = bookingList.indexWhere((candidate) => candidate.id == id);
-    final existing = bookingList[index];
-    final updated = Booking(
-      id: existing.id,
-      reference: existing.reference,
-      status: 'cancelled',
-      monthlyRent: existing.monthlyRent,
-      totalDue: existing.totalDue,
-      amountPaid: existing.amountPaid,
-      amountOutstanding: existing.amountOutstanding,
-      propertyTitle: existing.propertyTitle,
-      cancellationReason: reason,
-      payments: existing.payments,
-    );
-    bookingList[index] = updated;
     return updated;
   }
 
@@ -821,7 +712,12 @@ class FakeJourneyRepository implements JourneyRepository {
     ],
   })  : overview = overview ?? const SavedOverview(),
         eligibility = eligibility ??
-            const CheckoutEligibility(propertyId: 'prop-1', available: true, canPay: true);
+            const CheckoutEligibility(
+              propertyId: 'prop-1',
+              available: true,
+              canPay: true,
+              route: 'inquiry_accepted',
+            );
 
   SavedOverview overview;
   CheckoutEligibility eligibility;
@@ -944,34 +840,21 @@ class FakeJourneyRepository implements JourneyRepository {
       leaseAgreement ?? const LeaseAgreement(bookingReference: 'HM-BK-000001');
 }
 
-Viewing fakeViewing({
-  String id = 'view-1',
-  String status = 'confirmed',
-  DateTime? scheduledFor,
-}) =>
-    Viewing(
-      id: id,
-      reference: 'HM-VW-000001',
-      status: status,
-      scheduledFor: scheduledFor ?? DateTime(2026, 1, 18, 10),
-      propertyId: 'prop-1',
-      propertyTitle: 'Masaki 2BR Apartment',
-      propertyAddress: 'Masaki, Dar es Salaam',
-      hostName: 'Baraka Landlord',
-      hostPhone: '+255 712 345 678',
-    );
-
 Inquiry fakeInquiry({
   String id = 'inq-1',
   String status = 'pending',
   String message = 'Is this still available?',
   String? response,
   String? rejectionReason,
+  String? displayStatus,
+  String? bookingId,
 }) =>
     Inquiry(
       id: id,
       reference: 'HM-INQ-000001',
       status: status,
+      displayStatus: displayStatus ?? (status == 'accepted' ? 'awaiting_payment' : status),
+      bookingId: bookingId,
       message: message,
       createdAt: DateTime(2026, 1, 8, 10, 30),
       response: response,
@@ -1028,17 +911,31 @@ Booking fakeBooking({
       createdAt: DateTime(2026, 1, 10),
     );
 
-CheckoutSummary fakeCheckoutSummary({double totalDue = 2400000}) => CheckoutSummary(
-      booking: fakeBooking(),
+/// What the server returns for a first payment on an 800,000 home: a month's
+/// rent, a two-month deposit, and the HomeMate fee of half a month — which is
+/// highlighted, with the saving against the usual month's agent fee.
+CheckoutSummary fakeCheckoutSummary({double totalDue = 2800000}) => CheckoutSummary(
+      booking: fakeBooking(totalDue: totalDue),
       breakdown: const [
         CostLine(key: 'first_period', label: 'First month rent', amount: 800000),
         CostLine(key: 'deposit', label: 'Security deposit (2x)', amount: 1600000),
-        CostLine(key: 'agency_fee', label: 'Agency fee', amount: 0, waived: true),
+        CostLine(
+          key: 'service_fee',
+          label: "HomeMate fee (50% of one month's rent)",
+          amount: 400000,
+          highlight: true,
+        ),
       ],
       totalDue: totalDue,
       amountPaid: 0,
       amountOutstanding: totalDue,
-      payments: [fakePayment()],
+      payments: [fakePayment(amount: totalDue)],
+      serviceFee: const ServiceFee(
+        amount: 400000,
+        percentage: 50,
+        benchmarkAmount: 800000,
+        saving: 400000,
+      ),
     );
 
 Rental fakeRental({
@@ -1081,20 +978,6 @@ InquirySummary fakeInquirySummary({
       status: status,
       displayStatus: displayStatus ?? status,
       createdAt: DateTime(2026, 1, 8),
-      propertyId: 'prop-1',
-      propertyTitle: title,
-    );
-
-ViewingSummary fakeViewingSummary({
-  String id = 'view-1',
-  String status = 'confirmed',
-  String title = 'Masaki 2BR Apartment',
-}) =>
-    ViewingSummary(
-      id: id,
-      reference: 'HM-VW-000001',
-      status: status,
-      scheduledFor: DateTime(2026, 1, 18, 10),
       propertyId: 'prop-1',
       propertyTitle: title,
     );

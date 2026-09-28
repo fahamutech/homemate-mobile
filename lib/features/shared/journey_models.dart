@@ -81,19 +81,20 @@ class PropertyHold {
       );
 }
 
-/// Whether this customer may pay for this property, and how they got here.
+/// "May this customer pay for this property, and why?" — asked before every
+/// Pay button.
 ///
-/// The server decides all of it — an enquiry is a courtesy rather than a
-/// turnstile, and the app must not invent its own opinion about who is allowed.
+/// There is one road to paying: the landlord accepts the customer's enquiry.
+/// The server decides all of it, and the app must not invent its own opinion
+/// about who is allowed.
 class CheckoutEligibility {
   const CheckoutEligibility({
     required this.propertyId,
     this.available = false,
     this.canPay = false,
-    this.route = 'direct',
+    this.route = 'no_inquiry',
     this.inquiryId,
     this.inquiryStatus,
-    this.viewingId,
     this.bookingId,
     this.holdId,
     this.heldByMe = false,
@@ -105,12 +106,11 @@ class CheckoutEligibility {
   final bool available;
   final bool canPay;
 
-  /// `direct` | `inquiry_accepted` | `viewing_completed` | `inquiry_pending` |
-  /// `booking` | `blocked`.
+  /// `no_inquiry` | `inquiry_pending` | `inquiry_accepted` | `booking` |
+  /// `blocked`.
   final String route;
   final String? inquiryId;
   final String? inquiryStatus;
-  final String? viewingId;
   final String? bookingId;
   final String? holdId;
   final bool heldByMe;
@@ -128,24 +128,21 @@ class CheckoutEligibility {
   /// is the difference between a button someone trusts and one they do not.
   String get reasonLabel => switch (route) {
         'inquiry_accepted' =>
-          'Your enquiry was approved. Complete payment to secure your reservation.',
-        'viewing_completed' =>
-          'You have viewed this home. Complete payment to secure your reservation.',
-        'booking' => 'You have a reservation on this home. Finish paying to confirm it.',
+          'Your enquiry was accepted. Pay to secure this home — it is confirmed once we verify your payment.',
+        'booking' => 'You have started paying for this home. Finish paying to secure it.',
         'blocked' => 'The landlord declined this application.',
         'inquiry_pending' =>
-          'Your enquiry is still with the landlord — you can pay now to secure it, or wait for their reply.',
-        _ => 'Pay now to reserve this home. You do not need to enquire first.',
+          'Your enquiry is with the landlord. You can pay once they accept it.',
+        _ => 'Send an enquiry first. You can pay once the landlord accepts it.',
       };
 
   factory CheckoutEligibility.fromJson(Map<String, dynamic> json) => CheckoutEligibility(
         propertyId: json['propertyId'] as String? ?? '',
         available: json['available'] as bool? ?? false,
         canPay: json['canPay'] as bool? ?? false,
-        route: json['route'] as String? ?? 'direct',
+        route: json['route'] as String? ?? 'no_inquiry',
         inquiryId: json['inquiryId'] as String?,
         inquiryStatus: json['inquiryStatus'] as String?,
-        viewingId: json['viewingId'] as String?,
         bookingId: json['bookingId'] as String?,
         holdId: json['holdId'] as String?,
         heldByMe: json['heldByMe'] as bool? ?? false,
@@ -156,12 +153,22 @@ class CheckoutEligibility {
 
 /// One line of the cost breakdown on CUS-011.
 class CostLine {
-  const CostLine({required this.key, required this.label, required this.amount, this.waived = false});
+  const CostLine({
+    required this.key,
+    required this.label,
+    required this.amount,
+    this.waived = false,
+    this.highlight = false,
+  });
 
   final String key;
   final String label;
   final double amount;
   final bool waived;
+
+  /// The HomeMate fee is drawn out from the other lines, so the customer sees
+  /// exactly what the platform is charging them and what it saves.
+  final bool highlight;
 
   /// "TZS 0 (Waived)" rather than a missing row — a charge someone chose not
   /// to make is information, and its absence is not.
@@ -173,6 +180,7 @@ class CostLine {
         label: json['label'] as String? ?? '',
         amount: HmMoney.parse(json['amount']),
         waived: json['waived'] as bool? ?? false,
+        highlight: json['highlight'] as bool? ?? false,
       );
 }
 
@@ -186,6 +194,7 @@ class CheckoutSummary {
     required this.amountOutstanding,
     this.currency = 'TZS',
     this.payments = const [],
+    this.serviceFee,
   });
 
   final Booking booking;
@@ -195,6 +204,10 @@ class CheckoutSummary {
   final double amountOutstanding;
   final String currency;
   final List<CustomerPayment> payments;
+
+  /// The fee in this payment and what it saves, or null for a reservation
+  /// made before the fee existed.
+  final ServiceFee? serviceFee;
 
   String get totalLabel => HmMoney.format(totalDue, currency: currency);
 
@@ -218,6 +231,7 @@ class CheckoutSummary {
         payments: (json['payments'] as List? ?? const [])
             .map((p) => CustomerPayment.fromJson(p as Map<String, dynamic>))
             .toList(),
+        serviceFee: ServiceFee.fromJsonOrNull(json['serviceFee']),
       );
 }
 
@@ -614,46 +628,8 @@ class InquirySummary {
       );
 }
 
-/// A scheduled viewing as the Favourites screen's "Upcoming Bookings" row
-/// renders it.
-class ViewingSummary {
-  const ViewingSummary({
-    required this.id,
-    required this.reference,
-    required this.status,
-    required this.scheduledFor,
-    this.propertyId,
-    this.propertyTitle,
-    this.propertyAddress,
-    this.coverMediaId,
-    this.hostName,
-  });
-
-  final String id;
-  final String reference;
-  final String status;
-  final DateTime scheduledFor;
-  final String? propertyId;
-  final String? propertyTitle;
-  final String? propertyAddress;
-  final String? coverMediaId;
-  final String? hostName;
-
-  factory ViewingSummary.fromJson(Map<String, dynamic> json) => ViewingSummary(
-        id: json['id'] as String? ?? '',
-        reference: json['reference'] as String? ?? '',
-        status: json['status'] as String? ?? 'requested',
-        scheduledFor: _date(json['scheduled_for']) ?? DateTime.now(),
-        propertyId: json['property_id'] as String?,
-        propertyTitle: json['property_title'] as String?,
-        propertyAddress: json['property_address'] as String?,
-        coverMediaId: json['cover_media_id'] as String?,
-        hostName: json['host_name'] as String?,
-      );
-}
-
-/// CUS-013a, whole. Four sections and their totals, from one call — the screen
-/// a returning customer opens should not be four spinners.
+/// CUS-013a, whole. Three sections and their totals, from one call — the
+/// screen a returning customer opens should not be three spinners.
 class SavedOverview {
   const SavedOverview({
     this.activeRentals = const [],
@@ -662,8 +638,6 @@ class SavedOverview {
     this.favoriteCount = 0,
     this.recentInquiries = const [],
     this.inquiryCount = 0,
-    this.upcomingBookings = const [],
-    this.upcomingBookingCount = 0,
   });
 
   final List<Rental> activeRentals;
@@ -672,16 +646,13 @@ class SavedOverview {
   final int favoriteCount;
   final List<InquirySummary> recentInquiries;
   final int inquiryCount;
-  final List<ViewingSummary> upcomingBookings;
-  final int upcomingBookingCount;
 
   /// Nothing at all to show — which is a different screen from "no favourites
   /// but two active leases".
   bool get isEmpty =>
       activeRentals.isEmpty &&
       favorites.isEmpty &&
-      recentInquiries.isEmpty &&
-      upcomingBookings.isEmpty;
+      recentInquiries.isEmpty;
 
   static List<T> _list<T>(Object? raw, T Function(Map<String, dynamic>) parse) =>
       (raw as List? ?? const []).map((row) => parse(row as Map<String, dynamic>)).toList();
@@ -698,7 +669,5 @@ class SavedOverview {
         favoriteCount: _int(json['favoriteCount']),
         recentInquiries: _list(json['recentInquiries'], InquirySummary.fromJson),
         inquiryCount: _int(json['inquiryCount']),
-        upcomingBookings: _list(json['upcomingBookings'], ViewingSummary.fromJson),
-        upcomingBookingCount: _int(json['upcomingBookingCount']),
       );
 }

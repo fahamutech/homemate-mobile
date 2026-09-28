@@ -16,16 +16,17 @@ import '../../discovery/data/search_providers.dart';
 import '../../shared/journey_providers.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
+import '../../shared/service_fee_card.dart';
 
 /// CUS-005. One listing, in full.
 ///
 /// The order follows the design, and the design follows the order the
 /// questions actually arrive in: what does it look like, what is it, who is
 /// letting it, what is in it, where is it, what will it really cost, and how
-/// would I pay. The two things a customer can do — ask a question, arrange a
-/// viewing — are pinned to the bottom, because this is a long page and an
-/// action found only after scrolling past the house rules is an action nobody
-/// takes.
+/// would I pay. The next step on the one road to renting it — enquire, then
+/// pay once accepted — is pinned to the bottom, because this is a long page
+/// and an action found only after scrolling past the house rules is an action
+/// nobody takes.
 class PropertyScreen extends ConsumerWidget {
   const PropertyScreen({super.key, required this.propertyId});
 
@@ -235,7 +236,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
               ],
 
               const SizedBox(height: HmSpace.huge),
-              _ReadyToSee(propertyId: property.id, hasOpenInquiry: detail.hasOpenInquiry),
+              _HowItWorks(detail: detail),
 
               // Clears the pinned action bar so the last line is readable.
               const SizedBox(height: 96),
@@ -478,6 +479,12 @@ class _PriceBreakdown extends StatelessWidget {
               label: '${charge.name}${charge.isRefundable ? ' (refundable)' : ''}',
               value: money(charge.amount),
             ),
+          if (detail.serviceFee case final fee? when fee.isCharged)
+            _Row(
+              label: 'HomeMate fee · ${fee.percentageLabel} of a month',
+              value: money(fee.amount),
+              highlighted: true,
+            ),
 
           const Divider(height: HmSpace.huge),
           _Row(label: 'Total to move in', value: money(detail.moveInTotal), emphasised: true),
@@ -486,7 +493,7 @@ class _PriceBreakdown extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               'An estimate from what the landlord has listed. The exact figures '
-              'are confirmed on your booking before you pay anything.',
+              'are shown at checkout, once the landlord accepts your enquiry.',
               style: HmText.caption,
             ),
           ),
@@ -554,41 +561,75 @@ class _PaymentOptions extends StatelessWidget {
   }
 }
 
-/// The "Ready to see it?" prompt from the designs — the same two actions as
-/// the pinned bar, offered once in the flow of the page for anyone who has
-/// read to the end and decided.
-class _ReadyToSee extends StatelessWidget {
-  const _ReadyToSee({required this.propertyId, required this.hasOpenInquiry});
+/// Where the customer is on the one road to this home — enquire, be
+/// accepted, pay, be verified — and the fee that road costs, highlighted with
+/// what it saves against the usual month's agent fee.
+class _HowItWorks extends StatelessWidget {
+  const _HowItWorks({required this.detail});
 
-  final String propertyId;
-  final bool hasOpenInquiry;
+  final PropertyDetail detail;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(HmSpace.xxl),
-        decoration: BoxDecoration(
-          color: HmColors.brandPrimarySoft,
-          borderRadius: HmRadius.card,
+  Widget build(BuildContext context) {
+    final step = detail.isAccepted ? 2 : (detail.hasOpenInquiry ? 1 : 0);
+    const steps = ['Enquire', 'Landlord accepts', 'Pay', 'Payment verified'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (detail.serviceFee case final fee? when fee.isCharged) ...[
+          ServiceFeeCard(fee: fee, currency: detail.summary.currency),
+          const SizedBox(height: HmSpace.huge),
+        ],
+        _Section(
+          title: 'How to rent it',
+          child: Column(
+            children: [
+              for (var i = 0; i < steps.length; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: HmSpace.sm),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: i < step ? HmColors.brandPrimary : HmColors.bgPrimary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: i <= step ? HmColors.brandPrimary : HmColors.borderStrong,
+                            width: 2,
+                          ),
+                        ),
+                        child: i < step
+                            ? const Icon(Icons.check, size: 14, color: HmColors.textOnBrand)
+                            : Text(
+                                '${i + 1}',
+                                style: HmText.caption.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: i == step ? HmColors.brandPrimary : HmColors.textSecondary,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: HmSpace.xl),
+                      Expanded(
+                        child: Text(
+                          steps[i],
+                          style: i == step
+                              ? HmText.label.copyWith(color: HmColors.brandPrimary)
+                              : HmText.body,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Ready to see it?', style: HmText.heading),
-            const SizedBox(height: HmSpace.xs),
-            Text(
-              'Book a viewing to see the property in person — or reserve it '
-              'straight away if you have made up your mind.',
-              style: HmText.body,
-            ),
-            const SizedBox(height: HmSpace.xxl),
-            ElevatedButton.icon(
-              onPressed: () => context.push(Routes.scheduleViewing(propertyId)),
-              icon: const Icon(Icons.event_available_outlined, size: 18),
-              label: const Text('Schedule a Tour'),
-            ),
-          ],
-        ),
-      );
+      ],
+    );
+  }
 }
 
 class _Gallery extends StatelessWidget {
@@ -854,15 +895,30 @@ class _MiniMap extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.label, required this.value, this.emphasised = false});
+  const _Row({
+    required this.label,
+    required this.value,
+    this.emphasised = false,
+    this.highlighted = false,
+  });
 
   final String label;
   final String value;
   final bool emphasised;
 
+  /// The HomeMate fee line: tinted, so the platform's own charge is never a
+  /// line the customer has to go looking for.
+  final bool highlighted;
+
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: HmSpace.sm),
+  Widget build(BuildContext context) => Container(
+        margin: highlighted ? const EdgeInsets.symmetric(vertical: HmSpace.xs) : null,
+        padding: highlighted
+            ? const EdgeInsets.symmetric(vertical: HmSpace.sm, horizontal: HmSpace.md)
+            : const EdgeInsets.symmetric(vertical: HmSpace.sm),
+        decoration: highlighted
+            ? BoxDecoration(color: HmColors.brandPrimarySoft, borderRadius: BorderRadius.circular(HmRadius.sm))
+            : null,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -887,14 +943,12 @@ class _Row extends StatelessWidget {
       );
 }
 
-/// The pinned actions. What they offer depends on where the customer already
-/// is: asking twice about the same place is not a thing to invite.
-///
-/// Three doors, deliberately, because an enquiry is a courtesy and not a
-/// turnstile: somebody who knows this listing and wants it may pay outright
-/// without asking anybody first. The server is the one that decides whether
-/// they may — [checkoutEligibilityProvider] — so the button appears only when
-/// paying would actually work.
+/// The pinned actions. There is one road to this home: enquire, and once the
+/// landlord accepts, pay. So the bar offers exactly the next step — "Enquire"
+/// before anything has been asked, "View enquiry" while the landlord decides,
+/// and "Pay to secure it" once they have said yes. Whether the customer may
+/// pay is the server's answer ([checkoutEligibilityProvider]), never the
+/// app's guess.
 class _Actions extends ConsumerWidget {
   const _Actions({required this.detail});
 
@@ -933,36 +987,25 @@ class _Actions extends ConsumerWidget {
                           ? 'Someone is paying for this'
                           : eligibility!.hasStarted
                               ? 'Continue payment'
-                              : 'Reserve & pay',
+                              : 'Pay to secure it',
                     ),
                   ),
                 ),
                 const SizedBox(height: HmSpace.xl),
               ],
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: Text(detail.hasOpenInquiry ? 'View enquiry' : 'Enquire'),
-                      onPressed: () => detail.hasOpenInquiry
-                          ? context.push(Routes.inquiry(detail.myInquiryId!))
-                          : context.push(Routes.inquiryForm(propertyId)),
-                    ),
-                  ),
-                  const SizedBox(width: HmSpace.xl),
-                  Expanded(
-                    child: canPay
-                        ? OutlinedButton(
-                            onPressed: () => context.push(Routes.scheduleViewing(propertyId)),
-                            child: const Text('Book a viewing'),
-                          )
-                        : ElevatedButton(
-                            onPressed: () => context.push(Routes.scheduleViewing(propertyId)),
-                            child: const Text('Book a viewing'),
-                          ),
-                  ),
-                ],
+              SizedBox(
+                width: double.infinity,
+                child: detail.myInquiryId != null
+                    ? OutlinedButton.icon(
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                        label: const Text('View enquiry'),
+                        onPressed: () => context.push(Routes.inquiry(detail.myInquiryId!)),
+                      )
+                    : FilledButton.icon(
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                        label: const Text('Enquire'),
+                        onPressed: () => context.push(Routes.inquiryForm(propertyId)),
+                      ),
               ),
             ],
           ),

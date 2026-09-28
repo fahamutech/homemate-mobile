@@ -66,7 +66,6 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _Stat(label: 'Favourites', value: '${summary.savedCount}'),
                 _Stat(label: 'Enquiries', value: '${summary.openInquiries}'),
-                _Stat(label: 'Viewings', value: '${summary.upcomingViewings}'),
                 _Stat(label: 'Rentals', value: '${summary.activeBookings}'),
               ],
             ),

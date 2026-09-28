@@ -22,8 +22,9 @@ class NotificationsScreen extends ConsumerWidget {
     if (id == null) return null;
     return switch (notification.subjectTable) {
       'property_inquiries' => Routes.inquiry(id),
-      'property_viewings' => Routes.viewing(id),
-      'bookings' => Routes.booking(id),
+      // A reservation whose payment was verified is a tenancy: the rental is
+      // what the customer wants to see.
+      'bookings' => Routes.rental(id),
       'payments' => Routes.payment(id),
       _ => null,
     };
@@ -113,7 +114,6 @@ class NotificationsScreen extends ConsumerWidget {
 
   static IconData _iconFor(String kind) => switch (kind) {
         'inquiry_response' => Icons.question_answer_outlined,
-        'viewing_confirmed' || 'viewing_reminder' => Icons.event_available_outlined,
         'booking_update' => Icons.receipt_long_outlined,
         'payment_due' => Icons.account_balance_wallet_outlined,
         'payment_received' => Icons.check_circle_outline,

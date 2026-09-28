@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:homemate_mobile/core/network/api_exception.dart';
+import 'package:homemate_mobile/features/activity/presentation/activity_screen.dart';
 import 'package:homemate_mobile/features/activity/presentation/property_activity_screen.dart';
-import 'package:homemate_mobile/features/booking/presentation/booking_detail_screen.dart';
 import 'package:homemate_mobile/features/inquiry/presentation/inquiry_detail_screen.dart';
 import 'package:homemate_mobile/features/payment/presentation/checkout_screen.dart';
 import 'package:homemate_mobile/features/payment/presentation/hold_banner.dart';
 import 'package:homemate_mobile/features/shared/journey_models.dart';
-import 'package:homemate_mobile/features/viewing/presentation/viewing_detail_screen.dart';
 
 import 'support/fakes.dart';
 
@@ -59,7 +57,7 @@ void main() {
       expect(find.textContaining('Nothing has been charged'), findsOneWidget);
 
       final payButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Pay TZS 2,400,000'),
+        find.widgetWithText(FilledButton, 'Pay TZS 2,800,000'),
       );
       expect(
         payButton.onPressed,
@@ -112,20 +110,27 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('TOTAL AMOUNT DUE'), findsOneWidget);
-      expect(find.text('TZS 2,400,000'), findsWidgets);
+      expect(find.text('TZS 2,800,000'), findsWidgets);
       await reveal(tester, find.text('First month rent'));
       await reveal(tester, find.text('Security deposit (2x)'));
     });
 
-    testWidgets('a waived charge is still listed, because zero is information',
+    testWidgets('the HomeMate fee is highlighted, with the saving against a month’s agent fee',
         (tester) async {
       final harness = TestHarness();
 
       await tester.pumpWidget(harness.wrap(const CheckoutScreen(propertyId: 'prop-1')));
       await tester.pumpAndSettle();
 
-      await reveal(tester, find.text('Agency fee'));
-      expect(find.text('TZS 0 (Waived)'), findsOneWidget);
+      await reveal(tester, find.byKey(const Key('checkout-fee-line')));
+      expect(find.text("HomeMate fee (50% of one month's rent)"), findsOneWidget);
+
+      await reveal(tester, find.byKey(const Key('service-fee-card')));
+      expect(find.textContaining('included once in this payment'), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('service-fee-saving'))).data,
+        'TZS 400,000',
+      );
     });
 
     testWidgets('refuses to pay until a method is chosen', (tester) async {
@@ -134,7 +139,7 @@ void main() {
       await tester.pumpWidget(harness.wrap(const CheckoutScreen(propertyId: 'prop-1')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,400,000'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,800,000'));
       await tester.pumpAndSettle();
 
       expect(find.text('Choose how you want to pay'), findsOneWidget);
@@ -155,7 +160,7 @@ void main() {
       expect(find.text('M-Pesa Registered Number'), findsOneWidget);
       expect(find.textContaining('You will receive a M-Pesa prompt'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,400,000'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,800,000'));
       await tester.pumpAndSettle();
 
       expect(find.text('Enter the mobile money number to charge'), findsOneWidget);
@@ -177,7 +182,7 @@ void main() {
 
       expect(find.text('M-Pesa Registered Number'), findsNothing);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,400,000'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,800,000'));
       await tester.pumpAndSettle();
 
       expect(harness.journey.payments.single.methodId, 'pm-2');
@@ -198,7 +203,7 @@ void main() {
       await reveal(tester, find.text('Bank Transfer'));
       await tester.tap(find.text('Bank Transfer'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,400,000'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Pay TZS 2,800,000'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Payment successful'), findsNothing);
@@ -299,7 +304,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await reveal(tester, find.widgetWithText(FilledButton, 'Pay now to secure it'));
-      expect(find.textContaining('Complete payment to secure your reservation'), findsOneWidget);
+      expect(find.textContaining('Pay to secure this home'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Send Nudge Reminder'), findsNothing);
     });
 
@@ -353,33 +358,31 @@ void main() {
   });
 
   group('my activity', () {
-    testWidgets('a booking opens onto the whole journey, not just itself',
+    testWidgets('the Activity tab is the enquiries, each showing where the money is',
         (tester) async {
-      // CUS-013b. "Where am I with that house" spans the enquiry, the viewing,
-      // the payments and the lease — a booking screen that only shows the
-      // booking answers a narrower question than the one being asked.
       final harness = TestHarness();
-      harness.activity.bookingList.add(fakeBooking());
+      harness.activity.inquiryList.addAll([
+        fakeInquiry(id: 'inq-1', status: 'accepted', displayStatus: 'awaiting_verification'),
+        fakeInquiry(id: 'inq-2', status: 'pending'),
+      ]);
 
-      await tester.pumpWidget(harness.wrap(
-        const BookingDetailScreen(bookingId: 'booking-1'),
-        extraRoutes: [
-          GoRoute(
-            path: '/property/:id/activity',
-            builder: (_, state) =>
-                PropertyActivityScreen(propertyId: state.pathParameters['id']!),
-          ),
-        ],
-      ));
+      await tester.pumpWidget(harness.wrap(const ActivityScreen()));
       await tester.pumpAndSettle();
 
-      await tapAfterScroll(
-        tester,
-        find.widgetWithText(OutlinedButton, 'View the full journey'),
-      );
+      expect(find.text('My Rentals'), findsOneWidget);
+      expect(find.text('Your enquiries'), findsOneWidget);
+      expect(find.text('Awaiting verification'), findsOneWidget);
+      expect(find.text('Pending'), findsOneWidget);
+    });
 
-      expect(find.text('My Activity'), findsOneWidget);
-      expect(find.text('Journey Timeline'), findsOneWidget);
+    testWidgets('an empty Activity tab says how the journey starts', (tester) async {
+      final harness = TestHarness();
+
+      await tester.pumpWidget(harness.wrap(const ActivityScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No enquiries yet'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Find a home'), findsOneWidget);
     });
 
     testWidgets('the timeline renders the steps the server decided', (tester) async {
@@ -426,70 +429,42 @@ void main() {
     });
   });
 
-  group('after a viewing', () {
-    testWidgets('a tour that has been and gone offers the payment flow', (tester) async {
+  group('after paying', () {
+    testWidgets('a payment being verified says so, and asks for nothing more', (tester) async {
       final harness = TestHarness();
-      harness.activity.viewingList.add(
-        fakeViewing(status: 'completed', scheduledFor: DateTime(2026, 1, 1)),
+      harness.activity.inquiryList.add(
+        fakeInquiry(status: 'accepted', displayStatus: 'awaiting_verification'),
       );
 
-      await tester.pumpWidget(harness.wrap(const ViewingDetailScreen(viewingId: 'view-1')));
+      await tester.pumpWidget(harness.wrap(const InquiryDetailScreen(inquiryId: 'inq-1')));
       await tester.pumpAndSettle();
 
-      await reveal(tester, find.widgetWithText(FilledButton, 'Reserve & pay'));
-      expect(find.textContaining('You have seen this home'), findsOneWidget);
+      await reveal(tester, find.textContaining('we are verifying your payment'));
+      expect(find.widgetWithText(FilledButton, 'Pay now to secure it'), findsNothing);
     });
 
-    testWidgets('a confirmed tour whose day has passed counts too', (tester) async {
-      // Landlords routinely never mark a viewing completed. Waiting for them
-      // to do it would strand the customer at exactly the moment they have
-      // decided.
+    testWidgets('a verified payment ends the journey at the rental', (tester) async {
       final harness = TestHarness();
-      harness.activity.viewingList.add(
-        fakeViewing(
-          status: 'confirmed',
-          scheduledFor: DateTime.now().subtract(const Duration(days: 1)),
-        ),
+      harness.activity.inquiryList.add(
+        fakeInquiry(status: 'accepted', displayStatus: 'paid', bookingId: 'booking-1'),
       );
 
-      await tester.pumpWidget(harness.wrap(const ViewingDetailScreen(viewingId: 'view-1')));
+      await tester.pumpWidget(harness.wrap(const InquiryDetailScreen(inquiryId: 'inq-1')));
       await tester.pumpAndSettle();
 
-      await reveal(tester, find.widgetWithText(FilledButton, 'Reserve & pay'));
+      await reveal(tester, find.widgetWithText(FilledButton, 'View your rental'));
+      expect(find.textContaining('This home is yours'), findsOneWidget);
+      expect(find.text('Paid'), findsOneWidget);
     });
 
-    testWidgets('a tour still to come offers nothing to pay for yet', (tester) async {
+    testWidgets('an enquiry still with the landlord no longer offers a viewing', (tester) async {
       final harness = TestHarness();
-      harness.activity.viewingList.add(
-        fakeViewing(
-          status: 'confirmed',
-          scheduledFor: DateTime.now().add(const Duration(days: 3)),
-        ),
-      );
+      harness.activity.inquiryList.add(fakeInquiry(status: 'pending'));
 
-      await tester.pumpWidget(harness.wrap(const ViewingDetailScreen(viewingId: 'view-1')));
+      await tester.pumpWidget(harness.wrap(const InquiryDetailScreen(inquiryId: 'inq-1')));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(FilledButton, 'Reserve & pay'), findsNothing);
-    });
-
-    testWidgets('a home let to somebody else says so instead of offering to charge for it',
-        (tester) async {
-      final harness = TestHarness();
-      harness.activity.viewingList.add(
-        fakeViewing(status: 'completed', scheduledFor: DateTime(2026, 1, 1)),
-      );
-      harness.journey.eligibility = const CheckoutEligibility(
-        propertyId: 'prop-1',
-        available: false,
-        canPay: false,
-      );
-
-      await tester.pumpWidget(harness.wrap(const ViewingDetailScreen(viewingId: 'view-1')));
-      await tester.pumpAndSettle();
-
-      await reveal(tester, find.textContaining('has been let to someone else'));
-      expect(find.widgetWithText(FilledButton, 'Reserve & pay'), findsNothing);
+      expect(find.textContaining('viewing'), findsNothing);
     });
   });
 }

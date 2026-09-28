@@ -11,14 +11,13 @@ import '../features/auth/presentation/pin_setup_screen.dart';
 import '../features/auth/presentation/profile_setup_screen.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
-import '../features/booking/presentation/booking_detail_screen.dart';
-import '../features/booking/presentation/bookings_screen.dart';
 import '../features/discovery/presentation/home_screen.dart';
 import '../features/discovery/presentation/search_overlay.dart';
 import '../features/discovery/presentation/search_screen.dart';
 import '../features/inquiry/presentation/inquiries_screen.dart';
 import '../features/inquiry/presentation/inquiry_detail_screen.dart';
 import '../features/inquiry/presentation/inquiry_form_screen.dart';
+import '../features/activity/presentation/activity_screen.dart';
 import '../features/activity/presentation/property_activity_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/payment/presentation/checkout_screen.dart';
@@ -31,9 +30,6 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/property/presentation/gallery_screen.dart';
 import '../features/property/presentation/property_screen.dart';
 import '../features/saved/presentation/saved_screen.dart';
-import '../features/viewing/presentation/viewing_detail_screen.dart';
-import '../features/viewing/presentation/viewings_screen.dart';
-import '../features/viewing/presentation/schedule_viewing_screen.dart';
 import 'app_shell.dart';
 
 /// Every path in the app, named once.
@@ -74,26 +70,21 @@ class Routes {
   static String property(String id) => '/property/$id';
   static String gallery(String id, {int index = 0}) => '/property/$id/photos?start=$index';
   static String inquiryForm(String propertyId) => '/property/$propertyId/enquire';
-  static String scheduleViewing(String propertyId) => '/property/$propertyId/viewing';
   static const inquiries = '/activity/enquiries';
-  static const viewings = '/activity/viewings';
-  static const bookings = '/activity';
 
   /// Detail screens sit outside the tab shell, alongside /property and
   /// /payment. A detail is reachable from a list, from a notification and from
   /// the screen that created it — nesting it inside one tab's navigator means
   /// pushing it from anywhere else collides with that tab's page keys.
   static String inquiry(String id) => '/enquiry/$id';
-  static String viewing(String id) => '/viewing/$id';
-  static String booking(String id) => '/booking/$id';
   static String payment(String id) => '/payment/$id';
 
-  /// Reserving and paying for a property (CUS-011 + CUS-014).
+  /// Paying for a property once the landlord has accepted the enquiry
+  /// (CUS-011 + CUS-014).
   ///
-  /// Keyed on the *property* rather than on a booking, because that is what
-  /// the customer has in hand at every one of the three entry points — an
-  /// accepted enquiry, a completed viewing, or the listing itself. The server
-  /// works out whether a booking already exists.
+  /// Keyed on the *property*, which is what the customer has in hand from both
+  /// the listing and the accepted enquiry. The server works out whether a
+  /// reservation already exists.
   static String checkout(String propertyId) => '/property/$propertyId/checkout';
 
   /// The tenancies a customer is living under, reached from the Active Rents
@@ -231,10 +222,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [
             GoRoute(
               path: Routes.activity,
-              builder: (_, __) => const BookingsScreen(),
+              builder: (_, __) => const ActivityScreen(),
               routes: [
                 GoRoute(path: 'enquiries', builder: (_, __) => const InquiriesScreen()),
-                GoRoute(path: 'viewings', builder: (_, __) => const ViewingsScreen()),
               ],
             ),
           ]),
@@ -273,10 +263,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, state) => InquiryFormScreen(propertyId: state.pathParameters['id']!),
           ),
           GoRoute(
-            path: 'viewing',
-            builder: (_, state) => ScheduleViewingScreen(propertyId: state.pathParameters['id']!),
-          ),
-          GoRoute(
             path: 'checkout',
             builder: (_, state) => CheckoutScreen(propertyId: state.pathParameters['id']!),
           ),
@@ -312,14 +298,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/enquiry/:id',
         builder: (_, state) => InquiryDetailScreen(inquiryId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/viewing/:id',
-        builder: (_, state) => ViewingDetailScreen(viewingId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/booking/:id',
-        builder: (_, state) => BookingDetailScreen(bookingId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/payment/:id',
