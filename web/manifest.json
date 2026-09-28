@@ -1,12 +1,16 @@
 {
-    "name": "homemate_mobile",
-    "short_name": "homemate_mobile",
-    "start_url": ".",
+    "id": "/",
+    "name": "HomeMate Africa",
+    "short_name": "HomeMate",
+    "description": "Find, enquire about and rent verified homes in Tanzania. Pay with mobile money.",
+    "lang": "sw",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
+    "background_color": "#FFFFFF",
+    "theme_color": "#059676",
+    "categories": ["lifestyle", "shopping"],
     "prefer_related_applications": false,
     "icons": [
         {
@@ -30,6 +34,29 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "screenshots/01-discovery.jpg",
+            "sizes": "540x960",
+            "type": "image/jpeg",
+            "form_factor": "narrow",
+            "label": "Browse verified homes"
+        },
+        {
+            "src": "screenshots/03-map.jpg",
+            "sizes": "540x960",
+            "type": "image/jpeg",
+            "form_factor": "narrow",
+            "label": "See listings on the map"
+        },
+        {
+            "src": "screenshots/04-property-detail.jpg",
+            "sizes": "540x960",
+            "type": "image/jpeg",
+            "form_factor": "narrow",
+            "label": "Every detail before you enquire"
         }
     ]
 }

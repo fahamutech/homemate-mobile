@@ -6,6 +6,8 @@ import '../../../core/i18n/app_text.dart';
 import '../../../core/i18n/language_picker.dart';
 import '../../../core/location/location_providers.dart';
 import '../../../core/providers.dart';
+import '../../../core/pwa/install_controller.dart';
+import '../../../core/pwa/install_widgets.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_async.dart';
 import '../../../design/widgets/hm_choice.dart';
@@ -106,6 +108,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _SearchPrompt(onTap: _openSearch),
               ),
               const SizedBox(height: HmSpace.xxl),
+
+              // Web only, and only until installed or waved away.
+              if (ref.watch(installProvider).showCard)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(HmSpace.xxl, 0, HmSpace.xxl, HmSpace.xxl),
+                  child: InstallAppCard(),
+                ),
 
               // The chip row sits above everything it filters, and scrolls
               // rather than wrapping: a second row of chips pushes the first
