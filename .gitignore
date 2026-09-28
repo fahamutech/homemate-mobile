@@ -49,3 +49,6 @@ app.*.map.json
 
 # Local config; copy from .env.example
 .env.json
+
+# Firebase CLI deploy cache; local to each machine
+.firebase/
