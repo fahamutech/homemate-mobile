@@ -1,8 +1,22 @@
 name: CI
 
-# Every push and pull request: static analysis, the widget tests, and the
-# release web build (the PWA Firebase Hosting serves), pointed at production
-# through the tracked .env.prod.json.
+# Every push and pull request: static analysis and the widget tests, then the
+# two release builds — the PWA Firebase Hosting serves and the Android App
+# Bundle — both pointed at production through the tracked .env.prod.json.
+#
+# A push to main also ships them: the PWA to the `pwa` hosting target
+# (homematepwa) and the bundle to the Google Play internal test track.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT_HOMEMATETZ  service-account JSON, Firebase Hosting Admin
+#   PLAY_SERVICE_ACCOUNT_JSON            service-account JSON with release access in Play Console
+#   ANDROID_KEYSTORE_BASE64              base64 of the upload keystore (.jks)
+#   ANDROID_KEYSTORE_PASSWORD
+#   ANDROID_KEY_ALIAS
+#   ANDROID_KEY_PASSWORD
+# Optional variable:
+#   PLAY_RELEASE_STATUS  `completed` (default) or `draft` — Play only accepts
+#                        draft releases until the app has passed its first review.
 
 on:
   push:
@@ -11,10 +25,36 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a deploy half-way through an upload.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  FLUTTER_VERSION: 3.47.0
+  # Play needs a strictly increasing versionCode. The version *name* comes from
+  # pubspec.yaml; the code is the run number plus an offset that clears every
+  # bundle uploaded by hand before CI took over. Renaming this workflow resets
+  # run_number — raise the offset if that ever happens.
+  BUILD_NUMBER_OFFSET: 100
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
   web:
+    needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -23,13 +63,81 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.0
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
 
-      - name: Build web (release)
-        run: flutter build web --release --dart-define-from-file=.env.prod.json
+      - name: Build web (release, wasm)
+        run: flutter build web --wasm --release --dart-define-from-file=.env.prod.json
 
+      - name: Deploy to Firebase Hosting (pwa)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOMEMATETZ }}
+          projectId: homematetz
+          target: pwa
+          channelId: live
+
+  android:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      DEPLOY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+
+      # Pull requests build unsigned (build.gradle.kts leaves the release
+      # build unsigned when key.properties is absent); only main signs.
+      - name: Restore upload keystore
+        if: env.DEPLOY == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          cat > android/key.properties <<EOF
+          storeFile=$RUNNER_TEMP/upload.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Build app bundle (release)
+        run: |
+          flutter build appbundle --release \
+            --build-number=$(( ${{ github.run_number }} + BUILD_NUMBER_OFFSET )) \
+            --dart-define-from-file=.env.prod.json
+
+      - name: Upload to Google Play (internal)
+        if: env.DEPLOY == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.fahamutech.homemate
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
+
+      - name: Remove signing material
+        if: always() && env.DEPLOY == 'true'
+        run: rm -f "$RUNNER_TEMP/upload.jks" android/key.properties
