@@ -2,8 +2,7 @@ name: CI
 
 # Every push and pull request: static analysis, the widget tests, and the
 # release web build (the PWA Firebase Hosting serves), pointed at production
-# through the tracked .env.prod.json. The build is uploaded as an artifact so
-# a green run is a deployable `build/web`.
+# through the tracked .env.prod.json.
 
 on:
   push:
@@ -34,8 +33,3 @@ jobs:
       - name: Build web (release)
         run: flutter build web --release --dart-define-from-file=.env.prod.json
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: build/web
-          retention-days: 7
