@@ -15,6 +15,11 @@ import '../features/dev/widget_catalogue_screen.dart';
 import '../features/broker/presentation/broker_home_screen.dart';
 import '../features/broker/presentation/broker_intro_screen.dart';
 import '../features/partner_shared/presentation/landlord_confirm_placeholder.dart';
+import '../features/partner_shared/presentation/listings/listing_sent_screen.dart';
+import '../features/partner_shared/presentation/listings/partner_listing_screen.dart';
+import '../features/partner_shared/presentation/listings/partner_listings_screen.dart';
+import '../features/partner_shared/presentation/listings/wizard/listing_wizard_screen.dart';
+import '../features/partner_shared/presentation/listings/wizard/wizard_step.dart';
 import '../features/partner_shared/presentation/setup/application_status_screen.dart';
 import '../features/partner_shared/presentation/setup/partner_setup_screen.dart';
 import '../features/partner_shared/presentation/setup/setup_step.dart';
@@ -90,6 +95,30 @@ StatefulShellRoute _partnerShell(AppRole role, List<(String, Widget Function(Bui
           StatefulShellBranch(routes: [GoRoute(path: path, builder: (context, _) => screen(context))]),
       ],
     );
+
+/// A partner's listings outside the tabs: add, open, edit and "sent".
+/// `new` is listed before `:id` so it is not read as an id.
+List<GoRoute> _partnerListingRoutes(AppRole role) => [
+      GoRoute(path: Routes.partnerListingNew(role), builder: (_, __) => ListingWizardScreen(role: role)),
+      GoRoute(
+        path: '${Routes.partnerListings(role)}/:id',
+        builder: (_, state) => PartnerListingScreen(role: role, listingId: state.pathParameters['id']!),
+        routes: [
+          GoRoute(
+            path: 'edit',
+            builder: (_, state) => ListingWizardScreen(
+              role: role,
+              listingId: state.pathParameters['id'],
+              initialStep: WizardStep.fromName(state.uri.queryParameters['step']) ?? WizardStep.basics,
+            ),
+          ),
+          GoRoute(
+            path: 'sent',
+            builder: (_, state) => ListingSentScreen(role: role, listingId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+    ];
 
 /// The setup screens every partner role has, outside the tabs.
 List<GoRoute> _partnerSetupRoutes(AppRole role) => [
@@ -173,13 +202,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       _partnerShell(AppRole.broker, [
         (Routes.brokerHome, (_) => const BrokerHomeScreen()),
-        (Routes.brokerListings, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navListings)),
+        (Routes.brokerListings, (_) => const PartnerListingsScreen(role: AppRole.broker)),
         (Routes.brokerEnquiries, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navEnquiries)),
         (Routes.brokerEarnings, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navEarnings)),
         (Routes.brokerProfile, (_) => const PartnerProfileScreen(role: AppRole.broker)),
       ]),
       GoRoute(path: Routes.partnerIntro(AppRole.broker), builder: (_, __) => const BrokerIntroScreen()),
       ..._partnerSetupRoutes(AppRole.broker),
+      ..._partnerListingRoutes(AppRole.broker),
       _partnerShell(AppRole.landlord, [
         (Routes.landlordHome, (_) => const PartnerHomePlaceholder(role: AppRole.landlord)),
         (Routes.landlordHomes, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navHomes)),
