@@ -129,7 +129,7 @@ class RentalCard extends StatelessWidget {
                     ],
                     const SizedBox(height: HmSpace.sm),
                     Text(
-                      rental.rentLabel,
+                      rental.rentLabel(context.text),
                       style: HmText.label.copyWith(fontSize: 13, color: HmColors.brandPrimary),
                     ),
                     if (_termLabel(context.text).isNotEmpty) ...[

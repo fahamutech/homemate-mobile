@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../../core/i18n/app_text.dart';
+
 /// Money, formatted once.
 ///
 /// Amounts arrive from Postgres as strings ("2400000.00") because a numeric
@@ -21,13 +23,11 @@ class HmMoney {
   static String format(Object? value, {String currency = 'TZS'}) =>
       '$currency ${_whole.format(parse(value))}';
 
-  /// "TZS 800,000/month" — the phrasing the property screen uses, where
-  /// there is room to say it in full.
-  static String perMonth(Object? value, {String currency = 'TZS'}) =>
-      '${format(value, currency: currency)}/month';
-
-  /// "TZS 800,000/mo" — the same thing on a card, where the full word pushes
-  /// the price onto a second line and the layout with it.
-  static String perMonthShort(Object? value, {String currency = 'TZS'}) =>
-      '${format(value, currency: currency)}/mo';
+  /// "TZS 800,000/month" where there is room to say it in full; with
+  /// [short], "TZS 800,000/mo" on a card, where the full word pushes the price
+  /// onto a second line. Kiswahili says "/mwezi" either way.
+  static String perMonth(AppText text, Object? value, {String currency = 'TZS', bool short = false}) {
+    final amount = format(value, currency: currency);
+    return short ? text.listingPerMonth(amount) : text.tenantsPerMonth(amount);
+  }
 }

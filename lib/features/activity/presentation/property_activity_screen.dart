@@ -127,7 +127,7 @@ class _PropertyHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: HmSpace.sm),
                       Text(
-                        summary.priceLabelShort,
+                        summary.priceLabel(context.text, short: true),
                         style: HmText.label.copyWith(fontSize: 14, color: HmColors.brandPrimary),
                       ),
                     ],

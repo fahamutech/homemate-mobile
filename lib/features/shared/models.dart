@@ -1,3 +1,4 @@
+import '../../core/i18n/app_text.dart';
 import '../../design/widgets/hm_money.dart';
 
 /// The shapes the app reads back from the API.
@@ -70,10 +71,9 @@ class PropertySummary {
     return parts.isEmpty ? (addressLine ?? '') : parts.take(2).join(', ');
   }
 
-  String get priceLabel => HmMoney.perMonth(price, currency: currency);
-
-  /// The card version — see [HmMoney.perMonthShort].
-  String get priceLabelShort => HmMoney.perMonthShort(price, currency: currency);
+  /// "TZS 800,000/month" in the reader's words; [short] for a card.
+  String priceLabel(AppText text, {bool short = false}) =>
+      HmMoney.perMonth(text, price, currency: currency, short: short);
 
   factory PropertySummary.fromJson(Map<String, dynamic> json) => PropertySummary(
         id: json['id'] as String? ?? '',

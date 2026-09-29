@@ -16,6 +16,8 @@ import '../../shared/journey_providers.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
 import '../../../core/i18n/app_text.dart';
+import '../../../design/status_label.dart';
+import '../../shared/reference_name.dart';
 
 /// CUS-012b. One tenancy, managed.
 ///
@@ -50,14 +52,14 @@ class _Loaded extends ConsumerWidget {
 
   final RentalDetail detail;
 
-  static final _dayFormat = DateFormat('d MMM yyyy');
-  static final _monthFormat = DateFormat('MMMM yyyy');
+  static DateFormat get _dayFormat => DateFormat('d MMM yyyy');
+  static DateFormat get _monthFormat => DateFormat('MMMM yyyy');
 
   /// "1st of every month" — derived from when the lease began, because that is
   /// the day rent recurs on.
   String _dueDayLabel(AppText text, Rental rental) {
     final start = rental.leaseStartDate;
-    if (start == null) return HmStatusChip.humanise(rental.paymentFrequency ?? 'monthly');
+    if (start == null) return statusLabel(text, rental.paymentFrequency ?? 'monthly');
     final day = start.day;
     final suffix = switch (day) {
       1 || 21 || 31 => 'st',
@@ -531,7 +533,7 @@ class _Amenities extends StatelessWidget {
                   ),
                   const SizedBox(height: HmSpace.md),
                   Text(
-                    amenity.name,
+                    referenceName(context.text, code: amenity.code, name: amenity.name),
                     textAlign: TextAlign.center,
                     style: HmText.caption.copyWith(fontSize: 11),
                     maxLines: 2,

@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import 'app_locale.dart';
 import 'translations.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 /// The app's words, in whichever language is current.
 ///
@@ -28,6 +30,27 @@ class AppText {
       value,
       (text, param) => text.replaceAll('{${param.key}}', '${param.value}'),
     );
+  }
+
+  /// A phrase that may not exist: the words for a code the server sent, or
+  /// null when the catalogue has none, so the caller can fall back.
+  String? _maybe(String key) => kTranslations[locale]?[key] ?? kTranslations[AppLocale.english]?[key];
+
+  /// The words for a status / frequency / purpose code, if the catalogue has
+  /// them. Use `statusLabel()`, which falls back to readable English.
+  String? status(String code) => _maybe('status.$code');
+
+  /// The name of a reference-data item (property type, amenity) by its code,
+  /// if the catalogue has one. Use `referenceName()`, which falls back to the
+  /// server's name.
+  String? reference(String code) => _maybe('ref.$code');
+
+  /// The same, found by the server's English name for a seeded item.
+  String? referenceNamed(String english) {
+    for (final entry in kTranslations[AppLocale.english]!.entries) {
+      if (entry.key.startsWith('ref.') && entry.value == english) return _maybe(entry.key);
+    }
+    return null;
   }
 
   /// A count phrase: `$key.one` when [count] is exactly one, else [key].
@@ -1210,6 +1233,10 @@ class AppText {
   String get holdUnderAMinute => _s('hold.underAMinute');
   String get promptSayWhy => _s('prompt.sayWhy');
   String get phoneInvalid => _s('phone.invalid');
+
+  // --- Status words (shared) -------------------------------------------------
+
+  // --- Reference data: read through reference(code) --------------------------
 }
 
 /// Hands [AppText] to the widget tree through `Localizations`, so a language
@@ -1222,9 +1249,16 @@ class AppTextDelegate extends LocalizationsDelegate<AppText> {
   bool isSupported(Locale locale) =>
       AppLocale.values.any((value) => value.code == locale.languageCode);
 
+  /// Loading a language also makes it the one dates are written in: every
+  /// `DateFormat(pattern)` built after this reads "3 Ago" in Kiswahili and
+  /// "3 Aug" in English, with no screen passing a locale.
   @override
-  Future<AppText> load(Locale locale) async =>
-      AppText(AppLocale.fromCode(locale.languageCode));
+  Future<AppText> load(Locale locale) async {
+    final appLocale = AppLocale.fromCode(locale.languageCode);
+    await initializeDateFormatting(appLocale.code);
+    Intl.defaultLocale = appLocale.code;
+    return AppText(appLocale);
+  }
 
   @override
   bool shouldReload(AppTextDelegate old) => false;

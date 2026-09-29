@@ -12,6 +12,7 @@ import '../../../design/widgets/hm_money.dart';
 import '../../shared/customer_avatar.dart';
 import '../../shared/models.dart';
 import '../../../core/i18n/app_text.dart';
+import '../../shared/reference_name.dart';
 
 /// CUS-008a/b. "Complete your profile", in the three steps the designs draw.
 ///
@@ -563,7 +564,7 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
             children: [
               for (final type in data.propertyTypes)
                 HmChoicePill(
-                  label: type.name,
+                  label: referenceName(context.text, code: type.code, name: type.name),
                   dense: true,
                   selected: _draft.propertyTypeIds.contains(type.id),
                   onTap: () => setState(() {
@@ -674,7 +675,7 @@ class _AmenityGrid extends StatelessWidget {
               SizedBox(
                 width: width,
                 child: HmCheckTile(
-                  label: amenity.name,
+                  label: referenceName(context.text, code: amenity.code, name: amenity.name),
                   checked: selected.contains(amenity.id),
                   onChanged: (checked) {
                     final next = [...selected];

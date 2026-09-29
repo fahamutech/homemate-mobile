@@ -382,7 +382,7 @@ class _PropertyMatches extends ConsumerWidget {
               _Suggestion(
                 icon: Icons.home_work_outlined,
                 title: property.title,
-                subtitle: '${property.locationLabel} · ${property.priceLabel}',
+                subtitle: '${property.locationLabel} · ${property.priceLabel(context.text)}',
                 onTap: () => context.push(Routes.property(property.id)),
               ),
           ],

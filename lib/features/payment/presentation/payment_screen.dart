@@ -14,6 +14,7 @@ import '../../shared/journey_providers.dart';
 import '../data/payment_providers.dart';
 import '../../shared/models.dart';
 import '../../../core/i18n/app_text.dart';
+import '../../../design/status_label.dart';
 
 /// CUS-014 / CUS-015. Paying for a booking.
 ///
@@ -104,7 +105,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
               Text(payment.amountLabel, style: HmText.display),
               const SizedBox(height: HmSpace.md),
               Text(
-                '${HmStatusChip.humanise(payment.purpose)}'
+                '${statusLabel(context.text, payment.purpose)}'
                 '${payment.propertyTitle == null ? '' : ' · ${payment.propertyTitle}'}',
                 style: HmText.caption,
                 textAlign: TextAlign.center,

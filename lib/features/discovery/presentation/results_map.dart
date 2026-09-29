@@ -404,7 +404,7 @@ class _PriceMarker extends StatelessWidget {
           ),
           child: Text(
             label,
-            semanticsLabel: '${property.title}, ${property.priceLabel}',
+            semanticsLabel: '${property.title}, ${property.priceLabel(context.text)}',
             style: HmText.caption.copyWith(
               color: selected ? HmColors.textOnBrand : HmColors.brandPrimary,
               fontWeight: FontWeight.w700,

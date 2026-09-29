@@ -11,6 +11,7 @@ import '../../../../../design/widgets/hm_segmented.dart';
 import '../../../../../design/widgets/hm_text_field.dart';
 import '../../../data/partner_listing.dart';
 import 'step_controller.dart';
+import '../../../../shared/reference_name.dart';
 
 /// BRK-030a: what the home is.
 class BasicsStep extends ConsumerStatefulWidget {
@@ -86,7 +87,7 @@ class _BasicsStepState extends ConsumerState<BasicsStep> {
           children: [
             for (final type in types)
               HmChoicePill(
-                label: type.name,
+                label: referenceName(context.text, code: type.code, name: type.name),
                 dense: true,
                 showCheck: true,
                 selected: _type == type.id,

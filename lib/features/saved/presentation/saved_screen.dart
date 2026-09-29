@@ -189,7 +189,7 @@ class _ActiveRentRow extends StatelessWidget {
         ),
         title: rental.propertyTitle ?? context.text.rentalYourHome,
         subtitle: rental.propertyAddress,
-        highlight: rental.rentLabel,
+        highlight: rental.rentLabel(context.text),
         footnote: rental.nextPaymentDate == null
             ? null
             : context.text.savedNextPayment(DateFormat('d MMM yyyy').format(rental.nextPaymentDate!)),
