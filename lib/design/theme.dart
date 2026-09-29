@@ -21,6 +21,7 @@ ThemeData buildHomeMateTheme() {
 
   return ThemeData(
     useMaterial3: true,
+    fontFamily: HmFonts.family,
     colorScheme: scheme,
     scaffoldBackgroundColor: HmColors.bgSecondary,
     splashFactory: InkSparkle.splashFactory,

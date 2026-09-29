@@ -110,16 +110,25 @@ class HmRadius {
 
 /// The type ramp. Sizes come from the designs; the family is left to the
 /// platform so the app reads natively on Android and iOS alike.
+/// The app's own copy of Roboto (assets/fonts, Apache 2.0). Without it the
+/// web build downloads Roboto from Google's CDN at load time, and on a slow or
+/// filtered network digits come out spaced apart and symbols as empty boxes.
+class HmFonts {
+  const HmFonts._();
+
+  static const family = 'HomeMateRoboto';
+}
+
 class HmText {
   const HmText._();
 
-  static const display = TextStyle(fontSize: 28, height: 1.2, fontWeight: FontWeight.w700, color: HmColors.textPrimary);
-  static const title = TextStyle(fontSize: 22, height: 1.25, fontWeight: FontWeight.w700, color: HmColors.textPrimary);
-  static const heading = TextStyle(fontSize: 17, height: 1.3, fontWeight: FontWeight.w600, color: HmColors.textPrimary);
-  static const body = TextStyle(fontSize: 15, height: 1.45, color: HmColors.textBody);
-  static const label = TextStyle(fontSize: 13, height: 1.3, fontWeight: FontWeight.w600, color: HmColors.textPrimary);
-  static const caption = TextStyle(fontSize: 12, height: 1.35, color: HmColors.textSecondary);
-  static const price = TextStyle(fontSize: 20, height: 1.2, fontWeight: FontWeight.w700, color: HmColors.brandPrimary);
+  static const display = TextStyle(fontFamily: HmFonts.family, fontSize: 28, height: 1.2, fontWeight: FontWeight.w700, color: HmColors.textPrimary);
+  static const title = TextStyle(fontFamily: HmFonts.family, fontSize: 22, height: 1.25, fontWeight: FontWeight.w700, color: HmColors.textPrimary);
+  static const heading = TextStyle(fontFamily: HmFonts.family, fontSize: 17, height: 1.3, fontWeight: FontWeight.w600, color: HmColors.textPrimary);
+  static const body = TextStyle(fontFamily: HmFonts.family, fontSize: 15, height: 1.45, color: HmColors.textBody);
+  static const label = TextStyle(fontFamily: HmFonts.family, fontSize: 13, height: 1.3, fontWeight: FontWeight.w600, color: HmColors.textPrimary);
+  static const caption = TextStyle(fontFamily: HmFonts.family, fontSize: 12, height: 1.35, color: HmColors.textSecondary);
+  static const price = TextStyle(fontFamily: HmFonts.family, fontSize: 20, height: 1.2, fontWeight: FontWeight.w700, color: HmColors.brandPrimary);
 }
 
 /// The one breakpoint the app cares about. The designs are 390pt wide; above
