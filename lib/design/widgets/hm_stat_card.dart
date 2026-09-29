@@ -19,7 +19,8 @@ class HmStatCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: HmColors.textSecondary)),
+            // Two lines: "Earned this month" does not fit a third of a phone.
+            Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: HmColors.textSecondary)),
             const SizedBox(height: HmSpace.xs),
             FittedBox(
               fit: BoxFit.scaleDown,

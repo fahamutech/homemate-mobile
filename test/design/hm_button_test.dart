@@ -93,4 +93,28 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('hm-button-Send')));
     expect(taps, 0);
   });
+
+  testWidgets('a screen reader meets a button of its own, next to the text around it, and can press it', (tester) async {
+    final semantics = tester.ensureSemantics();
+    var taps = 0;
+    await tester.pumpWidget(themed(Column(children: [
+      const Text('Neema Mushi'),
+      HmButton(label: 'Confirm move-in', onPressed: () => taps++),
+      const HmButton(label: 'Locked', onPressed: null),
+    ])));
+
+    final button = tester.getSemantics(find.byKey(const ValueKey('hm-button-Confirm move-in')));
+    expect(button.label, 'Confirm move-in', reason: 'the button is its own node, not merged into its surroundings');
+    expect(tester.getSemantics(find.text('Neema Mushi')).label, 'Neema Mushi');
+    expect(button, matchesSemantics(label: 'Confirm move-in', isButton: true, hasEnabledState: true, isEnabled: true, hasTapAction: true));
+
+    tester.semantics.tap(find.semantics.byLabel('Confirm move-in'));
+    expect(taps, 1);
+
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('hm-button-Locked'))),
+      matchesSemantics(label: 'Locked', isButton: true, hasEnabledState: true, isEnabled: false),
+    );
+    semantics.dispose();
+  });
 }

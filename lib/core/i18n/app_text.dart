@@ -30,6 +30,14 @@ class AppText {
     );
   }
 
+  /// A count phrase: `$key.one` when [count] is exactly one, else [key].
+  String _plural(String key, Object count) {
+    final one = count is num ? count == 1 : '$count' == '1';
+    final singular = '$key.one';
+    final hasSingular = kTranslations[locale]?[singular] != null || kTranslations[AppLocale.english]?[singular] != null;
+    return _s(one && hasSingular ? singular : key, {'count': count});
+  }
+
   // --- common ---------------------------------------------------------------
   String get next => _s('common.next');
   String get skip => _s('common.skip');
@@ -361,7 +369,7 @@ class AppText {
   String get listingStatusRejected => _s('listing.status.rejected');
   String get listingStatusRented => _s('listing.status.rented');
   String get listingStatusArchived => _s('listing.status.archived');
-  String listingOpenEnquiries(Object count) => _s('listing.openEnquiries', {'count': count});
+  String listingOpenEnquiries(Object count) => _plural('listing.openEnquiries', count);
   String listingSent(Object date) => _s('listing.sent', {'date': date});
   String get listingSeeNote => _s('listing.seeNote');
   String listingPerMonth(Object amount) => _s('listing.perMonth', {'amount': amount});
@@ -379,7 +387,7 @@ class AppText {
   String listingRentPerMonth(Object amount) => _s('listing.rentPerMonth', {'amount': amount});
   String get listingPaymentMode => _s('listing.paymentMode');
   String get listingDeposit => _s('listing.deposit');
-  String listingMonths(Object count) => _s('listing.months', {'count': count});
+  String listingMonths(Object count) => _plural('listing.months', count);
   String get listingAvailableFrom => _s('listing.availableFrom');
   String get listingLandlord => _s('listing.landlord');
   String get listingHistory => _s('listing.history');
@@ -517,7 +525,7 @@ class AppText {
   String get enquiriesChannelCall => _s('enquiries.channel.call');
   String get enquiriesChannelSms => _s('enquiries.channel.sms');
   String enquiriesMoveIn(Object date) => _s('enquiries.moveIn', {'date': date});
-  String enquiriesPeople(Object count) => _s('enquiries.people', {'count': count});
+  String enquiriesPeople(Object count) => _plural('enquiries.people', count);
   String enquiriesBudget(Object amount) => _s('enquiries.budget', {'amount': amount});
   String get enquiriesReply => _s('enquiries.reply');
   String get enquiriesOpen => _s('enquiries.open');
@@ -651,7 +659,7 @@ class AppText {
   String get landlordConfirmTerms => _s('landlordConfirm.terms');
   String get landlordConfirmRent => _s('landlordConfirm.rent');
   String get landlordConfirmDeposit => _s('landlordConfirm.deposit');
-  String landlordConfirmMonths(Object count) => _s('landlordConfirm.months', {'count': count});
+  String landlordConfirmMonths(Object count) => _plural('landlordConfirm.months', count);
   String get landlordConfirmMinLease => _s('landlordConfirm.minLease');
   String get landlordConfirmAvailable => _s('landlordConfirm.available');
   String get landlordConfirmYes => _s('landlordConfirm.yes');
@@ -694,7 +702,7 @@ class AppText {
   String get tenancyRent => _s('tenancy.rent');
   String get tenancyDeposit => _s('tenancy.deposit');
   String get tenancyLease => _s('tenancy.lease');
-  String tenancyLeaseMonths(Object count) => _s('tenancy.leaseMonths', {'count': count});
+  String tenancyLeaseMonths(Object count) => _plural('tenancy.leaseMonths', count);
   String get tenancyMoveIn => _s('tenancy.moveIn');
   String get tenancyMonthsLeft => _s('tenancy.monthsLeft');
   String get tenancyAgreement => _s('tenancy.agreement');

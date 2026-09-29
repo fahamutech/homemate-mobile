@@ -51,7 +51,8 @@ class _VerifiedHome extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(children: [
+                IntrinsicHeight(
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Expanded(child: HmStatCard(label: text.landlordHomeHomes, value: '${summary?.count('homes').round() ?? 0}')),
                   const SizedBox(width: HmSpace.md),
                   Expanded(child: HmStatCard(label: text.landlordHomeLet, value: '${summary?.count('let').round() ?? 0}')),
@@ -64,7 +65,8 @@ class _VerifiedHome extends ConsumerWidget {
                       onTap: () => context.go(Routes.landlordMoney),
                     ),
                   ),
-                ]),
+                  ]),
+                ),
                 const SizedBox(height: HmSpace.huge),
                 NeedsYouSection(role: AppRole.landlord, items: summary?.needsYou ?? const []),
                 const SizedBox(height: HmSpace.xxl),

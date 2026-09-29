@@ -50,7 +50,8 @@ class _VerifiedHome extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(children: [
+                IntrinsicHeight(
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Expanded(child: HmStatCard(label: text.brokerHomeLive, value: '${summary?.count('liveListings').round() ?? 0}')),
                   const SizedBox(width: HmSpace.md),
                   Expanded(child: HmStatCard(label: text.brokerHomeOpen, value: '${summary?.count('openEnquiries').round() ?? 0}')),
@@ -62,7 +63,8 @@ class _VerifiedHome extends ConsumerWidget {
                       sub: 'TZS',
                     ),
                   ),
-                ]),
+                  ]),
+                ),
                 const SizedBox(height: HmSpace.huge),
                 NeedsYouSection(role: AppRole.broker, items: summary?.needsYou ?? const []),
                 const SizedBox(height: HmSpace.xxl),
