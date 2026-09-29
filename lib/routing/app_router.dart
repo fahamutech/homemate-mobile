@@ -12,7 +12,12 @@ import '../features/auth/presentation/profile_setup_screen.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/dev/widget_catalogue_screen.dart';
+import '../features/broker/presentation/broker_home_screen.dart';
+import '../features/broker/presentation/broker_intro_screen.dart';
 import '../features/partner_shared/presentation/landlord_confirm_placeholder.dart';
+import '../features/partner_shared/presentation/setup/application_status_screen.dart';
+import '../features/partner_shared/presentation/setup/partner_setup_screen.dart';
+import '../features/partner_shared/presentation/setup/setup_step.dart';
 import '../features/partner_shared/presentation/partner_home_placeholder.dart';
 import '../features/partner_shared/presentation/partner_profile_screen.dart';
 import '../features/partner_shared/presentation/partner_shell.dart';
@@ -75,26 +80,28 @@ class _AuthRefresh extends ChangeNotifier {
 /// A deep link opened while signed out, kept until sign-in finishes.
 final pendingDeepLinkProvider = Provider<PendingDeepLink>((_) => PendingDeepLink());
 
-/// A partner shell: five branches in the tab order of `nav_tabs.dart`. The
-/// first is the role's home and the last its profile; the middle three are
-/// placeholders the broker (T09) and landlord (T10) workspaces replace.
-StatefulShellRoute _partnerShell(AppRole role, List<(String, String Function(AppText)?)> tabs) =>
+/// A partner shell: five branches in the tab order of `nav_tabs.dart`, each
+/// a path and the screen at its root.
+StatefulShellRoute _partnerShell(AppRole role, List<(String, Widget Function(BuildContext))> tabs) =>
     StatefulShellRoute.indexedStack(
       builder: (_, __, shell) => PartnerShell(role: role, shell: shell),
       branches: [
-        for (final (index, (path, title)) in tabs.indexed)
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: path,
-              builder: (context, _) => switch (index) {
-                0 => PartnerHomePlaceholder(role: role),
-                4 => PartnerProfileScreen(role: role),
-                _ => PartnerTabPlaceholder(role: role, title: title!(context.text)),
-              },
-            ),
-          ]),
+        for (final (path, screen) in tabs)
+          StatefulShellBranch(routes: [GoRoute(path: path, builder: (context, _) => screen(context))]),
       ],
     );
+
+/// The setup screens every partner role has, outside the tabs.
+List<GoRoute> _partnerSetupRoutes(AppRole role) => [
+      GoRoute(
+        path: Routes.partnerSetup(role),
+        builder: (_, state) => PartnerSetupScreen(
+          role: role,
+          initialStep: SetupStep.fromName(state.uri.queryParameters['step']) ?? SetupStep.details,
+        ),
+      ),
+      GoRoute(path: Routes.partnerApplication(role), builder: (_, __) => ApplicationStatusScreen(role: role)),
+    ];
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _AuthRefresh(ref);
@@ -165,19 +172,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         redirect: (_, state) => Routes.landlordConfirm(state.pathParameters['propertyId']!),
       ),
       _partnerShell(AppRole.broker, [
-        (Routes.brokerHome, null),
-        (Routes.brokerListings, (AppText text) => text.navListings),
-        (Routes.brokerEnquiries, (AppText text) => text.navEnquiries),
-        (Routes.brokerEarnings, (AppText text) => text.navEarnings),
-        (Routes.brokerProfile, null),
+        (Routes.brokerHome, (_) => const BrokerHomeScreen()),
+        (Routes.brokerListings, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navListings)),
+        (Routes.brokerEnquiries, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navEnquiries)),
+        (Routes.brokerEarnings, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navEarnings)),
+        (Routes.brokerProfile, (_) => const PartnerProfileScreen(role: AppRole.broker)),
       ]),
+      GoRoute(path: Routes.partnerIntro(AppRole.broker), builder: (_, __) => const BrokerIntroScreen()),
+      ..._partnerSetupRoutes(AppRole.broker),
       _partnerShell(AppRole.landlord, [
-        (Routes.landlordHome, null),
-        (Routes.landlordHomes, (AppText text) => text.navHomes),
-        (Routes.landlordTenants, (AppText text) => text.navTenants),
-        (Routes.landlordMoney, (AppText text) => text.navMoney),
-        (Routes.landlordProfile, null),
+        (Routes.landlordHome, (_) => const PartnerHomePlaceholder(role: AppRole.landlord)),
+        (Routes.landlordHomes, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navHomes)),
+        (Routes.landlordTenants, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navTenants)),
+        (Routes.landlordMoney, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navMoney)),
+        (Routes.landlordProfile, (_) => const PartnerProfileScreen(role: AppRole.landlord)),
       ]),
+      ..._partnerSetupRoutes(AppRole.landlord),
 
       // The five tabs keep their own navigation stacks, so moving between them
       // does not throw away where you were.

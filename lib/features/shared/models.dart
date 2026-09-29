@@ -764,6 +764,8 @@ class ReferenceData {
     this.regions = const [],
     this.districts = const [],
     this.wards = const [],
+    this.banks = const [],
+    this.mobileMoneyProviders = const [],
   });
 
   final List<ReferenceItem> propertyTypes;
@@ -772,8 +774,15 @@ class ReferenceData {
   final List<ReferenceItem> districts;
   final List<ReferenceItem> wards;
 
+  /// Where a partner can be paid (BRK-002c).
+  final List<ReferenceItem> banks;
+  final List<String> mobileMoneyProviders;
+
   List<ReferenceItem> districtsIn(String? regionId) =>
       regionId == null ? districts : districts.where((d) => d.parentId == regionId).toList();
+
+  List<ReferenceItem> wardsIn(String? districtId) =>
+      districtId == null ? const [] : wards.where((w) => w.parentId == districtId).toList();
 
   static List<ReferenceItem> _list(Object? raw) => (raw as List? ?? const [])
       .map((row) => ReferenceItem.fromJson(row as Map<String, dynamic>))
@@ -785,6 +794,8 @@ class ReferenceData {
         regions: _list(json['regions']),
         districts: _list(json['districts']),
         wards: _list(json['wards']),
+        banks: _list(json['banks']),
+        mobileMoneyProviders: [for (final p in (json['mobileMoneyProviders'] as List? ?? const [])) '$p'],
       );
 }
 
