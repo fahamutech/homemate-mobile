@@ -54,9 +54,13 @@ class HmBadge extends StatelessWidget {
               Icon(icon, size: 13, color: tone.text),
               const SizedBox(width: HmSpace.xs),
             ],
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tone.text),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tone.text),
+              ),
             ),
           ],
         ),

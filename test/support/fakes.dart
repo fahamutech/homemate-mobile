@@ -13,6 +13,10 @@ import 'package:homemate_mobile/design/theme.dart';
 import 'package:homemate_mobile/features/auth/data/auth_repository.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
 import 'package:homemate_mobile/features/auth/data/session_store.dart';
+import 'package:homemate_mobile/features/roles/data/account_role.dart';
+import 'package:homemate_mobile/features/roles/data/app_role.dart';
+import 'package:homemate_mobile/features/roles/data/role_preference_store.dart';
+import 'package:homemate_mobile/features/roles/data/role_repository.dart';
 import 'package:homemate_mobile/features/shared/activity_repository.dart';
 import 'package:homemate_mobile/core/location/location_providers.dart';
 import 'package:homemate_mobile/core/location/location_service.dart';
@@ -20,6 +24,12 @@ import 'package:homemate_mobile/features/shared/catalogue_repository.dart';
 import 'package:homemate_mobile/features/shared/journey_models.dart';
 import 'package:homemate_mobile/features/shared/journey_repository.dart';
 import 'package:homemate_mobile/features/shared/models.dart';
+
+import 'landlord_fakes.dart';
+import 'partner_fakes.dart';
+
+export 'landlord_fakes.dart';
+export 'partner_fakes.dart';
 
 /// A whole backend, in memory.
 ///
@@ -301,6 +311,8 @@ class FakeCatalogueRepository implements CatalogueRepository {
         parentId: 'region-dar',
       ),
     ],
+    banks: [ReferenceItem(id: 'bank-crdb', name: 'CRDB Bank', code: 'crdb')],
+    mobileMoneyProviders: ['mpesa', 'mixx_by_yas', 'airtel_money', 'halopesa'],
     wards: [
       ReferenceItem(
         id: 'ward-masaki',
@@ -520,6 +532,43 @@ class FakeActivityRepository implements ActivityRepository {
 ///
 /// Every test uses this, so no test invents its own provider graph — and a new
 /// dependency is added in one place rather than twenty.
+/// The account's roles, as the server keeps them (T01).
+///
+/// Refuses to switch to a role that is not active, exactly as
+/// `POST /app/me/active-role` does.
+class FakeRoleRepository implements RoleRepository {
+  FakeRoleRepository({List<AccountRole>? roles, this.lastActiveRole})
+      : roles = roles ?? [const AccountRole(role: AppRole.customer, status: 'active')];
+
+  List<AccountRole> roles;
+  AppRole? lastActiveRole;
+  final List<AppRole> switches = [];
+
+  /// A customer who also holds [role] in [status].
+  static FakeRoleRepository withPartner(AppRole role, {String status = 'active', AppRole? lastActiveRole}) =>
+      FakeRoleRepository(
+        roles: [
+          const AccountRole(role: AppRole.customer, status: 'active'),
+          AccountRole(role: role, status: status),
+        ],
+        lastActiveRole: lastActiveRole,
+      );
+
+  @override
+  Future<RoleSnapshot> fetch() async => RoleSnapshot(roles: List.of(roles), lastActiveRole: lastActiveRole);
+
+  @override
+  Future<RoleSwitch> setActiveRole(AppRole role) async {
+    final active = role == AppRole.customer || roles.any((r) => r.role == role && r.isActive);
+    if (!active) {
+      throw ApiException(code: 'ROLE_NOT_ACTIVE', message: 'Your ${role.name} role is not active', statusCode: 403);
+    }
+    switches.add(role);
+    lastActiveRole = role;
+    return RoleSwitch(token: 'session-token-${role.name}', activeRole: role);
+  }
+}
+
 class TestHarness {
   TestHarness({
     FakeAuthRepository? auth,
@@ -527,8 +576,12 @@ class TestHarness {
     FakeActivityRepository? activity,
     FakeJourneyRepository? journey,
     FakeLocationService? location,
+    FakeRoleRepository? roles,
+    FakeIdentityRepository? identity,
     this.locale = AppLocale.english,
   })  : auth = auth ?? FakeAuthRepository(),
+        roles = roles ?? FakeRoleRepository(),
+        identity = identity ?? FakeIdentityRepository(),
         catalogue = catalogue ?? FakeCatalogueRepository(),
         activity = activity ?? FakeActivityRepository(),
         journey = journey ?? FakeJourneyRepository(),
@@ -538,6 +591,23 @@ class TestHarness {
   final FakeCatalogueRepository catalogue;
   final FakeActivityRepository activity;
   final FakeJourneyRepository journey;
+  final FakeRoleRepository roles;
+
+  // The partner workspaces (T09/T10).
+  final FakeIdentityRepository identity;
+  /// Starts from the same roles the role repository holds, so an active
+  /// broker there is an active broker here.
+  late final FakeOnboardingRepository onboarding = FakeOnboardingRepository(identity: identity)
+    ..statuses.addAll({for (final r in roles.roles) if (r.role.isPartner) r.role.name: r.status});
+  final FakeListingsRepository listings = FakeListingsRepository();
+  final FakeEnquiriesRepository enquiries = FakeEnquiriesRepository();
+  final FakeMoneyRepository money = FakeMoneyRepository();
+  final FakeConfirmationsRepository confirmations = FakeConfirmationsRepository();
+  final FakeTenanciesRepository tenancies = FakeTenanciesRepository();
+  final FakePhotoSource photos = FakePhotoSource();
+  final FakeWebpEncoder webp = FakeWebpEncoder();
+  final FakeContactLauncher contact = FakeContactLauncher();
+  final InMemoryRolePreferenceStore rolePreferences = InMemoryRolePreferenceStore();
 
   /// Defaults to `unknown` — nobody has been asked — which is the state the
   /// soft-ask card exists for, and the one a fresh install is really in.
@@ -558,6 +628,18 @@ class TestHarness {
         journeyRepositoryProvider.overrideWithValue(journey),
         locationServiceProvider.overrideWithValue(location),
         sessionStoreProvider.overrideWithValue(store),
+        roleRepositoryProvider.overrideWithValue(roles),
+        identityRepositoryProvider.overrideWithValue(identity),
+        onboardingRepositoryProvider.overrideWithValue(onboarding),
+        listingsRepositoryProvider.overrideWithValue(listings),
+        enquiriesRepositoryProvider.overrideWithValue(enquiries),
+        moneyRepositoryProvider.overrideWithValue(money),
+        confirmationsRepositoryProvider.overrideWithValue(confirmations),
+        tenanciesRepositoryProvider.overrideWithValue(tenancies),
+        photoSourceProvider.overrideWithValue(photos),
+        webpEncoderProvider.overrideWithValue(webp),
+        contactLauncherProvider.overrideWithValue(contact),
+        rolePreferenceStoreProvider.overrideWithValue(rolePreferences),
         localeStoreProvider.overrideWithValue(InMemoryLocaleStore(locale)),
       ];
 

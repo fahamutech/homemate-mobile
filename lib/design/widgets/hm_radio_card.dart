@@ -13,6 +13,7 @@ class HmRadioCard extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.badge,
+    this.details = const [],
   });
 
   final IconData icon;
@@ -23,6 +24,9 @@ class HmRadioCard extends StatelessWidget {
 
   /// Usually an [HmBadge] — "Active", "Waiting for review".
   final Widget? badge;
+
+  /// Ticked points under the option — what a role lets you do (ROL-004).
+  final List<String> details;
 
   @override
   Widget build(BuildContext context) {
@@ -43,40 +47,96 @@ class HmRadioCard extends StatelessWidget {
               color: selected ? HmColors.brandSubtle : HmColors.bgPrimary,
               borderRadius: radius,
               border: Border.all(
-                color: selected ? HmColors.brandPrimary : HmColors.borderDefault,
+                color: selected
+                    ? HmColors.brandPrimary
+                    : HmColors.borderDefault,
                 width: selected ? 1.5 : 1,
               ),
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: selected ? HmColors.bgPrimary : HmColors.brandSubtle,
-                    borderRadius: BorderRadius.circular(HmRadius.md),
-                  ),
-                  child: Icon(icon, size: 24, color: HmColors.brandPrimary),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? HmColors.bgPrimary
+                            : HmColors.brandSubtle,
+                        borderRadius: BorderRadius.circular(HmRadius.md),
+                      ),
+                      child: Icon(icon, size: 24, color: HmColors.brandPrimary),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: HmColors.textPrimary,
+                            ),
+                          ),
+                          if (subtitle.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              subtitle,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                height: 18 / 13,
+                                color: HmColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                          if (badge != null) ...[
+                            const SizedBox(height: HmSpace.sm),
+                            badge!,
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: HmSpace.md),
+                    Icon(
+                      selected
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 22,
+                      color: selected
+                          ? HmColors.brandPrimary
+                          : HmColors.borderStrong,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
+                for (final point in details) ...[
+                  const SizedBox(height: HmSpace.lg),
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: HmColors.textPrimary)),
-                      const SizedBox(height: 3),
-                      Text(subtitle, style: const TextStyle(fontSize: 13, height: 18 / 13, color: HmColors.textSecondary)),
-                      if (badge != null) ...[const SizedBox(height: HmSpace.sm), badge!],
+                      const Icon(
+                        Icons.check_rounded,
+                        size: 18,
+                        color: HmColors.brandPrimary,
+                      ),
+                      const SizedBox(width: HmSpace.md),
+                      Expanded(
+                        child: Text(
+                          point,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 20 / 14,
+                            color: HmColors.textBody,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(width: HmSpace.md),
-                Icon(
-                  selected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-                  size: 22,
-                  color: selected ? HmColors.brandPrimary : HmColors.borderStrong,
-                ),
+                ],
               ],
             ),
           ),

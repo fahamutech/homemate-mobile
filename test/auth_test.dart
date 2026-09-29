@@ -4,6 +4,7 @@ import 'package:homemate_mobile/core/network/api_exception.dart';
 import 'package:homemate_mobile/core/providers.dart';
 import 'package:homemate_mobile/features/auth/data/auth_controller.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
+import 'package:homemate_mobile/features/roles/data/app_role.dart';
 import 'package:homemate_mobile/features/auth/data/session_store.dart';
 import 'package:homemate_mobile/features/auth/presentation/otp_screen.dart';
 import 'package:homemate_mobile/features/auth/presentation/phone_field.dart';
@@ -420,6 +421,8 @@ void main() {
         phoneNumber: '+255712345678',
         hasPin: true,
       );
+      // They already said "Find a home" on AUTH-001 (partner roles T07).
+      await harness.rolePreferences.setStartedAs('cust-1', AppRole.customer);
       final container = ProviderContainer(overrides: harness.overrides);
       addTearDown(container.dispose);
 

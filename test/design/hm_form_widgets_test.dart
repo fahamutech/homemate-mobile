@@ -116,6 +116,19 @@ void main() {
       expect(decorationOf(tester, find.byKey(const ValueKey('radio-card-Landlord'))).color, HmColors.bgPrimary);
     });
 
+    testWidgets('can list what the option gives you, each point ticked', (tester) async {
+      await tester.pumpWidget(themed(HmRadioCard(
+        icon: Icons.key_rounded,
+        title: 'Landlord',
+        subtitle: 'You own homes',
+        selected: true,
+        details: const ['Rent comes to you', 'Every lease in one place'],
+        onTap: () {},
+      )));
+      expect(find.text('Rent comes to you'), findsOneWidget);
+      expect(find.byIcon(Icons.check_rounded), findsNWidgets(2));
+    });
+
     testWidgets('tapping picks it, and it can carry a badge', (tester) async {
       var tapped = false;
       await tester.pumpWidget(themed(HmRadioCard(
