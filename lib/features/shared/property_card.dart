@@ -292,7 +292,7 @@ class _SaveButton extends StatelessWidget {
         shape: const CircleBorder(),
         child: IconButton(
           // The label says what tapping does, not what the icon looks like.
-          tooltip: saved ? 'Remove from saved' : 'Save this property',
+          tooltip: saved ? context.text.savedRemove : context.text.savedAdd,
           onPressed: onPressed,
           iconSize: dense ? 16 : 20,
           padding: dense ? const EdgeInsets.all(HmSpace.md) : null,

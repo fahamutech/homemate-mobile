@@ -124,18 +124,6 @@ class CheckoutEligibility {
   /// restart.
   bool get hasStarted => bookingId != null;
 
-  /// The sentence above the button. It says *why* the customer may pay, which
-  /// is the difference between a button someone trusts and one they do not.
-  String get reasonLabel => switch (route) {
-        'inquiry_accepted' =>
-          'Your enquiry was accepted. Pay to secure this home — it is confirmed once we verify your payment.',
-        'booking' => 'You have started paying for this home. Finish paying to secure it.',
-        'blocked' => 'The landlord declined this application.',
-        'inquiry_pending' =>
-          'Your enquiry is with the landlord. You can pay once they accept it.',
-        _ => 'Send an enquiry first. You can pay once the landlord accepts it.',
-      };
-
   factory CheckoutEligibility.fromJson(Map<String, dynamic> json) => CheckoutEligibility(
         propertyId: json['propertyId'] as String? ?? '',
         available: json['available'] as bool? ?? false,
@@ -278,15 +266,6 @@ class PaymentMethodOption {
   final String kind;
   final String? provider;
   final String? instructions;
-
-  /// "Mobile Money", "Visa, Mastercard" — the second line under the name.
-  String get kindLabel => switch (kind) {
-        'mobile_money' => 'Mobile Money',
-        'card' => 'Visa, Mastercard',
-        'bank_transfer' => 'Direct Bank Deposit',
-        'cash' => 'Cash',
-        _ => kind.replaceAll('_', ' '),
-      };
 
   /// Only mobile money asks for a number to push the prompt to.
   bool get needsPhoneNumber => kind == 'mobile_money';
@@ -537,13 +516,6 @@ class LeaseAgreement {
   /// download that cannot work.
   bool get exists => id != null;
   bool get hasDocument => (documentUrl ?? '').isNotEmpty;
-
-  String get leaseTypeLabel => switch (leaseType) {
-        'fixed_term' => 'Fixed Term',
-        'periodic' => 'Periodic',
-        'month_to_month' => 'Month to Month',
-        _ => 'Fixed Term',
-      };
 
   factory LeaseAgreement.fromJson(Map<String, dynamic> json) => LeaseAgreement(
         bookingReference: json['booking_reference'] as String? ?? '',

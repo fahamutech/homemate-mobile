@@ -1189,6 +1189,25 @@ const Map<String, String> _en = {
   'inquiryDetail.oneADay': 'You can send one reminder a day.',
   'inquiryDetail.someonePaying': 'Someone else is paying for this home at the moment. If they do not finish, it becomes available again within ten minutes.',
   'inquiryDetail.payNow': 'Pay now to secure it',
+
+  // --- Checkout reasons and methods (PAY) ------------------------------------
+  'checkout.reason.accepted': 'Your enquiry was accepted. Pay to secure this home — it is confirmed once we verify your payment.',
+  'checkout.reason.booking': 'You have started paying for this home. Finish paying to secure it.',
+  'checkout.reason.blocked': 'The landlord declined this application.',
+  'checkout.reason.pending': 'Your enquiry is with the landlord. You can pay once they accept it.',
+  'checkout.reason.enquireFirst': 'Send an enquiry first. You can pay once the landlord accepts it.',
+  'payment.kind.mobileMoney': 'Mobile Money',
+  'payment.kind.card': 'Visa, Mastercard',
+  'payment.kind.bank': 'Direct Bank Deposit',
+  'payment.kind.cash': 'Cash',
+  'hold.expired': 'Your hold has expired',
+  'hold.held': 'This home is held for you',
+  'hold.expiredBody': 'Someone else can now start paying for it. Try again to take it back.',
+  'hold.heldBody': 'Nobody else can pay for it while the timer runs.',
+  'hold.minutesLeft': '{minutes} minutes remaining',
+  'hold.underAMinute': 'Less than a minute remaining',
+  'prompt.sayWhy': 'Please say why',
+  'phone.invalid': 'Enter a Tanzanian mobile number, like 0712 345 678',
 };
 
 const Map<String, String> _sw = {
@@ -2367,6 +2386,25 @@ const Map<String, String> _sw = {
   'inquiryDetail.oneADay': 'Unaweza kutuma ukumbusho mmoja kwa siku.',
   'inquiryDetail.someonePaying': 'Mtu mwingine analipia nyumba hii kwa sasa. Asipomaliza, itapatikana tena ndani ya dakika kumi.',
   'inquiryDetail.payNow': 'Lipa sasa kuihakikisha',
+
+  // --- Checkout reasons and methods (PAY) ------------------------------------
+  'checkout.reason.accepted': 'Ombi lako limekubaliwa. Lipa kuihakikisha nyumba hii — inathibitishwa tukishathibitisha malipo yako.',
+  'checkout.reason.booking': 'Umeanza kulipia nyumba hii. Maliza kulipa kuihakikisha.',
+  'checkout.reason.blocked': 'Mwenye nyumba amekataa ombi hili.',
+  'checkout.reason.pending': 'Ombi lako liko kwa mwenye nyumba. Unaweza kulipa akishalikubali.',
+  'checkout.reason.enquireFirst': 'Tuma ombi kwanza. Unaweza kulipa mwenye nyumba akishalikubali.',
+  'payment.kind.mobileMoney': 'Pesa kwa Simu',
+  'payment.kind.card': 'Visa, Mastercard',
+  'payment.kind.bank': 'Kuweka Benki Moja kwa Moja',
+  'payment.kind.cash': 'Pesa taslimu',
+  'hold.expired': 'Muda wako wa kushikilia umeisha',
+  'hold.held': 'Nyumba hii imeshikiliwa kwa ajili yako',
+  'hold.expiredBody': 'Mtu mwingine sasa anaweza kuanza kuilipia. Jaribu tena kuichukua.',
+  'hold.heldBody': 'Hakuna mwingine anayeweza kuilipia muda ukiendelea.',
+  'hold.minutesLeft': 'Zimebaki dakika {minutes}',
+  'hold.underAMinute': 'Imebaki chini ya dakika moja',
+  'prompt.sayWhy': 'Tafadhali eleza sababu',
+  'phone.invalid': 'Weka namba ya simu ya Tanzania, kama 0712 345 678',
 };
 
 /// Fails a debug build when a language is missing a key English has, so an

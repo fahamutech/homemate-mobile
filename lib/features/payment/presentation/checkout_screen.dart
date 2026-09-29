@@ -20,6 +20,7 @@ import '../../shared/journey_providers.dart';
 import '../../shared/service_fee_card.dart';
 import 'hold_banner.dart';
 import '../../../core/i18n/app_text.dart';
+import 'checkout_labels.dart';
 
 /// CUS-011 and CUS-014 — reserving a home and paying for it.
 ///
@@ -562,7 +563,7 @@ class _MethodTile extends StatelessWidget {
                       children: [
                         Text(option.name, style: HmText.label.copyWith(fontSize: 14)),
                         const SizedBox(height: HmSpace.xxs),
-                        Text(option.kindLabel, style: HmText.caption),
+                        Text(paymentKindLabel(context.text, option.kind), style: HmText.caption),
                       ],
                     ),
                   ),

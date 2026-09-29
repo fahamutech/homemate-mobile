@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../design/tokens.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// A Tanzanian mobile number, entered the way people actually write one.
 ///
@@ -17,14 +18,15 @@ class PhoneField extends StatelessWidget {
     this.enabled = true,
     this.autofocus = false,
     this.onSubmitted,
-    this.label = 'Phone number',
+    this.label,
   });
 
   final TextEditingController controller;
   final bool enabled;
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
-  final String label;
+  /// Defaults to "Phone number" in the reader's language.
+  final String? label;
 
   /// Turns whatever was typed into `+255XXXXXXXXX`, or null if it cannot be.
   static String? normalise(String input) {
@@ -39,8 +41,8 @@ class PhoneField extends StatelessWidget {
     return null;
   }
 
-  static String? validate(String? value) =>
-      normalise(value ?? '') == null ? 'Enter a Tanzanian mobile number, like 0712 345 678' : null;
+  static String? validate(AppText text, String? value) =>
+      normalise(value ?? '') == null ? text.phoneInvalid : null;
 
   @override
   Widget build(BuildContext context) {
@@ -56,13 +58,13 @@ class PhoneField extends StatelessWidget {
       ],
       textInputAction: TextInputAction.done,
       onFieldSubmitted: onSubmitted,
-      validator: validate,
+      validator: (value) => validate(context.text, value),
       decoration: InputDecoration(
-        labelText: label,
+        labelText: label ?? context.text.partnerDetailsPhone,
         hintText: '0712 345 678',
         prefixIcon: const Padding(
           padding: EdgeInsets.symmetric(horizontal: HmSpace.xxl),
-          child: Text('🇹🇿  +255', style: HmText.body),
+          child: Text('+255', style: HmText.body),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
       ),

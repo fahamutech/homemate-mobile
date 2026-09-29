@@ -38,4 +38,17 @@ void main() {
     }
     expect(offenders, isEmpty, reason: '${offenders.length} literals:\n${offenders.join('\n')}');
   });
+
+  test('no emoji anywhere in the app: the bundled font has none, so each would draw as a box', () {
+    final emoji = RegExp(r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]', unicode: true);
+    final offenders = <String>[];
+    for (final file in Directory('lib').listSync(recursive: true).whereType<File>()) {
+      if (!file.path.endsWith('.dart')) continue;
+      final lines = file.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        if (emoji.hasMatch(lines[i])) offenders.add('${file.path}:${i + 1}: ${lines[i].trim()}');
+      }
+    }
+    expect(offenders, isEmpty, reason: offenders.join('\n'));
+  });
 }

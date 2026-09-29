@@ -19,6 +19,7 @@ import '../../shared/models.dart';
 import '../../shared/property_image.dart';
 import '../data/inquiry_providers.dart';
 import '../../../core/i18n/app_text.dart';
+import '../../payment/presentation/checkout_labels.dart';
 
 /// CUS-007d/e/f. One enquiry: where it has got to, and what to do next.
 ///
@@ -367,7 +368,7 @@ class _PayNow extends ConsumerWidget {
       data: (data) => Column(
         children: [
           HmNotice(
-            message: data.reasonLabel,
+            message: checkoutReason(context.text, data.route),
             icon: Icons.verified_outlined,
             colour: HmColors.brandPrimary,
           ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../design/tokens.dart';
 import '../../shared/journey_models.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// The ten-minute countdown that runs above a checkout.
 ///
@@ -127,14 +128,14 @@ class _HoldBannerState extends State<HoldBanner> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  expired ? 'Your hold has expired' : 'This home is held for you',
+                  expired ? context.text.holdExpired : context.text.holdHeld,
                   style: HmText.label.copyWith(fontSize: 13, color: colour),
                 ),
                 const SizedBox(height: HmSpace.xxs),
                 Text(
                   expired
-                      ? 'Someone else can now start paying for it. Try again to take it back.'
-                      : 'Nobody else can pay for it while the timer runs.',
+                      ? context.text.holdExpiredBody
+                      : context.text.holdHeldBody,
                   style: HmText.caption.copyWith(fontSize: 12),
                 ),
               ],
@@ -153,8 +154,8 @@ class _HoldBannerState extends State<HoldBanner> {
                 // A ticking digit read out every second is unusable with a
                 // screen reader, so the live text says the minutes only.
                 semanticsLabel: minutes > 0
-                    ? '$minutes minutes remaining'
-                    : 'Less than a minute remaining',
+                    ? context.text.holdMinutesLeft(minutes)
+                    : context.text.holdUnderAMinute,
                 style: const TextStyle(
                   color: HmColors.textOnBrand,
                   fontWeight: FontWeight.w700,

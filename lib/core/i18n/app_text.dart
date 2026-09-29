@@ -1191,6 +1191,25 @@ class AppText {
   String get inquiryDetailOneADay => _s('inquiryDetail.oneADay');
   String get inquiryDetailSomeonePaying => _s('inquiryDetail.someonePaying');
   String get inquiryDetailPayNow => _s('inquiryDetail.payNow');
+
+  // --- Checkout reasons and methods (PAY) ------------------------------------
+  String get checkoutReasonAccepted => _s('checkout.reason.accepted');
+  String get checkoutReasonBooking => _s('checkout.reason.booking');
+  String get checkoutReasonBlocked => _s('checkout.reason.blocked');
+  String get checkoutReasonPending => _s('checkout.reason.pending');
+  String get checkoutReasonEnquireFirst => _s('checkout.reason.enquireFirst');
+  String get paymentKindMobileMoney => _s('payment.kind.mobileMoney');
+  String get paymentKindCard => _s('payment.kind.card');
+  String get paymentKindBank => _s('payment.kind.bank');
+  String get paymentKindCash => _s('payment.kind.cash');
+  String get holdExpired => _s('hold.expired');
+  String get holdHeld => _s('hold.held');
+  String get holdExpiredBody => _s('hold.expiredBody');
+  String get holdHeldBody => _s('hold.heldBody');
+  String holdMinutesLeft(Object minutes) => _s('hold.minutesLeft', {'minutes': minutes});
+  String get holdUnderAMinute => _s('hold.underAMinute');
+  String get promptSayWhy => _s('prompt.sayWhy');
+  String get phoneInvalid => _s('phone.invalid');
 }
 
 /// Hands [AppText] to the widget tree through `Localizations`, so a language

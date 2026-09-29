@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
+import '../../core/i18n/app_text.dart';
 
 /// "Tell us why" — the dialog used wherever an action needs a reason.
 ///
@@ -16,9 +17,9 @@ class HmPrompt extends StatefulWidget {
     required this.title,
     required this.confirmLabel,
     this.message,
-    this.fieldLabel = 'Reason',
+    this.fieldLabel,
     this.hintText,
-    this.cancelLabel = 'Cancel',
+    this.cancelLabel,
     this.destructive = false,
     this.required = true,
     this.capitalise = TextCapitalization.sentences,
@@ -27,9 +28,12 @@ class HmPrompt extends StatefulWidget {
   final String title;
   final String confirmLabel;
   final String? message;
-  final String fieldLabel;
+  /// Defaults to "Reason" in the reader's language.
+  final String? fieldLabel;
   final String? hintText;
-  final String cancelLabel;
+
+  /// Defaults to "Cancel" in the reader's language.
+  final String? cancelLabel;
   final bool destructive;
 
   /// When false, confirming with an empty field is allowed and returns ''.
@@ -42,9 +46,9 @@ class HmPrompt extends StatefulWidget {
     required String title,
     required String confirmLabel,
     String? message,
-    String fieldLabel = 'Reason',
+    String? fieldLabel,
     String? hintText,
-    String cancelLabel = 'Cancel',
+    String? cancelLabel,
     bool destructive = false,
     bool required = true,
     TextCapitalization capitalise = TextCapitalization.sentences,
@@ -81,7 +85,7 @@ class _HmPromptState extends State<HmPrompt> {
   void _confirm() {
     final value = _controller.text.trim();
     if (widget.required && value.isEmpty) {
-      setState(() => _error = 'Please say why');
+      setState(() => _error = context.text.promptSayWhy);
       return;
     }
     Navigator.of(context).pop(value);
@@ -108,7 +112,7 @@ class _HmPromptState extends State<HmPrompt> {
               textCapitalization: widget.capitalise,
               onSubmitted: (_) => _confirm(),
               decoration: InputDecoration(
-                labelText: widget.fieldLabel,
+                labelText: widget.fieldLabel ?? context.text.declineReason,
                 hintText: widget.hintText,
                 errorText: _error,
               ),
@@ -119,7 +123,7 @@ class _HmPromptState extends State<HmPrompt> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(widget.cancelLabel),
+          child: Text(widget.cancelLabel ?? context.text.cancel),
         ),
         FilledButton(
           onPressed: _confirm,
@@ -142,7 +146,7 @@ class HmConfirm {
     required String title,
     required String message,
     required String confirmLabel,
-    String cancelLabel = 'Cancel',
+    String? cancelLabel,
     bool destructive = false,
   }) async =>
       await showDialog<bool>(
@@ -153,7 +157,7 @@ class HmConfirm {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(cancelLabel),
+              child: Text(cancelLabel ?? dialogContext.text.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
