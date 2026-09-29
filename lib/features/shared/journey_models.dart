@@ -1,3 +1,4 @@
+import '../../core/i18n/app_text.dart';
 import '../../design/widgets/hm_money.dart';
 import 'models.dart';
 
@@ -396,7 +397,7 @@ class Rental {
 
   bool get hasAgreement => agreementId != null;
 
-  String get rentLabel => HmMoney.perMonthShort(monthlyRent, currency: currency);
+  String rentLabel(AppText text) => HmMoney.perMonth(text, monthlyRent, currency: currency, short: true);
 
   /// Whether the lease is close enough to its end to warrant a warning colour.
   bool get isEndingSoon => (daysRemaining ?? 999) <= 60;

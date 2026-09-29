@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:homemate_mobile/core/i18n/app_locale.dart';
 import 'package:homemate_mobile/core/i18n/app_text.dart';
 import 'package:homemate_mobile/core/i18n/language_picker.dart';
@@ -144,6 +146,21 @@ void main() {
       expect(find.text('Enquire'), findsNothing);
     });
 
+    testWidgets('reads the price, the amenities and the terms in Kiswahili too', (tester) async {
+      final harness = TestHarness();
+      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1'), locale: AppLocale.swahili));
+      await tester.pumpAndSettle();
+
+      // A month is a mwezi; the server's "Parking" and "monthly" are named in Kiswahili.
+      expect(find.textContaining('/mwezi'), findsWidgets);
+      expect(find.textContaining('/month'), findsNothing);
+      await reveal(tester, find.text('Maegesho'));
+      expect(find.text('Maegesho'), findsOneWidget);
+      await reveal(tester, find.text('Kila mwezi'));
+      expect(find.text('Kila mwezi'), findsOneWidget);
+      expect(find.text('Monthly'), findsNothing);
+    });
+
     testWidgets('checks out in Kiswahili', (tester) async {
       final harness = TestHarness();
       await tester.pumpWidget(harness.wrap(const CheckoutScreen(propertyId: 'prop-1'), locale: AppLocale.swahili));
@@ -173,5 +190,24 @@ void main() {
       expect(find.text('Inaonekana huna mtandao. Angalia muunganisho wako kisha ujaribu tena.'), findsOneWidget);
       expect(find.text('Jaribu tena'), findsOneWidget);
     });
+  });
+
+  group('dates', () {
+    // August is "Aug" in English and "Ago" in Kiswahili.
+    final day = DateTime(2026, 8, 3);
+
+    for (final (locale, expected) in [(AppLocale.swahili, '3 Ago 2026'), (AppLocale.english, '3 Aug 2026')]) {
+      testWidgets('read in ${locale.englishName} once that language loads', (tester) async {
+        final harness = TestHarness();
+        await tester.pumpWidget(harness.wrap(
+          // Like every screen, it reads the app's words, so it rebuilds when
+          // the language changes.
+          Builder(builder: (context) => Text(DateFormat('d MMM yyyy').format(day), semanticsLabel: context.text.back)),
+          locale: locale,
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text(expected), findsOneWidget);
+      });
+    }
   });
 }

@@ -13,6 +13,7 @@ import '../../../../../design/widgets/hm_section.dart';
 import '../../../data/partner_listing.dart';
 import 'charge_sheet.dart';
 import 'step_controller.dart';
+import '../../../../shared/reference_name.dart';
 
 /// BRK-030d: amenities, house rules, and charges on top of rent.
 class AmenitiesStep extends ConsumerStatefulWidget {
@@ -67,7 +68,7 @@ class _AmenitiesStepState extends ConsumerState<AmenitiesStep> {
           children: [
             for (final amenity in amenities)
               HmChoicePill(
-                label: amenity.name,
+                label: referenceName(context.text, code: amenity.code, name: amenity.name),
                 dense: true,
                 showCheck: true,
                 selected: _amenities.contains(amenity.id),

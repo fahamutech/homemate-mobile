@@ -24,7 +24,7 @@ class LeaseDetails extends ConsumerWidget {
 
   final LeaseAgreement lease;
 
-  static final _dayFormat = DateFormat('d MMM yyyy');
+  static DateFormat get _dayFormat => DateFormat('d MMM yyyy');
 
   static String typeLabel(AppText text, String? type) => switch (type) {
         'periodic' => text.leaseTypePeriodic,

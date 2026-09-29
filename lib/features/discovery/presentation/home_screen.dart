@@ -21,6 +21,7 @@ import '../../shared/property_image.dart';
 import '../data/search_providers.dart';
 import 'near_me_prompt.dart';
 import '../../shared/property_facts.dart';
+import '../../shared/reference_name.dart';
 
 /// CUS-001. What is waiting for you, then what is available, then what is
 /// close by.
@@ -372,7 +373,7 @@ class _CategoryChips extends StatelessWidget {
             }
             final type = types[index - 1];
             return HmChoicePill(
-              label: type.name,
+              label: referenceName(context.text, code: type.code, name: type.name),
               dense: true,
               selected: selected == type.id,
               onTap: () => onSelected(selected == type.id ? null : type.id),
@@ -501,8 +502,7 @@ class _NearbyCardState extends ConsumerState<_NearbyCard> {
                     ),
                     const SizedBox(height: HmSpace.md),
                     Text(
-                      HmMoney.perMonth(property.price, currency: property.currency)
-                          .replaceAll('/month', '/mo'),
+                      property.priceLabel(context.text, short: true),
                       style: HmText.price.copyWith(fontSize: 16),
                     ),
                   ],

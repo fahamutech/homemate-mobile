@@ -11,6 +11,7 @@ import '../../../../roles/data/app_role.dart';
 import '../../../data/partner_listing.dart';
 import '../../partner_photo.dart';
 import 'wizard_step.dart';
+import '../../../../shared/reference_name.dart';
 
 /// BRK-030g: every step at a glance with an Edit link, what stops it being
 /// sent (in the server's words), and what the partner earns.
@@ -26,7 +27,7 @@ class ReviewStep extends ConsumerWidget {
     final text = context.text;
     final reference = ref.watch(referenceDataProvider).valueOrNull;
     String name(List items, String? id) => items.where((i) => i.id == id).map((i) => i.name as String).firstOrNull ?? '';
-    final type = name(reference?.propertyTypes ?? const [], listing.propertyTypeId);
+    final type = referenceName(text, name: name(reference?.propertyTypes ?? const [], listing.propertyTypeId));
     final place = [
       name(reference?.wards ?? const [], listing.wardId),
       name(reference?.districts ?? const [], listing.districtId),

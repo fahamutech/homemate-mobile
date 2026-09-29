@@ -164,7 +164,7 @@ class _PropertyCardState extends ConsumerState<PropertyCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      property.priceLabelShort,
+                      property.priceLabel(context.text, short: true),
                       style: HmText.price.copyWith(fontSize: 15),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -263,7 +263,7 @@ class _PropertyCardState extends ConsumerState<PropertyCard> {
                   _Facts(property: property),
                   const SizedBox(height: HmSpace.md),
                   Text(
-                    property.priceLabelShort,
+                    property.priceLabel(context.text, short: true),
                     style: HmText.price,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

@@ -10,7 +10,6 @@ import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_async.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_money.dart';
-import '../../../design/widgets/hm_status_chip.dart';
 import '../../../routing/app_router.dart';
 import '../../discovery/data/search_providers.dart';
 import '../../shared/journey_providers.dart';
@@ -18,6 +17,8 @@ import '../../shared/models.dart';
 import '../../shared/property_image.dart';
 import '../../shared/service_fee_card.dart';
 import '../../../core/i18n/app_text.dart';
+import '../../../design/status_label.dart';
+import '../../shared/reference_name.dart';
 
 /// CUS-005. One listing, in full.
 ///
@@ -128,7 +129,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: HmSpace.md),
                   child: Text(
-                    property.propertyTypeName!.toUpperCase(),
+                    referenceName(context.text, name: property.propertyTypeName!).toUpperCase(),
                     style: HmText.caption.copyWith(
                       color: HmColors.brandPrimary,
                       fontWeight: FontWeight.w700,
@@ -155,7 +156,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Expanded(child: Text(property.priceLabel, style: HmText.price)),
+                  Expanded(child: Text(property.priceLabel(context.text), style: HmText.price)),
                   if (detail.monthlyTotal > (property.price ?? 0))
                     Text(
                       context.text.propertyAllIn(HmMoney.format(detail.monthlyTotal, currency: property.currency)),
@@ -184,7 +185,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
                       for (final amenity in detail.amenities)
                         Chip(
                           avatar: const Icon(Icons.check, size: 15, color: HmColors.brandPrimary),
-                          label: Text(amenity.name),
+                          label: Text(referenceName(context.text, code: amenity.code, name: amenity.name)),
                         ),
                     ],
                   ),
@@ -825,7 +826,7 @@ class _Terms extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <Widget>[
       if (detail.paymentFrequency != null)
-        _Row(label: context.text.propertyRentPaid, value: HmStatusChip.humanise(detail.paymentFrequency!)),
+        _Row(label: context.text.propertyRentPaid, value: statusLabel(context.text, detail.paymentFrequency!)),
       if (detail.minLeaseMonths != null)
         _Row(label: context.text.propertyMinStay, value: context.text.listingMonths(detail.minLeaseMonths!)),
       if (detail.noticePeriodDays != null)

@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/app_text.dart';
+import '../status_label.dart';
 import '../tokens.dart';
 
 /// A status, shown the same way everywhere.
 ///
 /// The backend speaks in `awaiting_payment` and `pending_review`; a person
-/// should read "Awaiting payment". Doing that conversion here means no screen
-/// carries its own half-complete map of statuses to words.
+/// should read "Awaiting payment" (or "Inasubiri malipo"). [statusLabel]
+/// does that once, so no screen carries its own map of statuses to words.
 class HmStatusChip extends StatelessWidget {
   const HmStatusChip(this.status, {super.key, this.dense = false});
 
   final String status;
   final bool dense;
-
-  static String humanise(String value) {
-    if (value.isEmpty) return value;
-    final words = value.replaceAll('_', ' ');
-    return words[0].toUpperCase() + words.substring(1);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +28,7 @@ class HmStatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(HmRadius.pill),
       ),
       child: Text(
-        humanise(status),
+        statusLabel(context.text, status),
         style: HmText.caption.copyWith(
           color: colour,
           fontWeight: FontWeight.w600,

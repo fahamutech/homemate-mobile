@@ -11,6 +11,7 @@ import '../../shared/catalogue_repository.dart';
 import '../../shared/models.dart';
 import '../data/search_providers.dart';
 import '../../../core/i18n/app_text.dart';
+import '../../shared/reference_name.dart';
 
 /// CUS-002b. The filter sheet, as the designs draw it.
 ///
@@ -379,7 +380,7 @@ class _PropertyTypes extends StatelessWidget {
           ),
           for (final type in types)
             HmChoicePill(
-              label: type.name,
+              label: referenceName(context.text, code: type.code, name: type.name),
               dense: true,
               selected: selected == type.id,
               onTap: () => onSelected(selected == type.id ? null : type.id),
@@ -418,7 +419,7 @@ class _AmenityGrid extends StatelessWidget {
               SizedBox(
                 width: width,
                 child: HmCheckTile(
-                  label: amenity.name,
+                  label: referenceName(context.text, code: amenity.code, name: amenity.name),
                   checked: selected.contains(amenity.id),
                   onChanged: (checked) {
                     final next = [...selected];
