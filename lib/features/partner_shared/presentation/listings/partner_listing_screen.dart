@@ -21,6 +21,7 @@ import '../../../roles/data/app_role.dart';
 import '../../data/partner_listing.dart';
 import '../../data/partner_providers.dart';
 import '../partner_photo.dart';
+import 'listing_broker_card.dart';
 import 'listing_status.dart';
 import 'wizard/wizard_step.dart';
 
@@ -161,6 +162,10 @@ class _Body extends StatelessWidget {
                 const SizedBox(height: HmSpace.xxl),
               ] else if (role == AppRole.broker && landlord?.confirmationStatus == 'pending') ...[
                 HmNote(text: text.listingLandlordPending, tone: HmNoteTone.info),
+                const SizedBox(height: HmSpace.xxl),
+              ],
+              if (role == AppRole.landlord && ListingBrokerCard.shows(listing)) ...[
+                ListingBrokerCard(listing: listing),
                 const SizedBox(height: HmSpace.xxl),
               ],
               HmCard(

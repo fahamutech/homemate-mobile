@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/i18n/app_text.dart';
-import '../../../../core/providers.dart';
-import '../../../../design/tokens.dart';
-import '../../../../design/widgets/hm_button.dart';
+import '../../../core/i18n/app_text.dart';
+import '../../../core/providers.dart';
+import '../../../design/tokens.dart';
+import '../../../design/widgets/hm_button.dart';
 
-/// Call and WhatsApp the customer — only ever shown to whoever answers.
-class EnquiryContactButtons extends ConsumerWidget {
-  const EnquiryContactButtons({super.key, required this.phone});
+/// Call and WhatsApp a person: the customer who enquired, the tenant, the
+/// broker who listed a landlord's home.
+class ContactButtons extends ConsumerWidget {
+  const ContactButtons({super.key, required this.phone});
 
   final String phone;
 

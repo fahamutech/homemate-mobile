@@ -61,7 +61,7 @@ class EarningsScreen extends ConsumerWidget {
               if (overview.items.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: HmSpace.xxl),
-                  child: Text(text.earningsEmpty, textAlign: TextAlign.center, style: HmText.body),
+                  child: Text(role == AppRole.landlord ? text.earningsEmptyLandlord : text.earningsEmpty, textAlign: TextAlign.center, style: HmText.body),
                 )
               else
                 HmCard(
@@ -80,10 +80,8 @@ class EarningsScreen extends ConsumerWidget {
                     ],
                   ]),
                 ),
-              if (role == AppRole.broker) ...[
-                const SizedBox(height: HmSpace.xl),
-                HmNote(text: text.earningsNote),
-              ],
+              const SizedBox(height: HmSpace.xl),
+              HmNote(text: role == AppRole.landlord ? text.earningsNoteLandlord : text.earningsNote),
             ],
           ),
         ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/data/auth_controller.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/session_store.dart';
+import '../features/landlord/data/landlord_repository.dart';
 import '../features/partner_shared/data/enquiries_repository.dart';
 import '../features/partner_shared/data/listings_repository.dart';
 import '../features/partner_shared/data/money_repository.dart';
@@ -120,6 +121,14 @@ final enquiriesRepositoryProvider = Provider<EnquiriesRepository>(
 
 final moneyRepositoryProvider = Provider<MoneyRepository>(
   (ref) => HttpMoneyRepository(ref.watch(apiClientProvider)),
+);
+
+final confirmationsRepositoryProvider = Provider<ConfirmationsRepository>(
+  (ref) => HttpConfirmationsRepository(ref.watch(apiClientProvider)),
+);
+
+final tenanciesRepositoryProvider = Provider<TenanciesRepository>(
+  (ref) => HttpTenanciesRepository(ref.watch(apiClientProvider)),
 );
 
 final catalogueRepositoryProvider = Provider<CatalogueRepository>(

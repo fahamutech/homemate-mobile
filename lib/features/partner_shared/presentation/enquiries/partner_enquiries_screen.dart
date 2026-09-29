@@ -16,7 +16,7 @@ import '../../data/partner_enquiry.dart';
 import '../../data/partner_providers.dart';
 import '../partner_photo.dart';
 import 'customer_avatar_initials.dart';
-import 'enquiry_contact_buttons.dart';
+import '../contact_buttons.dart';
 import 'enquiry_copy.dart';
 
 /// BRK-040: enquiries on the partner's homes, by New / Replied / Accepted /
@@ -159,7 +159,7 @@ class _EnquiryCard extends StatelessWidget {
             ),
             if (phone != null) ...[
               const SizedBox(width: HmSpace.md),
-              EnquiryContactButtons(phone: phone),
+              ContactButtons(phone: phone),
             ],
           ]),
         ],
