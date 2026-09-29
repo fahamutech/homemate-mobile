@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../core/i18n/app_text.dart';
 import '../core/providers.dart';
-import '../design/tokens.dart';
+import '../design/widgets/hm_bottom_nav.dart';
+import 'nav_tabs.dart';
 
-/// The bottom navigation the signed-in app lives inside.
+/// The bottom navigation the signed-in customer app lives inside.
 ///
 /// The badges come from the shared activity summary, so the number on the tab
 /// and the list behind it cannot disagree — and one `invalidate` after an
@@ -18,72 +19,21 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final text = context.text;
     final summary = ref.watch(activitySummaryProvider).valueOrNull;
-    final activityBadge =
-        (summary?.openInquiries ?? 0) + (summary?.paymentsAwaitingVerification ?? 0);
 
     return Scaffold(
       body: shell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: shell.currentIndex,
+      bottomNavigationBar: HmBottomNav(
+        tabs: customerTabs(
+          context.text,
+          savedCount: summary?.savedCount ?? 0,
+          activityCount: (summary?.openInquiries ?? 0) + (summary?.paymentsAwaitingVerification ?? 0),
+        ),
+        currentIndex: shell.currentIndex,
         // `initialLocation: true` on a re-tap pops that tab back to its root,
         // which is what a person expects from tapping the tab they are on.
-        onDestinationSelected: (index) =>
-            shell.goBranch(index, initialLocation: index == shell.currentIndex),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: text.navHome,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.search_outlined),
-            selectedIcon: const Icon(Icons.search),
-            label: text.navSearch,
-          ),
-          NavigationDestination(
-            // "Favourite", per the design's bottom bar. The tab holds more
-            // than saved listings — active rents and enquiries as well — so
-            // "Saved" would describe only a third of what is behind it.
-            icon: _Badged(
-              count: summary?.savedCount ?? 0,
-              child: const Icon(Icons.favorite_outline),
-            ),
-            selectedIcon: const Icon(Icons.favorite),
-            label: text.navFavourite,
-          ),
-          NavigationDestination(
-            icon: _Badged(count: activityBadge, child: const Icon(Icons.receipt_long_outlined)),
-            selectedIcon: const Icon(Icons.receipt_long),
-            label: text.navActivity,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: text.navProfile,
-          ),
-        ],
+        onSelected: (index) => shell.goBranch(index, initialLocation: index == shell.currentIndex),
       ),
-    );
-  }
-}
-
-/// A count on a tab icon, and nothing at all when there is none to show.
-class _Badged extends StatelessWidget {
-  const _Badged({required this.count, required this.child});
-
-  final int count;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (count <= 0) return child;
-    return Badge(
-      backgroundColor: HmColors.error,
-      // Read aloud as a number rather than as decoration.
-      label: Text(count > 99 ? '99+' : '$count'),
-      child: child,
     );
   }
 }

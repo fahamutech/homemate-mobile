@@ -9,6 +9,7 @@ class ApiException implements Exception {
     required this.message,
     this.statusCode,
     this.retryAfterSeconds,
+    this.details = const {},
   });
 
   final String code;
@@ -17,6 +18,15 @@ class ApiException implements Exception {
 
   /// Present on a 429 so a screen can count down instead of just refusing.
   final int? retryAfterSeconds;
+
+  /// What the server added to explain a refusal — `missingSteps` on a partner
+  /// application, `reasons` on a listing that is not ready.
+  final Map<String, dynamic> details;
+
+  /// A list of sentences from [details], or none.
+  List<String> detailList(String key) => [
+        for (final item in (details[key] as List? ?? const [])) '$item',
+      ];
 
   bool get isUnauthorized => statusCode == 401;
   bool get isForbidden => statusCode == 403;

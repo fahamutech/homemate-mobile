@@ -13,12 +13,17 @@ class HmColors {
   static const brandPrimary = Color(0xFF059676);
   static const brandPrimaryDark = Color(0xFF047857);
   static const brandPrimarySoft = Color(0x1F059676);
+  // color/brand/subtle and color/brand/border — the tint and edge of a
+  // selected card, a brand note and the role chip.
+  static const brandSubtle = Color(0xFFE6F5F2);
+  static const brandBorder = Color(0xFFA7F3D0);
 
   // color/text/*
   static const textPrimary = Color(0xFF0F1729);
   static const textBody = Color(0xFF4B5563);
   static const textSecondary = Color(0xFF64748B);
   static const textDisabled = Color(0xFF94A3B8);
+  static const textTertiary = Color(0xFF9CA3AF);
   static const textOnBrand = Color(0xFFFFFFFF);
 
   // color/bg/* and color/surface/*
@@ -35,6 +40,28 @@ class HmColors {
   static const error = Color(0xFFDC2626);
   static const warning = Color(0xFFF59E0B);
   static const info = Color(0xFF3B82F6);
+
+  // color/status/*-bg, *-border, *-text — the tinted pairs the partner
+  // components (badges, notes, attention rows, timeline dots) are drawn with.
+  static const greenBg = Color(0xFFD1FAE5);
+  static const greenText = Color(0xFF065F46);
+  static const successSubtle = Color(0xFFF0FDF4);
+  static const orangeBg = Color(0xFFFFF7ED);
+  static const orangeBorder = Color(0xFFFED7AA);
+  static const orangeText = Color(0xFFC2410C);
+  static const orangeAccent = Color(0xFFF97316);
+  static const blueBg = Color(0xFFEFF6FF);
+  static const blueBorder = Color(0xFFC7D2FE);
+  static const blueText = Color(0xFF1D4ED8);
+  static const redBg = Color(0xFFFEE2E2);
+  static const redText = Color(0xFF991B1B);
+  static const amberBg = Color(0xFFFEF3C7);
+  static const amberText = Color(0xFF92400E);
+  static const infoBg = Color(0xFFDBEAFE);
+  static const infoText = Color(0xFF1E3A5F);
+
+  /// Shadow under the selected option of a segmented control.
+  static const shadowSoft = Color(0x140F1729);
 
   /// Status chips share one mapping so a state never reads green on one screen
   /// and grey on another.

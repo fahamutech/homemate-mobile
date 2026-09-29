@@ -12,6 +12,10 @@ import 'api_exception.dart';
 abstract class SessionSource {
   String? get token;
 
+  /// `broker` or `landlord` while a partner shell is on screen, sent as
+  /// `X-Partner-Role` so an applicant's requests reach their workspace.
+  String? get partnerRole;
+
   /// Called when the API rejects the token, so the app can return to sign-in
   /// once rather than every screen discovering it separately.
   Future<void> onSessionRejected();
@@ -125,6 +129,7 @@ class ApiClient {
         if (hasBody) 'content-type': 'application/json',
         'accept': 'application/json',
         if (session?.token case final token?) 'authorization': 'Bearer $token',
+        if (session?.partnerRole case final role?) 'x-partner-role': role,
       };
 
   Map<String, dynamic> _decode(http.Response response) {
@@ -152,6 +157,7 @@ class ApiClient {
       message: payload['message'] as String? ?? ApiException.unexpected().message,
       statusCode: response.statusCode,
       retryAfterSeconds: retryAfter,
+      details: payload['details'] is Map<String, dynamic> ? payload['details'] as Map<String, dynamic> : const {},
     );
   }
 
