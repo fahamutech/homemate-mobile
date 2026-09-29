@@ -14,6 +14,7 @@ import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_status_chip.dart';
 import '../../../routing/app_router.dart';
 import '../../shared/customer_avatar.dart';
+import '../../roles/presentation/work_with_homemate_section.dart';
 
 /// CUS-019. The account: who you are, and the few things you can change.
 class ProfileScreen extends ConsumerWidget {
@@ -74,6 +75,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
 
           const SizedBox(height: HmSpace.section),
+          const WorkWithHomeMateSection(),
           const Text('Account', style: HmText.label),
           const SizedBox(height: HmSpace.md),
           _Item(

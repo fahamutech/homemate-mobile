@@ -13,6 +13,10 @@ import 'package:homemate_mobile/design/theme.dart';
 import 'package:homemate_mobile/features/auth/data/auth_repository.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
 import 'package:homemate_mobile/features/auth/data/session_store.dart';
+import 'package:homemate_mobile/features/roles/data/account_role.dart';
+import 'package:homemate_mobile/features/roles/data/app_role.dart';
+import 'package:homemate_mobile/features/roles/data/role_preference_store.dart';
+import 'package:homemate_mobile/features/roles/data/role_repository.dart';
 import 'package:homemate_mobile/features/shared/activity_repository.dart';
 import 'package:homemate_mobile/core/location/location_providers.dart';
 import 'package:homemate_mobile/core/location/location_service.dart';
@@ -520,6 +524,43 @@ class FakeActivityRepository implements ActivityRepository {
 ///
 /// Every test uses this, so no test invents its own provider graph — and a new
 /// dependency is added in one place rather than twenty.
+/// The account's roles, as the server keeps them (T01).
+///
+/// Refuses to switch to a role that is not active, exactly as
+/// `POST /app/me/active-role` does.
+class FakeRoleRepository implements RoleRepository {
+  FakeRoleRepository({List<AccountRole>? roles, this.lastActiveRole})
+      : roles = roles ?? [const AccountRole(role: AppRole.customer, status: 'active')];
+
+  List<AccountRole> roles;
+  AppRole? lastActiveRole;
+  final List<AppRole> switches = [];
+
+  /// A customer who also holds [role] in [status].
+  static FakeRoleRepository withPartner(AppRole role, {String status = 'active', AppRole? lastActiveRole}) =>
+      FakeRoleRepository(
+        roles: [
+          const AccountRole(role: AppRole.customer, status: 'active'),
+          AccountRole(role: role, status: status),
+        ],
+        lastActiveRole: lastActiveRole,
+      );
+
+  @override
+  Future<RoleSnapshot> fetch() async => RoleSnapshot(roles: List.of(roles), lastActiveRole: lastActiveRole);
+
+  @override
+  Future<RoleSwitch> setActiveRole(AppRole role) async {
+    final active = role == AppRole.customer || roles.any((r) => r.role == role && r.isActive);
+    if (!active) {
+      throw ApiException(code: 'ROLE_NOT_ACTIVE', message: 'Your ${role.name} role is not active', statusCode: 403);
+    }
+    switches.add(role);
+    lastActiveRole = role;
+    return RoleSwitch(token: 'session-token-${role.name}', activeRole: role);
+  }
+}
+
 class TestHarness {
   TestHarness({
     FakeAuthRepository? auth,
@@ -527,8 +568,10 @@ class TestHarness {
     FakeActivityRepository? activity,
     FakeJourneyRepository? journey,
     FakeLocationService? location,
+    FakeRoleRepository? roles,
     this.locale = AppLocale.english,
   })  : auth = auth ?? FakeAuthRepository(),
+        roles = roles ?? FakeRoleRepository(),
         catalogue = catalogue ?? FakeCatalogueRepository(),
         activity = activity ?? FakeActivityRepository(),
         journey = journey ?? FakeJourneyRepository(),
@@ -538,6 +581,8 @@ class TestHarness {
   final FakeCatalogueRepository catalogue;
   final FakeActivityRepository activity;
   final FakeJourneyRepository journey;
+  final FakeRoleRepository roles;
+  final InMemoryRolePreferenceStore rolePreferences = InMemoryRolePreferenceStore();
 
   /// Defaults to `unknown` — nobody has been asked — which is the state the
   /// soft-ask card exists for, and the one a fresh install is really in.
@@ -558,6 +603,8 @@ class TestHarness {
         journeyRepositoryProvider.overrideWithValue(journey),
         locationServiceProvider.overrideWithValue(location),
         sessionStoreProvider.overrideWithValue(store),
+        roleRepositoryProvider.overrideWithValue(roles),
+        rolePreferenceStoreProvider.overrideWithValue(rolePreferences),
         localeStoreProvider.overrideWithValue(InMemoryLocaleStore(locale)),
       ];
 

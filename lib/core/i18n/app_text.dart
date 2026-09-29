@@ -110,6 +110,58 @@ class AppText {
   String get devSampleRejected => _s('dev.sample.rejected');
   String get devSamplePaid => _s('dev.sample.paid');
 
+  // --- roles (partner roles T07) --------------------------------------------
+  String get roleCustomer => _s('role.customer');
+  String get roleBroker => _s('role.broker');
+  String get roleLandlord => _s('role.landlord');
+  String get roleCustomerSummary => _s('role.customer.summary');
+  String get roleBrokerSummary => _s('role.broker.summary');
+  String get roleLandlordSummary => _s('role.landlord.summary');
+  String get roleStatusApplied => _s('role.status.applied');
+  String get roleStatusPendingReview => _s('role.status.pendingReview');
+  String get roleStatusActionNeeded => _s('role.status.actionNeeded');
+  String get roleUseTitle => _s('roleUse.title');
+  String get roleUseSubtitle => _s('roleUse.subtitle');
+  String get roleUseCustomerTitle => _s('roleUse.customer.title');
+  String get roleUseCustomerBody => _s('roleUse.customer.body');
+  String get roleUseBrokerTitle => _s('roleUse.broker.title');
+  String get roleUseBrokerBody => _s('roleUse.broker.body');
+  String get roleUseLandlordTitle => _s('roleUse.landlord.title');
+  String get roleUseLandlordBody => _s('roleUse.landlord.body');
+  String get roleUseNote => _s('roleUse.note');
+  String chooseRoleTitle(String name) => _s('chooseRole.title', {'name': name});
+  String get chooseRoleTitleNoName => _s('chooseRole.titleNoName');
+  String get chooseRoleSubtitle => _s('chooseRole.subtitle');
+  String chooseRoleAlways(String role) => _s('chooseRole.always', {'role': role});
+  String get chooseRoleHint => _s('chooseRole.hint');
+  String chooseRoleContinueAs(String role) => _s('chooseRole.continueAs', {'role': role});
+  String get switchRoleTitle => _s('switchRole.title');
+  String switchRoleSubtitle(String phone) => _s('switchRole.subtitle', {'phone': phone});
+  String get switchRoleCurrent => _s('switchRole.current');
+  String get switchRoleNote => _s('switchRole.note');
+  String get earnSection => _s('earn.section');
+  String get earnTitle => _s('earn.title');
+  String get earnEntryBody => _s('earn.entryBody');
+  String get earnSubtitle => _s('earn.subtitle');
+  String get earnBrokerTitle => _s('earn.broker.title');
+  String get earnBrokerBody => _s('earn.broker.body');
+  String get earnBrokerPoint1 => _s('earn.broker.point1');
+  String get earnBrokerPoint2 => _s('earn.broker.point2');
+  String get earnBrokerPoint3 => _s('earn.broker.point3');
+  String get earnLandlordBody => _s('earn.landlord.body');
+  String get earnLandlordPoint1 => _s('earn.landlord.point1');
+  String get earnLandlordPoint2 => _s('earn.landlord.point2');
+  String get earnLandlordPoint3 => _s('earn.landlord.point3');
+  String get earnNote => _s('earn.note');
+  String get earnAlreadyHeld => _s('earn.alreadyHeld');
+  String partnerComingSoon(String role) => _s('partner.comingSoon', {'role': role});
+  String get partnerSignOut => _s('partner.signOut');
+  String partnerStatusApplied(String role) => _s('partner.status.applied', {'role': role});
+  String partnerStatusPendingReview(String role) => _s('partner.status.pendingReview', {'role': role});
+  String partnerStatusActionNeeded(String role) => _s('partner.status.actionNeeded', {'role': role});
+  String get landlordConfirmTitle => _s('landlordConfirm.title');
+  String get landlordConfirmBody => _s('landlordConfirm.body');
+
   // --- home -----------------------------------------------------------------
   String greeting(String? name) =>
       _s('home.greeting', {'name': name ?? _s('home.greeting.fallbackName')});

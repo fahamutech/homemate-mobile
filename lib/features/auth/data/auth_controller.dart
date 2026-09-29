@@ -142,6 +142,17 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
+  /// A switched role (ROL-002) comes with a re-signed token; the account and
+  /// the stored profile stay as they are.
+  Future<void> replaceToken(String newToken) async {
+    token = newToken;
+    final stored = await _store.read();
+    await _store.write(StoredSession(
+      token: newToken,
+      userJson: stored?.userJson ?? state.customer?.toJson() ?? const {},
+    ));
+  }
+
   Future<void> rememberPhoneNumber(String phoneNumber) async {
     await _store.rememberPhoneNumber(phoneNumber);
     state = state.copyWith(lastPhoneNumber: phoneNumber);

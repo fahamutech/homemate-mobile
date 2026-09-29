@@ -4,6 +4,9 @@ import '../features/auth/data/auth_controller.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/session_store.dart';
 import '../features/profile/data/identity_repository.dart';
+import '../features/roles/data/role_controller.dart';
+import '../features/roles/data/role_preference_store.dart';
+import '../features/roles/data/role_repository.dart';
 import '../features/shared/activity_repository.dart';
 import '../features/shared/catalogue_repository.dart';
 import '../features/shared/journey_repository.dart';
@@ -52,6 +55,35 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
     store: ref.watch(sessionStoreProvider),
   ),
 );
+
+final roleRepositoryProvider = Provider<RoleRepository>(
+  (ref) => HttpRoleRepository(ref.watch(apiClientProvider)),
+);
+
+final rolePreferenceStoreProvider = Provider<RolePreferenceStore>(
+  (ref) => SharedPreferencesRolePreferenceStore(),
+);
+
+/// The role in use. Loads when someone signs in (or a stored session is
+/// restored) and forgets everything on sign-out — "signing out signs out of
+/// every role on this phone".
+final roleControllerProvider = StateNotifierProvider<RoleController, RoleState>((ref) {
+  final controller = RoleController(
+    repository: ref.watch(roleRepositoryProvider),
+    preferences: ref.watch(rolePreferenceStoreProvider),
+    auth: ref.read(authControllerProvider.notifier),
+  );
+  ref.listen<AuthState>(authControllerProvider, (previous, next) {
+    final wasSignedIn = previous?.isSignedIn ?? false;
+    final samePerson = previous?.customer?.id == next.customer?.id;
+    if (next.isSignedIn && (!wasSignedIn || !samePerson)) {
+      controller.load(next.customer!);
+    } else if (!next.isSignedIn && wasSignedIn) {
+      controller.reset();
+    }
+  }, fireImmediately: true);
+  return controller;
+});
 
 final catalogueRepositoryProvider = Provider<CatalogueRepository>(
   (ref) => HttpCatalogueRepository(ref.watch(apiClientProvider), baseUrl: Env.apiBaseUrl),

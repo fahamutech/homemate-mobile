@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/providers.dart';
-import '../features/auth/data/auth_controller.dart';
 import '../features/auth/presentation/forgot_pin_screen.dart';
 import '../features/auth/presentation/onboarding_screen.dart';
 import '../features/auth/presentation/otp_screen.dart';
@@ -13,6 +12,15 @@ import '../features/auth/presentation/profile_setup_screen.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/dev/widget_catalogue_screen.dart';
+import '../features/partner_shared/presentation/landlord_confirm_placeholder.dart';
+import '../features/partner_shared/presentation/partner_home_placeholder.dart';
+import '../features/partner_shared/presentation/partner_profile_screen.dart';
+import '../features/partner_shared/presentation/partner_shell.dart';
+import '../features/partner_shared/presentation/partner_tab_placeholder.dart';
+import '../features/roles/data/app_role.dart';
+import '../features/roles/presentation/choose_role_screen.dart';
+import '../features/roles/presentation/earn_screen.dart';
+import '../features/roles/presentation/role_use_screen.dart';
 import '../features/discovery/presentation/home_screen.dart';
 import '../features/discovery/presentation/search_overlay.dart';
 import '../features/discovery/presentation/search_screen.dart';
@@ -32,90 +40,13 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/property/presentation/gallery_screen.dart';
 import '../features/property/presentation/property_screen.dart';
 import '../features/saved/presentation/saved_screen.dart';
+import '../core/i18n/app_text.dart';
 import 'app_shell.dart';
+import 'deep_links.dart';
+import 'role_redirect.dart';
+import 'routes.dart';
 
-/// Every path in the app, named once.
-///
-/// Screens navigate with `context.go(Routes.property(id))` rather than a
-/// string literal, so a renamed path is a compile error rather than a dead
-/// link someone finds in production.
-class Routes {
-  const Routes._();
-
-  static const splash = '/';
-  static const onboarding = '/welcome';
-  static const signIn = '/sign-in';
-  static const otp = '/verify';
-  static const pinSetup = '/set-pin';
-  static const forgotPin = '/forgot-pin';
-  static const profileSetup = '/complete-profile';
-
-  /// Editing the same details later.
-  ///
-  /// Deliberately NOT [profileSetup]: that path is where the redirect *holds*
-  /// anyone whose profile is outstanding, and sends everyone else straight to
-  /// the home screen — which is exactly what "Edit your details" used to do.
-  static const profileEdit = '/profile/edit';
-  static const identity = '/profile/identity';
-  static const preferences = '/profile/preferences';
-
-  static const home = '/home';
-  static const search = '/search';
-  static const saved = '/saved';
-  static const activity = '/activity';
-  static const profile = '/profile';
-  static const notifications = '/notifications';
-
-  /// The full-screen search, pushed over whatever tab you were on.
-  static const searchOverlay = '/search-overlay';
-
-  static String property(String id) => '/property/$id';
-  static String gallery(String id, {int index = 0}) => '/property/$id/photos?start=$index';
-  static String inquiryForm(String propertyId) => '/property/$propertyId/enquire';
-  static const inquiries = '/activity/enquiries';
-
-  /// Detail screens sit outside the tab shell, alongside /property and
-  /// /payment. A detail is reachable from a list, from a notification and from
-  /// the screen that created it — nesting it inside one tab's navigator means
-  /// pushing it from anywhere else collides with that tab's page keys.
-  static String inquiry(String id) => '/enquiry/$id';
-  static String payment(String id) => '/payment/$id';
-
-  /// Paying for a property once the landlord has accepted the enquiry
-  /// (CUS-011 + CUS-014).
-  ///
-  /// Keyed on the *property*, which is what the customer has in hand from both
-  /// the listing and the accepted enquiry. The server works out whether a
-  /// reservation already exists.
-  static String checkout(String propertyId) => '/property/$propertyId/checkout';
-
-  /// The tenancies a customer is living under, reached from the Active Rents
-  /// section of the Favourites tab (CUS-012a/b/c).
-  static const rentals = '/rentals';
-  static String rental(String bookingId) => '/rentals/$bookingId';
-  static String lease(String bookingId) => '/rentals/$bookingId/lease';
-
-  /// One property's timeline — CUS-013b.
-  static String propertyActivity(String propertyId) => '/property/$propertyId/activity';
-
-  /// The screens reachable without a session.
-  ///
-  /// The splash is deliberately NOT one of them. It is only ever correct while
-  /// the stored session is being read; treating it as a normal public route
-  /// meant the redirect had no reason to move off it once reading finished,
-  /// and the app sat on the splash screen forever.
-  static const _public = {onboarding, signIn, otp, pinSetup, forgotPin};
-
-  /// The widget catalogue (T02). Registered, and reachable signed out, only in
-  /// a debug build.
-  static const devWidgets = '/dev/widgets';
-
-  static bool isPublic(String location) =>
-      _public.contains(location) ||
-      location.startsWith('$otp?') ||
-      location.startsWith('$pinSetup?') ||
-      (kDebugMode && location == devWidgets);
-}
+export 'routes.dart';
 
 /// Rebuilds the router's redirect whenever the session changes.
 ///
@@ -127,8 +58,43 @@ class _AuthRefresh extends ChangeNotifier {
     ref.listen(authControllerProvider, (previous, next) {
       if (previous?.stage != next.stage) notifyListeners();
     });
+    // Loading the roles, answering AUTH-001 / ROL-001 and switching role all
+    // move the person to another shell.
+    ref.listen(roleControllerProvider, (previous, next) {
+      // Only on a settled change, so the half-way state of a switch does not
+      // send the router somewhere it immediately has to leave.
+      final before = (previous?.settled ?? false, previous?.current, previous?.landing);
+      final after = (next.settled, next.current, next.landing);
+      if (before != after && (next.settled || (previous?.settled ?? false))) {
+        notifyListeners();
+      }
+    });
   }
 }
+
+/// A deep link opened while signed out, kept until sign-in finishes.
+final pendingDeepLinkProvider = Provider<PendingDeepLink>((_) => PendingDeepLink());
+
+/// A partner shell: five branches in the tab order of `nav_tabs.dart`. The
+/// first is the role's home and the last its profile; the middle three are
+/// placeholders the broker (T09) and landlord (T10) workspaces replace.
+StatefulShellRoute _partnerShell(AppRole role, List<(String, String Function(AppText)?)> tabs) =>
+    StatefulShellRoute.indexedStack(
+      builder: (_, __, shell) => PartnerShell(role: role, shell: shell),
+      branches: [
+        for (final (index, (path, title)) in tabs.indexed)
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: path,
+              builder: (context, _) => switch (index) {
+                0 => PartnerHomePlaceholder(role: role),
+                4 => PartnerProfileScreen(role: role),
+                _ => PartnerTabPlaceholder(role: role, title: title!(context.text)),
+              },
+            ),
+          ]),
+      ],
+    );
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _AuthRefresh(ref);
@@ -145,46 +111,23 @@ final routerProvider = Provider<GoRouter>((ref) {
     /// "where does an unauthenticated person end up".
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
-      final location = state.matchedLocation;
+      final roles = ref.read(roleControllerProvider);
+      final pending = ref.read(pendingDeepLinkProvider);
 
-      // Still reading storage: hold on the splash rather than flashing the
-      // sign-in screen at someone who is already signed in.
-      if (auth.stage == AuthStage.restoring) {
-        return location == Routes.splash ? null : Routes.splash;
+      // A link from outside the app (the landlord's SMS) is held through
+      // sign-in and opened once the session is ready.
+      final link = deepLinkLocation(state.uri);
+      if (link != null && !auth.isSignedIn) pending.remember(link);
+      if (link != null && auth.isSignedIn && link != state.matchedLocation) return link;
+      // Kept until the router has actually arrived: a refresh can run the
+      // redirect again from the old location before this one commits.
+      final target = pending.location;
+      if (auth.isSignedIn && roles.settled && target != null) {
+        if (state.matchedLocation != target) return target;
+        pending.take();
       }
 
-      if (!auth.isSignedIn) {
-        if (Routes.isPublic(location)) return null;
-        // Anyone still on the splash has finished restoring and has no
-        // session, so they go on to the welcome screens — unless this device
-        // has already been through them and has a PIN, in which case walking
-        // somebody who just signed out back through three intro slides is
-        // three taps between them and the keypad.
-        return auth.isPinEnrolled ? Routes.signIn : Routes.onboarding;
-      }
-
-      // Signed in but the profile step is outstanding — CUS-008a. Everything
-      // else waits until it is done, because an enquiry with no name on it is
-      // not much use to the landlord receiving it.
-      if (auth.stage == AuthStage.needsProfile) {
-        return location == Routes.profileSetup ? null : Routes.profileSetup;
-      }
-
-      // Signed in and complete: the entry screens have nothing left to offer
-      // — and neither does the splash.
-      //
-      // The splash has to be listed here explicitly. It is deliberately not a
-      // public route (see `_public`), so without this a customer who is
-      // already signed in when the app launches finishes restoring and then
-      // sits on the splash forever: nothing above matches, and the fallthrough
-      // is "stay where you are".
-      if (location == Routes.devWidgets) return null;
-      if (Routes.isPublic(location) ||
-          location == Routes.profileSetup ||
-          location == Routes.splash) {
-        return Routes.home;
-      }
-      return null;
+      return roleRedirect(auth: auth, roles: roles, location: state.matchedLocation);
     },
 
     routes: [
@@ -209,6 +152,32 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.forgotPin, builder: (_, __) => const ForgotPinScreen()),
       GoRoute(path: Routes.profileSetup, builder: (_, __) => const ProfileSetupScreen()),
       if (kDebugMode) GoRoute(path: Routes.devWidgets, builder: (_, __) => const WidgetCatalogueScreen()),
+      GoRoute(path: Routes.roleUse, builder: (_, __) => const RoleUseScreen()),
+      GoRoute(path: Routes.chooseRole, builder: (_, __) => const ChooseRoleScreen()),
+      GoRoute(path: Routes.earn, builder: (_, __) => const EarnScreen()),
+      GoRoute(
+        path: '${Routes.landlordConfirmPrefix}:propertyId',
+        builder: (_, state) => LandlordConfirmPlaceholder(propertyId: state.pathParameters['propertyId']!),
+      ),
+      // The SMS link with its host already taken off by the platform.
+      GoRoute(
+        path: '/confirm/:propertyId',
+        redirect: (_, state) => Routes.landlordConfirm(state.pathParameters['propertyId']!),
+      ),
+      _partnerShell(AppRole.broker, [
+        (Routes.brokerHome, null),
+        (Routes.brokerListings, (AppText text) => text.navListings),
+        (Routes.brokerEnquiries, (AppText text) => text.navEnquiries),
+        (Routes.brokerEarnings, (AppText text) => text.navEarnings),
+        (Routes.brokerProfile, null),
+      ]),
+      _partnerShell(AppRole.landlord, [
+        (Routes.landlordHome, null),
+        (Routes.landlordHomes, (AppText text) => text.navHomes),
+        (Routes.landlordTenants, (AppText text) => text.navTenants),
+        (Routes.landlordMoney, (AppText text) => text.navMoney),
+        (Routes.landlordProfile, null),
+      ]),
 
       // The five tabs keep their own navigation stacks, so moving between them
       // does not throw away where you were.
