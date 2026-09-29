@@ -52,7 +52,7 @@ ThemeData buildHomeMateTheme() {
         // designs use for a primary action.
         minimumSize: const Size.fromHeight(52),
         shape: RoundedRectangleBorder(borderRadius: HmRadius.card),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontFamily: HmFonts.family, fontSize: 15, fontWeight: FontWeight.w600),
         elevation: 0,
       ),
     ),
@@ -62,13 +62,13 @@ ThemeData buildHomeMateTheme() {
         minimumSize: const Size.fromHeight(52),
         side: const BorderSide(color: HmColors.borderDefault),
         shape: RoundedRectangleBorder(borderRadius: HmRadius.card),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontFamily: HmFonts.family, fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: HmColors.brandPrimary,
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontFamily: HmFonts.family, fontSize: 14, fontWeight: FontWeight.w600),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -99,7 +99,7 @@ ThemeData buildHomeMateTheme() {
         borderSide: const BorderSide(color: HmColors.error, width: 1.5),
       ),
       labelStyle: HmText.caption,
-      hintStyle: const TextStyle(color: HmColors.textDisabled, fontSize: 15),
+      hintStyle: const TextStyle(fontFamily: HmFonts.family, color: HmColors.textDisabled, fontSize: 15),
     ),
     cardTheme: CardThemeData(
       color: HmColors.bgPrimary,
@@ -133,7 +133,7 @@ ThemeData buildHomeMateTheme() {
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: HmColors.textPrimary,
-      contentTextStyle: const TextStyle(color: HmColors.bgPrimary, fontSize: 14),
+      contentTextStyle: const TextStyle(fontFamily: HmFonts.family, color: HmColors.bgPrimary, fontSize: 14),
       shape: RoundedRectangleBorder(borderRadius: HmRadius.card),
     ),
   );
