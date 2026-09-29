@@ -36,6 +36,7 @@ void main() {
     'propertyTitle': 'Masaki Heights Residence',
     'propertyAddress': 'Plot 12, Haile Selassie Rd',
     'tenantName': 'Neema Mushi',
+    'landlordName': 'Amina Mwinyi',
   };
 
   group('reading the landlord endpoint', () {
@@ -50,6 +51,7 @@ void main() {
       expect(lease.leaseMonths, 12);
       expect(lease.leaseStartDate, DateTime(2026, 10, 1));
       expect(lease.tenantName, 'Neema Mushi');
+      expect(lease.landlordName, 'Amina Mwinyi');
       expect(lease.bookingReference, 'HM-BK-000031');
     });
 

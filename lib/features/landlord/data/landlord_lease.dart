@@ -28,5 +28,6 @@ LeaseAgreement leaseFromLandlordJson(Map<String, dynamic> json) {
     propertyTitle: json['propertyTitle'] as String?,
     propertyAddress: json['propertyAddress'] as String?,
     tenantName: json['tenantName'] as String?,
+    landlordName: json['landlordName'] as String?,
   );
 }
