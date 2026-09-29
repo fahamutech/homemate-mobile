@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets/hm_money.dart';
 import 'models.dart';
+import '../../core/i18n/app_text.dart';
 
 /// The HomeMate fee, drawn out and highlighted: what it is, what the usual
 /// agent would have charged, and what the customer keeps.
@@ -48,7 +49,7 @@ class ServiceFeeCard extends StatelessWidget {
               const SizedBox(width: HmSpace.md),
               Expanded(
                 child: Text(
-                  'HomeMate fee: ${money(fee.amount)}',
+                  context.text.feeTitle(money(fee.amount)),
                   style: HmText.heading.copyWith(fontSize: 15),
                 ),
               ),
@@ -57,8 +58,8 @@ class ServiceFeeCard extends StatelessWidget {
           const SizedBox(height: HmSpace.xs),
           Text(
             inFirstPayment
-                ? '${fee.percentageLabel} of one month’s rent, included once in this payment.'
-                : '${fee.percentageLabel} of one month’s rent, charged once in your first payment.',
+                ? context.text.feeIncludedNow(fee.percentageLabel)
+                : context.text.feeInFirstPayment(fee.percentageLabel),
             style: HmText.caption,
           ),
           const SizedBox(height: HmSpace.xl),
@@ -83,7 +84,7 @@ class ServiceFeeCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.check_circle, size: 16, color: HmColors.success),
                   const SizedBox(width: HmSpace.md),
-                  const Expanded(child: Text('You save', style: HmText.label)),
+                  Expanded(child: Text(context.text.feeYouSave, style: HmText.label)),
                   Text(
                     money(fee.saving),
                     key: const Key('service-fee-saving'),

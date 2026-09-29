@@ -419,20 +419,6 @@ class Rental {
 
   String get rentLabel => HmMoney.perMonthShort(monthlyRent, currency: currency);
 
-  /// The chip on the right of the row: months left while there is time, then
-  /// days once it is close enough to count them.
-  ///
-  /// The switch to days happens at three months because "2 months" and
-  /// "45 days" are the same fact, and only one of them makes a tenant act.
-  String get remainingLabel {
-    final days = daysRemaining;
-    final months = monthsRemaining;
-    if (days == null && months == null) return 'Active Lease';
-    if (days != null && days <= 90) return days == 1 ? '1 day' : '$days days';
-    if (months != null) return months == 1 ? '1 month' : '$months months';
-    return 'Active Lease';
-  }
-
   /// Whether the lease is close enough to its end to warrant a warning colour.
   bool get isEndingSoon => (daysRemaining ?? 999) <= 60;
 

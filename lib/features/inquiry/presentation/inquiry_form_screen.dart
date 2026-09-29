@@ -10,6 +10,7 @@ import '../../../design/widgets/hm_scaffold.dart';
 import '../../../routing/app_router.dart';
 import '../../discovery/data/search_providers.dart';
 import '../data/inquiry_providers.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-007a. Asking the landlord a question.
 ///
@@ -27,9 +28,8 @@ class InquiryFormScreen extends ConsumerStatefulWidget {
 
 class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _message = TextEditingController(
-    text: 'Hello, I am interested in this property. Is it still available?',
-  );
+  final _message = TextEditingController();
+  bool _messageSeeded = false;
   final _budget = TextEditingController();
 
   DateTime? _moveIn;
@@ -37,6 +37,16 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
   String _contactPreference = 'phone';
   bool _busy = false;
   String? _error;
+
+  // The suggested opening line is in the customer's language, which is only
+  // known once the widget sits under the app's Localizations.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_messageSeeded) return;
+    _messageSeeded = true;
+    _message.text = context.text.inquiryFormDefaultMessage;
+  }
 
   @override
   void dispose() {
@@ -79,7 +89,7 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
       ref.invalidate(propertyDetailProvider(widget.propertyId));
 
       if (!mounted) return;
-      HmFeedback.success(context, 'Your enquiry has been sent');
+      HmFeedback.success(context, context.text.inquiryFormSent);
       // Replaces the form so Back does not offer to send it a second time.
       context.pushReplacement(Routes.inquiry(inquiry.id));
     } on ApiException catch (error) {
@@ -92,7 +102,7 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
   @override
   Widget build(BuildContext context) {
     return HmScaffold(
-      title: 'Send an enquiry',
+      title: context.text.inquiryFormTitle,
       backgroundColor: HmColors.bgPrimary,
       body: SingleChildScrollView(
         child: Form(
@@ -102,7 +112,7 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
             children: [
               HmInlineError(_error),
 
-              const Text('Your message', style: HmText.label),
+              Text(context.text.inquiryFormMessage, style: HmText.label),
               const SizedBox(height: HmSpace.md),
               TextFormField(
                 key: const Key('inquiry-message'),
@@ -111,27 +121,27 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
                 maxLines: 5,
                 maxLength: 1000,
                 validator: (value) =>
-                    (value ?? '').trim().isEmpty ? 'Write a short message' : null,
-                decoration: const InputDecoration(
-                  hintText: 'Ask about availability, the area, or anything else',
+                    (value ?? '').trim().isEmpty ? context.text.inquiryFormMessageRequired : null,
+                decoration: InputDecoration(
+                  hintText: context.text.inquiryFormMessageHint,
                 ),
               ),
 
               const SizedBox(height: HmSpace.xxl),
-              const Text('When would you move in?', style: HmText.label),
+              Text(context.text.inquiryFormMoveIn, style: HmText.label),
               const SizedBox(height: HmSpace.md),
               OutlinedButton.icon(
                 onPressed: _busy ? null : _pickMoveIn,
                 icon: const Icon(Icons.calendar_today_outlined, size: 18),
                 label: Text(
                   _moveIn == null
-                      ? 'Choose a date (optional)'
+                      ? context.text.inquiryFormChooseDate
                       : '${_moveIn!.day}/${_moveIn!.month}/${_moveIn!.year}',
                 ),
               ),
 
               const SizedBox(height: HmSpace.xxl),
-              const Text('How many people?', style: HmText.label),
+              Text(context.text.inquiryFormPeople, style: HmText.label),
               const SizedBox(height: HmSpace.md),
               Wrap(
                 spacing: HmSpace.md,
@@ -146,7 +156,7 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
               ),
 
               const SizedBox(height: HmSpace.xxl),
-              const Text('Your budget (optional)', style: HmText.label),
+              Text(context.text.inquiryFormBudget, style: HmText.label),
               const SizedBox(height: HmSpace.md),
               TextFormField(
                 controller: _budget,
@@ -156,16 +166,16 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
               ),
 
               const SizedBox(height: HmSpace.xxl),
-              const Text('How should they reach you?', style: HmText.label),
+              Text(context.text.inquiryFormReach, style: HmText.label),
               const SizedBox(height: HmSpace.md),
               Wrap(
                 spacing: HmSpace.md,
                 children: [
-                  for (final (value, label) in const [
-                    ('phone', 'Call'),
+                  for (final (value, label) in [
+                    ('phone', context.text.enquiriesCall),
                     ('sms', 'SMS'),
                     ('whatsapp', 'WhatsApp'),
-                    ('in_app', 'In the app'),
+                    ('in_app', context.text.inquiryFormInApp),
                   ])
                     ChoiceChip(
                       label: Text(label),
@@ -185,7 +195,7 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Send enquiry'),
+                    : Text(context.text.inquiryFormSend),
               ),
               const SizedBox(height: HmSpace.xxl),
             ],

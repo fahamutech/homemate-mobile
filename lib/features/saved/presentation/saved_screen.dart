@@ -14,6 +14,8 @@ import '../../shared/journey_providers.dart';
 import '../../shared/property_card.dart';
 import '../../shared/property_image.dart';
 import '../../discovery/data/search_providers.dart';
+import '../../rental/presentation/rental_remaining.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-013a. Favourites — and everything else the customer has going on.
 ///
@@ -43,13 +45,13 @@ class SavedScreen extends ConsumerWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: true,
-        title: const Column(
+        title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Favourite', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            Text(context.text.navFavourite, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             SizedBox(height: HmSpace.xxs),
             Text(
-              'Your favourites & activity',
+              context.text.savedSubtitle,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: HmColors.textBody),
             ),
           ],
@@ -65,13 +67,12 @@ class SavedScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(savedOverviewProvider),
           emptyWhen: (data) => data.isEmpty,
           empty: HmEmpty(
-            title: 'Nothing here yet',
-            message: 'Tap the heart on a listing to keep it here, and anything you '
-                'enquire about will show up too.',
+            title: context.text.commonNothingYet,
+            message: context.text.savedEmptyBody,
             icon: Icons.favorite_outline,
             action: OutlinedButton(
               onPressed: () => context.go(Routes.search),
-              child: const Text('Browse homes'),
+              child: Text(context.text.savedBrowse),
             ),
           ),
           data: (data) => _Sections(overview: data),
@@ -93,13 +94,13 @@ class _Sections extends ConsumerWidget {
       children: [
         if (overview.activeRentals.isNotEmpty) ...[
           HmSectionHeader(
-            title: 'Active Rents',
-            action: overview.activeRentalCount > overview.activeRentals.length ? 'See All' : null,
+            title: context.text.savedActiveRents,
+            action: overview.activeRentalCount > overview.activeRentals.length ? context.text.commonSeeAllTitle : null,
             onAction: overview.activeRentalCount > overview.activeRentals.length
                 ? () => context.push(Routes.rentals)
                 : null,
             trailingText: overview.activeRentalCount <= overview.activeRentals.length
-                ? _items(overview.activeRentalCount)
+                ? context.text.savedItems(overview.activeRentalCount)
                 : null,
           ),
           for (final rental in overview.activeRentals)
@@ -111,13 +112,13 @@ class _Sections extends ConsumerWidget {
         ],
 
         HmSectionHeader(
-          title: 'Saved Favorites',
-          trailingText: _items(overview.favoriteCount),
+          title: context.text.savedFavorites,
+          trailingText: context.text.savedItems(overview.favoriteCount),
         ),
         if (overview.favorites.isEmpty)
-          const _EmptySection(
+          _EmptySection(
             icon: Icons.favorite_outline,
-            message: 'Tap the heart on a listing to keep it here for later.',
+            message: context.text.savedFavoritesEmpty,
           )
         else
           // Sideways, as the design has it: two cards visible at a time is
@@ -146,16 +147,16 @@ class _Sections extends ConsumerWidget {
         const SizedBox(height: HmSpace.section),
 
         HmSectionHeader(
-          title: 'Recent Inquiries',
-          action: overview.recentInquiries.isEmpty ? null : 'See All',
+          title: context.text.savedRecentInquiries,
+          action: overview.recentInquiries.isEmpty ? null : context.text.commonSeeAllTitle,
           onAction: overview.recentInquiries.isEmpty
               ? null
               : () => context.go(Routes.inquiries),
         ),
         if (overview.recentInquiries.isEmpty)
-          const _EmptySection(
+          _EmptySection(
             icon: Icons.question_answer_outlined,
-            message: 'Ask a landlord about a home and the conversation appears here.',
+            message: context.text.savedInquiriesEmpty,
           )
         else
           for (final inquiry in overview.recentInquiries)
@@ -167,7 +168,6 @@ class _Sections extends ConsumerWidget {
     );
   }
 
-  static String _items(int count) => count == 1 ? '1 Item' : '$count Items';
 }
 
 /// An active tenancy. Tapping it is how a customer reaches their lease, their
@@ -187,14 +187,14 @@ class _ActiveRentRow extends StatelessWidget {
           width: 48,
           borderRadius: BorderRadius.circular(HmRadius.sm),
         ),
-        title: rental.propertyTitle ?? 'Your home',
+        title: rental.propertyTitle ?? context.text.rentalYourHome,
         subtitle: rental.propertyAddress,
         highlight: rental.rentLabel,
         footnote: rental.nextPaymentDate == null
             ? null
-            : 'Next payment: ${DateFormat('d MMM yyyy').format(rental.nextPaymentDate!)}',
+            : context.text.savedNextPayment(DateFormat('d MMM yyyy').format(rental.nextPaymentDate!)),
         trailing: _Pill(
-          label: rental.remainingLabel,
+          label: rentalRemaining(context.text, rental),
           // A lease inside its last two months is a decision the tenant has to
           // make, so it stops being reassuring green.
           colour: rental.isEndingSoon ? HmColors.warning : HmColors.brandPrimary,
@@ -216,8 +216,8 @@ class _InquiryRow extends StatelessWidget {
           width: 48,
           borderRadius: BorderRadius.circular(HmRadius.sm),
         ),
-        title: inquiry.propertyTitle ?? 'Property',
-        subtitle: 'Inquired on ${DateFormat('d MMM yyyy').format(inquiry.createdAt)}',
+        title: inquiry.propertyTitle ?? context.text.leaseProperty,
+        subtitle: context.text.savedInquiredOn(DateFormat('d MMM yyyy').format(inquiry.createdAt)),
         // `display_status` is the server's, so an accepted enquiry reads as
         // "Awaiting payment" here without the app inventing that mapping.
         trailing: HmStatusChip(inquiry.displayStatus, dense: true),

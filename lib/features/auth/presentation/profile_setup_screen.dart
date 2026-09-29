@@ -11,6 +11,7 @@ import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_money.dart';
 import '../../shared/customer_avatar.dart';
 import '../../shared/models.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-008a/b. "Complete your profile", in the three steps the designs draw.
 ///
@@ -75,14 +76,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     return Scaffold(
       backgroundColor: HmColors.bgPrimary,
       appBar: AppBar(
-        title: const Text('Complete Your Profile'),
+        title: Text(context.text.profileSetupTitle),
         centerTitle: true,
         automaticallyImplyLeading: false,
         leading: _step == 1
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
-                tooltip: 'Back a step',
+                tooltip: context.text.profileSetupBackStep,
                 onPressed: _busy ? null : () => setState(() => _step -= 1),
               ),
       ),
@@ -154,18 +155,18 @@ class _Footer extends StatelessWidget {
                     onPressed: busy ? null : onContinue,
                     child: busy
                         ? const _Spinner()
-                        : const Text('Continue'),
+                        : Text(context.text.continueLabel),
                   )
                 : Column(
                     children: [
                       OutlinedButton(
                         onPressed: onFinish,
-                        child: const Text('Skip for Now'),
+                        child: Text(context.text.profileSetupSkipForNow),
                       ),
                       const SizedBox(height: HmSpace.xl),
                       ElevatedButton(
                         onPressed: onFinish,
-                        child: const Text('Complete Profile'),
+                        child: Text(context.text.profileSetupComplete),
                       ),
                     ],
                   ),
@@ -244,7 +245,7 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
       // Nobody renting a home was born last week, and nobody is 120.
       firstDate: DateTime(now.year - 120),
       lastDate: DateTime(now.year - 18, now.month, now.day),
-      helpText: 'Your date of birth',
+      helpText: context.text.profileSetupDobHelp,
     );
     if (picked != null) setState(() => _dateOfBirth = picked);
   }
@@ -258,12 +259,12 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
+              title: Text(context.text.photoTake),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
+              title: Text(context.text.photoFromGallery),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
             ),
           ],
@@ -299,7 +300,7 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
       await ref.read(authControllerProvider.notifier).applyProfile(customer);
       ref.read(profilePhotoRevisionProvider.notifier).state++;
 
-      if (mounted) HmFeedback.success(context, 'Photo saved');
+      if (mounted) HmFeedback.success(context, context.text.photoSaved);
     } catch (error) {
       if (mounted) HmFeedback.failure(context, error);
     } finally {
@@ -327,24 +328,24 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
             const SizedBox(height: HmSpace.huge),
           ],
 
-          const _FieldLabel('Full Name'),
+          _FieldLabel(context.text.profileFieldFullName),
           TextFormField(
             key: const Key('full-name'),
             controller: _name,
             textCapitalization: TextCapitalization.words,
             autofillHints: const [AutofillHints.name],
-            validator: (value) => (value ?? '').trim().isEmpty ? 'Please enter your name' : null,
-            decoration: const InputDecoration(hintText: 'Your name as it appears on your ID'),
+            validator: (value) => (value ?? '').trim().isEmpty ? context.text.profileFieldNameRequired : null,
+            decoration: InputDecoration(hintText: context.text.profileFieldNameHint),
           ),
 
-          const _FieldLabel('Date of Birth'),
+          _FieldLabel(context.text.profileFieldDob),
           InkWell(
             onTap: _pickDate,
             borderRadius: HmRadius.card,
             child: InputDecorator(
               decoration: const InputDecoration(suffixIcon: Icon(Icons.calendar_today_outlined)),
               child: Text(
-                _dateOfBirth == null ? 'DD / MM / YYYY' : _formatDate(_dateOfBirth!),
+                _dateOfBirth == null ? context.text.profileFieldDobPlaceholder : _formatDate(_dateOfBirth!),
                 style: _dateOfBirth == null
                     ? HmText.body.copyWith(color: HmColors.textDisabled)
                     : HmText.body.copyWith(color: HmColors.textPrimary),
@@ -352,25 +353,25 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
             ),
           ),
 
-          const _FieldLabel('Gender'),
+          _FieldLabel(context.text.profileFieldGender),
           HmSegmentedPills<String?>(
-            options: const [('male', 'Male'), ('female', 'Female'), ('other', 'Other')],
+            options: [('male', context.text.genderMale), ('female', context.text.genderFemale), ('other', context.text.genderOther)],
             value: _gender,
             onChanged: (value) => setState(() => _gender = _gender == value ? null : value),
           ),
 
-          const _FieldLabel('Phone Number'),
+          _FieldLabel(context.text.profileFieldPhone),
           // Read-only: the number is what the session is built on, and
           // changing it is re-verifying a phone, not editing a field.
           TextFormField(
             enabled: false,
             initialValue: customer?.phoneNumber ?? '',
-            decoration: const InputDecoration(
-              helperText: 'Verified. To change it, sign in with the new number.',
+            decoration: InputDecoration(
+              helperText: context.text.profileFieldPhoneHelp,
             ),
           ),
 
-          const _FieldLabel('Email Address'),
+          _FieldLabel(context.text.profileFieldEmail),
           TextFormField(
             key: const Key('email'),
             controller: _email,
@@ -381,15 +382,15 @@ class ProfileDetailsFormState extends ConsumerState<ProfileDetailsForm> {
               if (email.isEmpty) return null; // optional
               return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)
                   ? null
-                  : 'That does not look like an email address';
+                  : context.text.profileFieldEmailInvalid;
             },
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'you@example.com',
-              helperText: 'Optional — for receipts and lease documents',
+              helperText: context.text.profileFieldEmailHelp,
             ),
           ),
 
-          const _FieldLabel('Language'),
+          _FieldLabel(context.text.language),
           HmSegmentedPills<String>(
             options: const [('en', 'English'), ('sw', 'Kiswahili')],
             value: _language,
@@ -440,7 +441,7 @@ class _PhotoPicker extends StatelessWidget {
             ],
           ),
           const SizedBox(height: HmSpace.md),
-          TextButton(onPressed: onTap, child: const Text('Tap to change photo')),
+          TextButton(onPressed: onTap, child: Text(context.text.photoTapToChange)),
         ],
       );
 }
@@ -522,15 +523,14 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
         child: Column(
           children: [
             Text(
-              'We could not load the options just now. You can set these later '
-              'from your profile.',
+              context.text.profileSetupOptionsFailed,
               style: HmText.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: HmSpace.md),
             TextButton(
               onPressed: () => ref.invalidate(referenceDataProvider),
-              child: const Text('Try again'),
+              child: Text(context.text.retry),
             ),
           ],
         ),
@@ -538,15 +538,15 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
       data: (data) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _FieldLabel('Preferred Location'),
+          _FieldLabel(context.text.prefsLocation),
           DropdownButtonFormField<String?>(
             initialValue: _draft.preferredRegionId,
             isExpanded: true,
-            hint: const Text('Anywhere in Tanzania'),
+            hint: Text(context.text.prefsAnywhere),
             items: [
-              const DropdownMenuItem<String?>(
+              DropdownMenuItem<String?>(
                 value: null,
-                child: Text('Anywhere in Tanzania'),
+                child: Text(context.text.prefsAnywhere),
               ),
               for (final region in data.regions)
                 DropdownMenuItem<String?>(value: region.id, child: Text(region.name)),
@@ -556,7 +556,7 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
             ),
           ),
 
-          const _FieldLabel('Preferred Property Type'),
+          _FieldLabel(context.text.prefsPropertyType),
           Wrap(
             spacing: HmSpace.md,
             runSpacing: HmSpace.md,
@@ -575,9 +575,9 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
             ],
           ),
 
-          const _FieldLabel('Number of Bedrooms'),
+          _FieldLabel(context.text.prefsBedrooms),
           HmSegmentedPills<int?>(
-            options: const [(0, 'Studio'), (1, '1'), (2, '2'), (3, '3'), (4, '4+')],
+            options: [(0, context.text.prefsStudio), (1, '1'), (2, '2'), (3, '3'), (4, '4+')],
             value: _draft.bedroomsMin,
             onChanged: (value) => setState(
               () => _draft = _draft.copyWith(
@@ -589,7 +589,7 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
           const SizedBox(height: HmSpace.huge),
           Row(
             children: [
-              Expanded(child: Text('Monthly Budget Range', style: HmText.label)),
+              Expanded(child: Text(context.text.prefsBudget, style: HmText.label)),
               Text(_budgetLabel(), style: HmText.label.copyWith(color: HmColors.brandPrimary)),
             ],
           ),
@@ -613,19 +613,19 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
             ],
           ),
 
-          const _FieldLabel('Move-in Timeline'),
+          _FieldLabel(context.text.prefsTimeline),
           HmSegmentedPills<String>(
-            options: const [
-              ('immediately', 'Immediately'),
-              ('two_weeks', '1-2 Weeks'),
-              ('one_month', '1 Month'),
-              ('flexible', 'Flexible'),
+            options: [
+              ('immediately', context.text.prefsTimelineNow),
+              ('two_weeks', context.text.prefsTimelineTwoWeeks),
+              ('one_month', context.text.prefsTimelineMonth),
+              ('flexible', context.text.prefsTimelineFlexible),
             ],
             value: _timeline,
             onChanged: _setTimeline,
           ),
 
-          const _FieldLabel('Must-have Amenities'),
+          _FieldLabel(context.text.prefsAmenities),
           _AmenityGrid(
             amenities: data.amenities,
             selected: _draft.amenityIds,
@@ -640,7 +640,7 @@ class PreferencesFormState extends ConsumerState<PreferencesForm> {
       '${HmMoney.format(_budget.start)} – ${_budgetCeiling()}';
 
   String _budgetCeiling() =>
-      _budget.end >= _maxBudget ? 'Any' : HmMoney.format(_budget.end);
+      _budget.end >= _maxBudget ? context.text.prefsAny : HmMoney.format(_budget.end);
 }
 
 /// Two columns of checkboxes, as the designs draw them.
@@ -729,7 +729,7 @@ class _IdentityStepState extends ConsumerState<IdentityStep> {
             filename: picked.name,
           );
       ref.invalidate(identityStatusProvider);
-      if (mounted) HmFeedback.success(context, 'Sent for verification');
+      if (mounted) HmFeedback.success(context, context.text.identitySent);
     } catch (error) {
       if (mounted) HmFeedback.failure(context, error);
     } finally {
@@ -746,12 +746,12 @@ class _IdentityStepState extends ConsumerState<IdentityStep> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Photograph your ID'),
+              title: Text(context.text.identityPhotographId),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose an existing photo'),
+              title: Text(context.text.identityExistingPhoto),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
             ),
           ],
@@ -782,10 +782,10 @@ class _IdentityStepState extends ConsumerState<IdentityStep> {
           ),
         ),
         const SizedBox(height: HmSpace.xxl),
-        Text('Almost Done!', style: HmText.title, textAlign: TextAlign.center),
+        Text(context.text.profileSetupAlmostDone, style: HmText.title, textAlign: TextAlign.center),
         const SizedBox(height: HmSpace.md),
         Text(
-          'Verify your identity to unlock all features',
+          context.text.profileSetupVerifyToUnlock,
           style: HmText.body,
           textAlign: TextAlign.center,
         ),
@@ -793,10 +793,10 @@ class _IdentityStepState extends ConsumerState<IdentityStep> {
 
         _EvidenceCard(
           icon: Icons.badge_outlined,
-          title: 'National ID or Passport',
-          subtitle: 'Upload government-issued ID',
+          title: context.text.identityIdTitle,
+          subtitle: context.text.identityIdSubtitle,
           status: status.statusOf('national_id'),
-          actionLabel: 'Upload Document',
+          actionLabel: context.text.identityUpload,
           actionIcon: Icons.file_upload_outlined,
           busy: _uploading == 'national_id',
           onPressed: _chooseIdSource,
@@ -804,10 +804,10 @@ class _IdentityStepState extends ConsumerState<IdentityStep> {
         const SizedBox(height: HmSpace.xxl),
         _EvidenceCard(
           icon: Icons.photo_camera_outlined,
-          title: 'Take a Selfie',
-          subtitle: 'We will match it with your ID',
+          title: context.text.identitySelfieTitle,
+          subtitle: context.text.identitySelfieSubtitle,
           status: status.statusOf('selfie'),
-          actionLabel: 'Take Photo',
+          actionLabel: context.text.identityTakePhoto,
           actionIcon: Icons.camera_alt_outlined,
           busy: _uploading == 'selfie',
           onPressed: () => _upload('selfie', ImageSource.camera),
@@ -821,8 +821,7 @@ class _IdentityStepState extends ConsumerState<IdentityStep> {
             const SizedBox(width: HmSpace.xl),
             Expanded(
               child: Text(
-                'You can skip verification now and complete it later from your '
-                'profile settings.',
+                context.text.profileSetupSkipVerification,
                 style: HmText.caption,
               ),
             ),
@@ -838,7 +837,7 @@ class _IdentityStepState extends ConsumerState<IdentityStep> {
             ),
             Expanded(
               child: Text(
-                'I agree to the Terms of Service and Privacy Policy',
+                context.text.profileSetupAgree,
                 style: HmText.body,
               ),
             ),
@@ -873,10 +872,10 @@ class _EvidenceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (badge, badgeColour) = switch (status) {
-      'verified' => ('VERIFIED', HmColors.success),
-      'pending' => ('IN REVIEW', HmColors.info),
-      'rejected' => ('REJECTED', HmColors.error),
-      _ => ('NOT VERIFIED', HmColors.warning),
+      'verified' => (context.text.identityBadgeVerified, HmColors.success),
+      'pending' => (context.text.identityBadgeInReview, HmColors.info),
+      'rejected' => (context.text.identityBadgeRejected, HmColors.error),
+      _ => (context.text.identityBadgeNotVerified, HmColors.warning),
     };
 
     return Container(
@@ -938,7 +937,7 @@ class _EvidenceCard extends StatelessWidget {
             icon: busy
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : Icon(actionIcon, size: 18),
-            label: Text(status == 'not_started' ? actionLabel : 'Replace'),
+            label: Text(status == 'not_started' ? actionLabel : context.text.partnerDocReplace),
           ),
         ],
       ),
@@ -956,7 +955,7 @@ class _EvidenceCard extends StatelessWidget {
 /// It is a route of its own rather than a re-entry into `/complete-profile`:
 /// that path is where the router *holds* people whose profile is outstanding,
 /// so a customer who has already finished was bounced straight back to the
-/// home screen the moment they tapped "Edit your details".
+/// home screen the moment they tapped context.text.partnerActionEditDetails.
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -977,7 +976,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     try {
       if (!await _detailsKey.currentState!.save()) return;
       if (!mounted) return;
-      HmFeedback.success(context, 'Your details are saved');
+      HmFeedback.success(context, context.text.profileEditSaved);
       context.pop();
     } on ApiException catch (error) {
       setState(() => _error = error.message);
@@ -989,7 +988,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: HmColors.bgPrimary,
-        appBar: AppBar(title: const Text('Edit your details'), centerTitle: true),
+        appBar: AppBar(title: Text(context.text.partnerActionEditDetails), centerTitle: true),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(HmSpace.huge),
@@ -1001,7 +1000,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 const SizedBox(height: HmSpace.section),
                 ElevatedButton(
                   onPressed: _busy ? null : _save,
-                  child: _busy ? const _Spinner() : const Text('Save changes'),
+                  child: _busy ? const _Spinner() : Text(context.text.profileEditSave),
                 ),
               ],
             ),

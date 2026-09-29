@@ -6,6 +6,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../auth/presentation/profile_setup_screen.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-008b, reached from Profile rather than from onboarding.
 ///
@@ -18,7 +19,7 @@ class IdentityScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
         backgroundColor: HmColors.bgPrimary,
-        appBar: AppBar(title: const Text('Identity verification'), centerTitle: true),
+        appBar: AppBar(title: Text(context.text.profileIdentity), centerTitle: true),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(HmSpace.huge),
@@ -50,7 +51,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     try {
       await _formKey.currentState!.save();
       if (!mounted) return;
-      HmFeedback.success(context, 'Saved — we will look out for matches');
+      HmFeedback.success(context, context.text.prefsSaved);
       context.pop();
     } on ApiException catch (error) {
       setState(() => _error = error.message);
@@ -62,7 +63,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: HmColors.bgPrimary,
-        appBar: AppBar(title: const Text('What you are looking for'), centerTitle: true),
+        appBar: AppBar(title: Text(context.text.prefsTitle), centerTitle: true),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(HmSpace.huge),
@@ -80,7 +81,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('Save'),
+                      : Text(context.text.save),
                 ),
               ],
             ),

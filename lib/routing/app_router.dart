@@ -62,6 +62,7 @@ import 'app_shell.dart';
 import 'deep_links.dart';
 import 'role_redirect.dart';
 import 'routes.dart';
+import '../core/i18n/app_text.dart';
 
 export 'routes.dart';
 
@@ -366,11 +367,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             children: [
               const Icon(Icons.explore_off_outlined, size: 44),
               const SizedBox(height: 16),
-              const Text('That page does not exist.'),
+              Text(context.text.notFoundMessage),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => context.go(Routes.home),
-                child: const Text('Go home'),
+                child: Text(context.text.notFoundGoHome),
               ),
             ],
           ),

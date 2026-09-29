@@ -12,6 +12,7 @@ import '../../discovery/data/search_providers.dart';
 import '../../shared/journey_providers.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-013b. Everything that has happened between this customer and one
 /// property, in order.
@@ -31,7 +32,7 @@ class PropertyActivityScreen extends ConsumerWidget {
     final property = ref.watch(propertyDetailProvider(propertyId));
 
     return HmScaffold(
-      title: 'My Activity',
+      title: context.text.homeMyActivity,
       padded: false,
       backgroundColor: HmColors.bgSecondary,
       body: RefreshIndicator(
@@ -52,15 +53,14 @@ class PropertyActivityScreen extends ConsumerWidget {
             ),
             const SizedBox(height: HmSpace.huge),
 
-            const HmSectionHeader(title: 'Journey Timeline'),
+            HmSectionHeader(title: context.text.rentalJourney),
             HmAsync(
               value: journey,
               onRetry: () => ref.invalidate(propertyJourneyProvider(propertyId)),
               emptyWhen: (events) => events.isEmpty,
-              empty: const HmEmpty(
-                title: 'Nothing here yet',
-                message: 'Enquire about this home and every step — the landlord’s answer, '
-                    'your payment, its verification — will be recorded here.',
+              empty: HmEmpty(
+                title: context.text.commonNothingYet,
+                message: context.text.pactivityEmptyBody,
                 icon: Icons.timeline_outlined,
               ),
               data: (events) => HmCard(child: HmTimeline(events: events)),

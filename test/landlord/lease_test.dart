@@ -110,4 +110,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('LEASE b1'), findsOneWidget);
   });
+
+  group('the contract document', () {
+    Map<String, dynamic> withDocument(String? url) => {
+          ...withAgreement,
+          'agreement': {...(withAgreement['agreement'] as Map<String, dynamic>), 'documentUrl': url},
+        };
+
+    testWidgets('a drawn-up document opens from the download button', (tester) async {
+      final harness = await open(tester, const TenancyLeaseScreen(tenancyId: 'b1'),
+          arrange: (h) => h.tenancies.leases['b1'] = leaseFromLandlordJson(withDocument('https://files.homemate.co.tz/HM-LA-7.pdf')));
+      await tester.scrollUntilVisible(find.text('Download contract PDF'), 200);
+      await tester.tap(find.text('Download contract PDF'));
+      await tester.pumpAndSettle();
+      expect(harness.links.opened, [Uri.parse('https://files.homemate.co.tz/HM-LA-7.pdf')]);
+    });
+
+    testWidgets('when it cannot be opened the reader is told', (tester) async {
+      final harness = await open(tester, const TenancyLeaseScreen(tenancyId: 'b1'), arrange: (h) {
+        h.tenancies.leases['b1'] = leaseFromLandlordJson(withDocument('https://files.homemate.co.tz/HM-LA-7.pdf'));
+        h.links.succeeds = false;
+      });
+      await tester.scrollUntilVisible(find.text('Download contract PDF'), 200);
+      await tester.tap(find.text('Download contract PDF'));
+      await tester.pumpAndSettle();
+      expect(find.text("We couldn't open the contract. Try again later."), findsOneWidget);
+      expect(harness.links.opened, hasLength(1));
+    });
+
+    testWidgets('an unsafe link is never offered', (tester) async {
+      final harness = await open(tester, const TenancyLeaseScreen(tenancyId: 'b1'),
+          arrange: (h) => h.tenancies.leases['b1'] = leaseFromLandlordJson(withDocument('javascript:alert(1)')));
+      await tester.scrollUntilVisible(find.text('Contract PDF not ready'), 200);
+      await tester.tap(find.text('Contract PDF not ready'));
+      await tester.pumpAndSettle();
+      expect(harness.links.opened, isEmpty);
+    });
+  });
 }

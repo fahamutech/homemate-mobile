@@ -18,6 +18,7 @@ import '../../shared/journey_providers.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
 import '../data/inquiry_providers.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-007d/e/f. One enquiry: where it has got to, and what to do next.
 ///
@@ -47,10 +48,10 @@ class InquiryDetailScreen extends ConsumerWidget {
   Future<void> _withdraw(BuildContext context, WidgetRef ref) async {
     final confirmed = await HmConfirm.show(
       context,
-      title: 'Withdraw this enquiry?',
-      message: 'The landlord will no longer see it. You can always ask again later.',
-      cancelLabel: 'Keep it',
-      confirmLabel: 'Withdraw',
+      title: context.text.inquiryDetailWithdrawQ,
+      message: context.text.inquiryDetailWithdrawBody,
+      cancelLabel: context.text.inquiryDetailKeep,
+      confirmLabel: context.text.inquiryDetailWithdraw,
       destructive: true,
     );
     if (!confirmed) return;
@@ -58,7 +59,7 @@ class InquiryDetailScreen extends ConsumerWidget {
     try {
       await ref.read(activityRepositoryProvider).withdrawInquiry(inquiryId);
       _invalidate(ref);
-      if (context.mounted) HmFeedback.success(context, 'Enquiry withdrawn');
+      if (context.mounted) HmFeedback.success(context, context.text.inquiryDetailWithdrawn);
     } catch (error) {
       if (context.mounted) HmFeedback.failure(context, error);
     }
@@ -70,7 +71,7 @@ class InquiryDetailScreen extends ConsumerWidget {
     final journey = ref.watch(inquiryJourneyProvider(inquiryId));
 
     return HmScaffold(
-      title: 'Enquiry Details',
+      title: context.text.inquiryDetailTitle,
       padded: false,
       backgroundColor: HmColors.bgSecondary,
       body: RefreshIndicator(
@@ -89,7 +90,7 @@ class InquiryDetailScreen extends ConsumerWidget {
               if (data.propertyId != null) _PropertyCard(inquiry: data),
               const SizedBox(height: HmSpace.huge),
 
-              const HmSectionHeader(title: 'Status timeline'),
+              HmSectionHeader(title: context.text.inquiryDetailTimeline),
               HmAsync(
                 value: journey,
                 onRetry: () => ref.invalidate(inquiryJourneyProvider(inquiryId)),
@@ -105,7 +106,7 @@ class InquiryDetailScreen extends ConsumerWidget {
 
               if (data.message.isNotEmpty)
                 HmCard(
-                  title: 'What you asked',
+                  title: context.text.inquiryDetailAsked,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -122,7 +123,7 @@ class InquiryDetailScreen extends ConsumerWidget {
               if (data.wasAnswered) ...[
                 const SizedBox(height: HmSpace.xl),
                 HmCard(
-                  title: 'The landlord replied',
+                  title: context.text.inquiryDetailReplied,
                   child: Text(data.response!, style: HmText.body),
                 ),
               ],
@@ -135,7 +136,7 @@ class InquiryDetailScreen extends ConsumerWidget {
                 OutlinedButton(
                   onPressed: () => _withdraw(context, ref),
                   style: OutlinedButton.styleFrom(foregroundColor: HmColors.error),
-                  child: const Text('Withdraw enquiry'),
+                  child: Text(context.text.inquiryDetailWithdrawEnquiry),
                 ),
               ],
             ],
@@ -181,7 +182,7 @@ class _PropertyCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              inquiry.propertyTitle ?? 'Property',
+                              inquiry.propertyTitle ?? context.text.leaseProperty,
                               style: HmText.heading,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -230,7 +231,7 @@ class _NextStepState extends ConsumerState<_NextStep> {
       await ref.read(journeyRepositoryProvider).nudgeInquiry(widget.inquiry.id);
       widget.onChanged();
       if (mounted) {
-        HmFeedback.success(context, 'Reminder sent — the landlord has been notified');
+        HmFeedback.success(context, context.text.inquiryDetailReminderSent);
       }
     } catch (error) {
       // The cooldown arrives as an ordinary failure and reads as one: it
@@ -251,15 +252,15 @@ class _NextStepState extends ConsumerState<_NextStep> {
         children: [
           HmNotice(
             message: inquiry.rejectionReason?.isNotEmpty == true
-                ? 'The landlord declined this application: ${inquiry.rejectionReason}'
-                : 'The landlord declined this application.',
+                ? context.text.inquiryDetailDeclinedWhy(inquiry.rejectionReason!)
+                : context.text.inquiryDetailDeclined,
             icon: Icons.cancel_outlined,
             colour: HmColors.error,
           ),
           const SizedBox(height: HmSpace.huge),
           OutlinedButton(
             onPressed: () => context.go(Routes.search),
-            child: const Text('Find another home'),
+            child: Text(context.text.inquiryDetailFindAnother),
           ),
         ],
       );
@@ -269,8 +270,8 @@ class _NextStepState extends ConsumerState<_NextStep> {
     if (inquiry.isPaid) {
       return Column(
         children: [
-          const HmNotice(
-            message: 'Your payment has been verified. This home is yours.',
+          HmNotice(
+            message: context.text.inquiryDetailVerified,
             icon: Icons.check_circle_outline,
             colour: HmColors.success,
           ),
@@ -281,7 +282,7 @@ class _NextStepState extends ConsumerState<_NextStep> {
               child: FilledButton.icon(
                 onPressed: () => context.push(Routes.rental(bookingId)),
                 icon: const Icon(Icons.vpn_key_outlined, size: 18),
-                label: const Text('View your rental'),
+                label: Text(context.text.inquiryDetailViewRental),
               ),
             ),
           ],
@@ -291,9 +292,8 @@ class _NextStepState extends ConsumerState<_NextStep> {
 
     // Paid, and a person is checking the money arrived.
     if (inquiry.isBeingVerified) {
-      return const HmNotice(
-        message: 'Thank you — we are verifying your payment. The home is confirmed as '
-            'soon as it clears, and we will notify you.',
+      return HmNotice(
+        message: context.text.inquiryDetailVerifying,
         icon: Icons.hourglass_top_outlined,
         colour: HmColors.info,
       );
@@ -310,9 +310,8 @@ class _NextStepState extends ConsumerState<_NextStep> {
         children: [
           HmNotice(
             message: waitingDays >= 2
-                ? 'You have been waiting $waitingDays days. Most landlords reply within '
-                    'a day — send a reminder and we will notify them again.'
-                : 'Your enquiry is with the landlord. Most reply within a day.',
+                ? context.text.inquiryDetailWaiting(waitingDays)
+                : context.text.inquiryDetailWithLandlord,
             icon: Icons.schedule_outlined,
             colour: HmColors.warning,
           ),
@@ -328,12 +327,12 @@ class _NextStepState extends ConsumerState<_NextStep> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: HmColors.textOnBrand),
                     )
                   : const Icon(Icons.notifications_active_outlined, size: 18),
-              label: const Text('Send Nudge Reminder'),
+              label: Text(context.text.inquiryDetailNudge),
             ),
           ),
           const SizedBox(height: HmSpace.md),
           Text(
-            'You can send one reminder a day.',
+            context.text.inquiryDetailOneADay,
             style: HmText.caption.copyWith(fontSize: 11),
             textAlign: TextAlign.center,
           ),
@@ -374,9 +373,8 @@ class _PayNow extends ConsumerWidget {
           ),
           if (data.isBlockedByHold) ...[
             const SizedBox(height: HmSpace.xl),
-            const HmNotice(
-              message: 'Someone else is paying for this home at the moment. If they do '
-                  'not finish, it becomes available again within ten minutes.',
+            HmNotice(
+              message: context.text.inquiryDetailSomeonePaying,
               icon: Icons.hourglass_top_outlined,
             ),
           ],
@@ -399,7 +397,7 @@ class _PayNow extends ConsumerWidget {
           // The amount when the server has told us one, and a plain verb when
           // it has not — a button that says "Pay TZS 0" is worse than one that
           // just says "Pay".
-          eligibility?.hasStarted ?? false ? 'Continue payment' : 'Pay now to secure it',
+          eligibility?.hasStarted ?? false ? context.text.propertyContinuePayment : context.text.inquiryDetailPayNow,
         ),
       ),
     );

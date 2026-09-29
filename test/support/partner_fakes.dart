@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:homemate_mobile/core/contact/contact_launcher.dart';
+import 'package:homemate_mobile/core/links/link_opener.dart';
 import 'package:homemate_mobile/core/media/photo_source.dart';
 import 'package:homemate_mobile/core/media/picked_photo.dart';
 import 'package:homemate_mobile/core/media/webp_encoder.dart';
@@ -524,6 +525,19 @@ class FakeWebpEncoder implements WebpEncoder {
 }
 
 /// Records calls and chats instead of leaving the app.
+/// Records the documents a screen asked to open; [succeeds] false plays a
+/// phone with nothing to open them with.
+class FakeLinkOpener implements LinkOpener {
+  final List<Uri> opened = [];
+  bool succeeds = true;
+
+  @override
+  Future<bool> open(Uri uri) async {
+    opened.add(uri);
+    return succeeds;
+  }
+}
+
 class FakeContactLauncher implements ContactLauncher {
   final List<String> calls = [];
   final List<String> chats = [];

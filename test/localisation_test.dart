@@ -5,7 +5,12 @@ import 'package:homemate_mobile/core/i18n/language_picker.dart';
 import 'package:homemate_mobile/core/i18n/locale_controller.dart';
 import 'package:homemate_mobile/core/i18n/locale_store.dart';
 import 'package:homemate_mobile/core/i18n/translations.dart';
+import 'package:homemate_mobile/design/widgets/hm_async.dart';
+import 'package:homemate_mobile/core/network/api_exception.dart';
 import 'package:homemate_mobile/features/auth/presentation/onboarding_screen.dart';
+import 'package:homemate_mobile/features/inquiry/presentation/inquiry_form_screen.dart';
+import 'package:homemate_mobile/features/payment/presentation/checkout_screen.dart';
+import 'package:homemate_mobile/features/property/presentation/property_screen.dart';
 
 import 'support/fakes.dart';
 
@@ -31,11 +36,11 @@ void main() {
 
     test('fills placeholders', () {
       const en = AppText(AppLocale.english);
-      expect(en.greeting('Asha'), 'Hi, Asha 👋');
+      expect(en.greeting('Asha'), 'Hi, Asha');
       expect(en.unreadNotifications(3), '3 unread notifications');
       // No name is a real case — the profile step is skippable.
-      expect(en.greeting(null), 'Hi, there 👋');
-      expect(const AppText(AppLocale.swahili).greeting(null), 'Habari, karibu 👋');
+      expect(en.greeting(null), 'Hi, there');
+      expect(const AppText(AppLocale.swahili).greeting(null), 'Habari, karibu');
     });
   });
 
@@ -62,11 +67,12 @@ void main() {
   });
 
   test('no copy leans on a symbol a phone may lack a glyph for', () {
-    // "→" needs a fallback font that Flutter web fetches at runtime; where it
-    // cannot, the reader sees an empty box. Say it in words instead.
+    // "→" and emoji need fallback fonts that Flutter web fetches at runtime;
+    // where it cannot, the reader sees an empty box. Say it in words instead.
+    final missingGlyph = RegExp(r"[→⋮\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]", unicode: true);
     for (final locale in AppLocale.values) {
-      final withArrow = [for (final e in kTranslations[locale]!.entries) if (e.value.contains('→')) e.key];
-      expect(withArrow, isEmpty, reason: '$locale');
+      final offending = [for (final e in kTranslations[locale]!.entries) if (missingGlyph.hasMatch(e.value)) e.key];
+      expect(offending, isEmpty, reason: '$locale');
     }
   });
 
@@ -120,6 +126,52 @@ void main() {
       expect(find.text('Find your home'), findsOneWidget);
       expect(find.text('Next'), findsOneWidget);
       expect(find.text('Pata nyumba yako'), findsNothing);
+    });
+  });
+
+  group('a customer in Kiswahili', () {
+    testWidgets('reads the property, its price and the way to rent it in Kiswahili', (tester) async {
+      final harness = TestHarness();
+      await tester.pumpWidget(harness.wrap(const PropertyScreen(propertyId: 'prop-1'), locale: AppLocale.swahili));
+      await tester.pumpAndSettle();
+
+      await reveal(tester, find.text('Mchanganuo wa Bei'));
+      expect(find.text('Mchanganuo wa Bei'), findsOneWidget);
+      expect(find.text('Price Breakdown'), findsNothing);
+      await reveal(tester, find.text('Jinsi ya kuikodi'));
+      expect(find.text('Jinsi ya kuikodi'), findsOneWidget);
+      expect(find.text('Uliza'), findsWidgets);
+      expect(find.text('Enquire'), findsNothing);
+    });
+
+    testWidgets('checks out in Kiswahili', (tester) async {
+      final harness = TestHarness();
+      await tester.pumpWidget(harness.wrap(const CheckoutScreen(propertyId: 'prop-1'), locale: AppLocale.swahili));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Maelezo ya Nafasi'), findsOneWidget);
+      expect(find.text('Reservation Details'), findsNothing);
+    });
+
+    testWidgets('is offered an opening line in Kiswahili when enquiring', (tester) async {
+      final harness = TestHarness();
+      await tester.pumpWidget(harness.wrap(const InquiryFormScreen(propertyId: 'prop-1'), locale: AppLocale.swahili));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Habari, ninavutiwa na nyumba hii. Bado inapatikana?'), findsOneWidget);
+      expect(find.text('Tuma ombi'), findsWidgets);
+    });
+
+    testWidgets('is told about being offline in Kiswahili, with a way to retry', (tester) async {
+      final harness = TestHarness();
+      await tester.pumpWidget(harness.wrap(
+        HmErrorView(error: ApiException.network(), onRetry: () {}),
+        locale: AppLocale.swahili,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Inaonekana huna mtandao. Angalia muunganisho wako kisha ujaribu tena.'), findsOneWidget);
+      expect(find.text('Jaribu tena'), findsOneWidget);
     });
   });
 }

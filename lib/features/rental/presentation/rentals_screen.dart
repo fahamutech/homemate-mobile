@@ -10,6 +10,8 @@ import '../../../routing/app_router.dart';
 import '../../shared/journey_models.dart';
 import '../../shared/journey_providers.dart';
 import '../../shared/property_image.dart';
+import '../../../core/i18n/app_text.dart';
+import 'rental_remaining.dart';
 
 /// CUS-012a. Every lease the customer is currently living under.
 ///
@@ -23,7 +25,7 @@ class RentalsScreen extends ConsumerWidget {
     final rentals = ref.watch(rentalsProvider);
 
     return HmScaffold(
-      title: 'My Rentals',
+      title: context.text.rentalsTitle,
       padded: false,
       backgroundColor: HmColors.bgSecondary,
       body: RefreshIndicator(
@@ -33,13 +35,12 @@ class RentalsScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(rentalsProvider),
           emptyWhen: (page) => page.isEmpty,
           empty: HmEmpty(
-            title: 'No active rentals',
-            message: 'Once you have paid for a home and the lease begins, it will '
-                'be managed from here.',
+            title: context.text.rentalsEmpty,
+            message: context.text.rentalsEmptyBody,
             icon: Icons.vpn_key_outlined,
             action: OutlinedButton(
               onPressed: () => context.go(Routes.search),
-              child: const Text('Find a home'),
+              child: Text(context.text.rentalsFind),
             ),
           ),
           data: (page) => ListView.separated(
@@ -62,13 +63,13 @@ class RentalCard extends StatelessWidget {
   final Rental rental;
 
   /// "Jan 2026 - Dec 2026" — the term, in the shorthand the design uses.
-  String get _termLabel {
+  String _termLabel(AppText text) {
     final start = rental.leaseStartDate;
     final end = rental.leaseEndDate;
     if (start == null && end == null) return '';
     final format = DateFormat('MMM yyyy');
-    if (end == null) return 'From ${format.format(start!)}';
-    if (start == null) return 'Until ${format.format(end)}';
+    if (end == null) return text.rentalsFrom(format.format(start!));
+    if (start == null) return text.rentalsUntil(format.format(end));
     return '${format.format(start)} - ${format.format(end)}';
   }
 
@@ -104,7 +105,7 @@ class RentalCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      rental.propertyTitle ?? 'Your home',
+                      rental.propertyTitle ?? context.text.rentalYourHome,
                       style: HmText.label.copyWith(fontSize: 14),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -131,10 +132,10 @@ class RentalCard extends StatelessWidget {
                       rental.rentLabel,
                       style: HmText.label.copyWith(fontSize: 13, color: HmColors.brandPrimary),
                     ),
-                    if (_termLabel.isNotEmpty) ...[
+                    if (_termLabel(context.text).isNotEmpty) ...[
                       const SizedBox(height: HmSpace.xs),
                       Text(
-                        _termLabel,
+                        _termLabel(context.text),
                         style: HmText.caption.copyWith(fontSize: 12, color: HmColors.textDisabled),
                       ),
                     ],
@@ -153,10 +154,10 @@ class RentalCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(HmRadius.pill),
                 ),
                 child: Text(
-                  rental.remainingLabel,
+                  rentalRemaining(context.text, rental),
                   // Read aloud as what it means, since "0 days" on its own is
                   // not obviously "the lease ends today".
-                  semanticsLabel: '${rental.remainingLabel} of lease remaining',
+                  semanticsLabel: context.text.rentalsRemaining(rentalRemaining(context.text, rental)),
                   style: HmText.caption.copyWith(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,

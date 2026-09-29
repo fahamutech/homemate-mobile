@@ -18,6 +18,7 @@ import '../features/shared/journey_repository.dart';
 import '../features/shared/models.dart';
 import 'config/env.dart';
 import 'contact/contact_launcher.dart';
+import 'links/link_opener.dart';
 import 'media/photo_source.dart';
 import 'media/webp_encoder.dart';
 import 'network/api_client.dart';
@@ -103,6 +104,8 @@ final roleControllerProvider = StateNotifierProvider<RoleController, RoleState>(
 final photoSourceProvider = Provider<PhotoSource>((ref) => ImagePickerPhotoSource());
 
 final contactLauncherProvider = Provider<ContactLauncher>((ref) => UrlContactLauncher());
+
+final linkOpenerProvider = Provider<LinkOpener>((ref) => UrlLinkOpener());
 
 final webpEncoderProvider = Provider<WebpEncoder>((ref) => WebpEncoder.platformDefault());
 

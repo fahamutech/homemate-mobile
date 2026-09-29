@@ -10,6 +10,7 @@ import '../../../design/widgets/hm_scaffold.dart';
 import '../../../routing/app_router.dart';
 import '../../shared/models.dart';
 import '../data/notification_providers.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-020. What happened while the customer was away.
 class NotificationsScreen extends ConsumerWidget {
@@ -35,7 +36,7 @@ class NotificationsScreen extends ConsumerWidget {
     final notifications = ref.watch(notificationsProvider);
 
     return HmScaffold(
-      title: 'Notifications',
+      title: context.text.notifications,
       padded: false,
       actions: [
         TextButton(
@@ -48,7 +49,7 @@ class NotificationsScreen extends ConsumerWidget {
               if (context.mounted) HmFeedback.failure(context, error);
             }
           },
-          child: const Text('Mark all read'),
+          child: Text(context.text.notificationsMarkAll),
         ),
       ],
       body: RefreshIndicator(
@@ -57,9 +58,9 @@ class NotificationsScreen extends ConsumerWidget {
           value: notifications,
           onRetry: () => ref.invalidate(notificationsProvider),
           emptyWhen: (page) => page.isEmpty,
-          empty: const HmEmpty(
-            title: 'Nothing new',
-            message: 'Replies, confirmations and payment updates appear here.',
+          empty: HmEmpty(
+            title: context.text.notificationsEmpty,
+            message: context.text.notificationsEmptyBody,
             icon: Icons.notifications_none_rounded,
           ),
           data: (page) => ListView.separated(

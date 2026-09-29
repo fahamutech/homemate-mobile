@@ -11,6 +11,7 @@ import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_scaffold.dart';
 import '../../../routing/app_router.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-006c / CUS-006e. Enter the code that was texted.
 ///
@@ -72,7 +73,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   Future<void> _verify() async {
     if (_code.text.length != 6) {
-      setState(() => _error = 'Enter the 6-digit code');
+      setState(() => _error = context.text.otpEnterCode);
       return;
     }
     setState(() {
@@ -113,7 +114,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           .requestOtp(phoneNumber: widget.phoneNumber, purpose: widget.purpose);
       if (challenge.challengeId != null) _challengeId = challenge.challengeId!;
       _startCountdown(challenge.resendAfterSeconds);
-      if (mounted) HmFeedback.success(context, 'A new code is on its way');
+      if (mounted) HmFeedback.success(context, context.text.otpResent);
     } on ApiException catch (error) {
       // A refusal carries how long to wait, so the countdown restarts at the
       // server's number rather than the app guessing.
@@ -127,7 +128,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return HmScaffold(
-      title: 'Verify your number',
+      title: context.text.otpTitle,
       onBack: () => context.go(Routes.signIn),
       backgroundColor: HmColors.bgPrimary,
       body: SingleChildScrollView(
@@ -135,10 +136,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: HmSpace.huge),
-            Text('Enter the code', style: HmText.title, textAlign: TextAlign.center),
+            Text(context.text.otpHeading, style: HmText.title, textAlign: TextAlign.center),
             const SizedBox(height: HmSpace.md),
             Text(
-              'We sent a 6-digit code to ${widget.phoneNumber}.',
+              context.text.otpSentTo(widget.phoneNumber),
               style: HmText.body,
               textAlign: TextAlign.center,
             ),
@@ -174,15 +175,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Verify'),
+                  : Text(context.text.otpVerify),
             ),
             const SizedBox(height: HmSpace.xxl),
             Center(
               child: _resendIn > 0
-                  ? Text('Resend in ${_resendIn}s', style: HmText.caption)
+                  ? Text(context.text.otpResendIn(_resendIn), style: HmText.caption)
                   : TextButton(
                       onPressed: _busy ? null : _resend,
-                      child: const Text('Send another code'),
+                      child: Text(context.text.otpSendAnother),
                     ),
             ),
           ],

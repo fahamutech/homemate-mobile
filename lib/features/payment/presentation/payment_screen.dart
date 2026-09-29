@@ -13,6 +13,7 @@ import '../../inquiry/data/inquiry_providers.dart';
 import '../../shared/journey_providers.dart';
 import '../data/payment_providers.dart';
 import '../../shared/models.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-014 / CUS-015. Paying for a booking.
 ///
@@ -31,7 +32,7 @@ class PaymentScreen extends ConsumerWidget {
     final payment = ref.watch(paymentProvider(paymentId));
 
     return HmScaffold(
-      title: 'Payment',
+      title: context.text.paymentTitle,
       body: HmAsync(
         value: payment,
         onRetry: () => ref.invalidate(paymentProvider(paymentId)),
@@ -69,7 +70,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
       ref.invalidate(savedOverviewProvider);
       ref.invalidate(activitySummaryProvider);
 
-      if (mounted) HmFeedback.success(context, 'Thank you — we are checking your payment');
+      if (mounted) HmFeedback.success(context, context.text.paymentThanks);
     } catch (error) {
       if (mounted) HmFeedback.failure(context, error);
     } finally {
@@ -81,13 +82,12 @@ class _LoadedState extends ConsumerState<_Loaded> {
   /// finance match the payment in minutes rather than hours.
   Future<String?> _askForReference() => HmPrompt.show(
         context,
-        title: 'Confirm your payment',
-        message: 'If you have the confirmation code from your payment message, '
-            'entering it helps us check much faster.',
-        fieldLabel: 'Confirmation code (optional)',
-        hintText: 'e.g. QJ12KL9MN',
-        cancelLabel: 'Not yet',
-        confirmLabel: 'I have paid',
+        title: context.text.paymentConfirmTitle,
+        message: context.text.paymentConfirmBody,
+        fieldLabel: context.text.paymentCodeLabel,
+        hintText: context.text.paymentCodeHint,
+        cancelLabel: context.text.wizardReviewMissing,
+        confirmLabel: context.text.paymentIHavePaid,
         capitalise: TextCapitalization.characters,
         required: false,
       );
@@ -134,11 +134,11 @@ class _LoadedState extends ConsumerState<_Loaded> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('I have paid'),
+                : Text(context.text.paymentIHavePaid),
           ),
           const SizedBox(height: HmSpace.md),
-          const Text(
-            'Only tap this once you have actually sent the money.',
+          Text(
+            context.text.paymentOnlyOnce,
             style: HmText.caption,
             textAlign: TextAlign.center,
           ),
@@ -161,23 +161,23 @@ class _HowToPay extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('How to pay', style: HmText.heading),
+        Text(context.text.paymentHowTo, style: HmText.heading),
         const SizedBox(height: HmSpace.xl),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(HmSpace.xxl),
             child: Column(
               children: [
-                _CopyRow(label: 'Pay to', value: payment.payToName ?? ''),
+                _CopyRow(label: context.text.paymentPayTo, value: payment.payToName ?? ''),
                 if (payment.payToAccountName != null)
-                  _CopyRow(label: 'Account name', value: payment.payToAccountName!),
+                  _CopyRow(label: context.text.paymentAccountName, value: payment.payToAccountName!),
                 _CopyRow(
-                  label: payment.paymentMethodKindLabel,
+                  label: payment.paymentMethodKindLabel(context.text),
                   value: payment.payToAccountNumber!,
                   emphasise: true,
                 ),
-                _CopyRow(label: 'Reference', value: payment.payReference!, emphasise: true),
-                _CopyRow(label: 'Amount', value: payment.amountLabel, emphasise: true),
+                _CopyRow(label: context.text.paymentReference, value: payment.payReference!, emphasise: true),
+                _CopyRow(label: context.text.wizardChargeAmount, value: payment.amountLabel, emphasise: true),
               ],
             ),
           ),
@@ -201,9 +201,8 @@ class _HowToPay extends StatelessWidget {
           ),
         ],
         const SizedBox(height: HmSpace.xxl),
-        const Text(
-          'Always quote the reference. Without it we cannot match your payment to '
-          'your booking.',
+        Text(
+          context.text.paymentQuoteReference,
           style: HmText.caption,
         ),
       ],
@@ -241,11 +240,11 @@ class _CopyRow extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Copy $label',
+              tooltip: context.text.paymentCopy(label),
               icon: const Icon(Icons.copy_rounded, size: 18),
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: value));
-                if (context.mounted) HmFeedback.success(context, '$label copied');
+                if (context.mounted) HmFeedback.success(context, context.text.paymentCopied(label));
               },
             ),
           ],
@@ -257,9 +256,9 @@ class _Waiting extends StatelessWidget {
   const _Waiting();
 
   @override
-  Widget build(BuildContext context) => const HmEmpty(
-        title: 'Payment details are being prepared',
-        message: 'We will notify you the moment they are ready — usually within a few minutes.',
+  Widget build(BuildContext context) => HmEmpty(
+        title: context.text.paymentPreparing,
+        message: context.text.paymentPreparingBody,
         icon: Icons.hourglass_empty_rounded,
       );
 }
@@ -283,17 +282,16 @@ class _BeingChecked extends StatelessWidget {
               children: [
                 const Icon(Icons.hourglass_top_rounded, size: 36, color: HmColors.warning),
                 const SizedBox(height: HmSpace.xxl),
-                const Text('We are checking your payment', style: HmText.heading),
+                Text(context.text.paymentChecking, style: HmText.heading),
                 const SizedBox(height: HmSpace.md),
-                const Text(
-                  'Someone from our team is confirming it against the account. '
-                  'You will be notified as soon as it clears.',
+                Text(
+                  context.text.paymentCheckingBody,
                   style: HmText.body,
                   textAlign: TextAlign.center,
                 ),
                 if (payment.declaredReference != null) ...[
                   const SizedBox(height: HmSpace.xxl),
-                  Text('Your code: ${payment.declaredReference}', style: HmText.caption),
+                  Text(context.text.paymentYourCode(payment.declaredReference!), style: HmText.caption),
                 ],
               ],
             ),
@@ -320,16 +318,20 @@ class _Paid extends StatelessWidget {
           children: [
             const Icon(Icons.check_circle_rounded, size: 40, color: HmColors.success),
             const SizedBox(height: HmSpace.xxl),
-            const Text('Payment received', style: HmText.heading),
+            Text(context.text.paymentReceived, style: HmText.heading),
             const SizedBox(height: HmSpace.md),
             Text(
-              'We confirmed ${payment.amountLabel}'
-              '${payment.confirmedAt == null ? '' : ' on ${payment.confirmedAt!.day}/${payment.confirmedAt!.month}/${payment.confirmedAt!.year}'}.',
+              payment.confirmedAt == null
+                  ? context.text.paymentConfirmed(payment.amountLabel)
+                  : context.text.paymentConfirmedOn(
+                      payment.amountLabel,
+                      '${payment.confirmedAt!.day}/${payment.confirmedAt!.month}/${payment.confirmedAt!.year}',
+                    ),
               style: HmText.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: HmSpace.xxl),
-            Text('Receipt ${payment.reference}', style: HmText.caption),
+            Text(context.text.paymentReceipt(payment.reference), style: HmText.caption),
           ],
         ),
       );
@@ -351,10 +353,10 @@ class _Failed extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline_rounded, size: 40, color: HmColors.error),
             const SizedBox(height: HmSpace.xxl),
-            const Text('This payment did not go through', style: HmText.heading),
+            Text(context.text.paymentFailed, style: HmText.heading),
             const SizedBox(height: HmSpace.md),
             Text(
-              payment.failureReason ?? 'Please contact support so we can sort it out.',
+              payment.failureReason ?? context.text.paymentContactSupport,
               style: HmText.body,
               textAlign: TextAlign.center,
             ),
@@ -366,10 +368,10 @@ class _Failed extends StatelessWidget {
 extension on CustomerPayment {
   /// "Lipa Namba" means something to a Tanzanian customer; "Account number"
   /// is what a bank transfer needs. The method decides the wording.
-  String get paymentMethodKindLabel => switch (paymentMethodName?.toLowerCase()) {
+  String paymentMethodKindLabel(AppText text) => switch (paymentMethodName?.toLowerCase()) {
         final name? when name.contains('pesa') || name.contains('mix') || name.contains('airtel') =>
           'Lipa Namba',
-        final name? when name.contains('bank') => 'Account number',
-        _ => 'Pay to number',
+        final name? when name.contains('bank') => text.paymentAccountNumber,
+        _ => text.paymentPayToNumber,
       };
 }

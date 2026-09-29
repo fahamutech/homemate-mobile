@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_exception.dart';
 import '../tokens.dart';
+import '../../core/i18n/app_text.dart';
+import '../../core/network/error_text.dart';
 
 /// Loading, empty, error and content — the four states every fetched screen
 /// has, written once.
@@ -37,7 +39,7 @@ class HmAsync<T> extends StatelessWidget {
       error: (error, _) => HmErrorView(error: error, onRetry: onRetry),
       data: (loaded) {
         if (emptyWhen?.call(loaded) == true) {
-          return empty ?? const HmEmpty(title: 'Nothing here yet');
+          return empty ?? HmEmpty(title: context.text.commonNothingYet);
         }
         return data(loaded);
       },
@@ -81,7 +83,7 @@ class HmErrorView extends StatelessWidget {
     final api = error is ApiException ? error as ApiException : null;
     // An unexpected exception is a bug; showing its toString to a customer
     // helps nobody, so it becomes the generic sentence instead.
-    final message = api?.message ?? ApiException.unexpected().message;
+    final message = errorText(context.text, error);
     final canRetry = onRetry != null && (api == null || api.isTransient || api.isRateLimited);
 
     return Center(
@@ -101,7 +103,7 @@ class HmErrorView extends StatelessWidget {
               const SizedBox(height: HmSpace.huge),
               OutlinedButton(
                 onPressed: onRetry,
-                child: const Text('Try again'),
+                child: Text(context.text.retry),
               ),
             ],
           ],

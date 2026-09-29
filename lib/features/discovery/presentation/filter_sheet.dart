@@ -10,6 +10,7 @@ import '../../../design/widgets/hm_money.dart';
 import '../../shared/catalogue_repository.dart';
 import '../../shared/models.dart';
 import '../data/search_providers.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-002b. The filter sheet, as the designs draw it.
 ///
@@ -94,7 +95,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
       initialDate: _draft.availableBy ?? today,
       firstDate: today,
       lastDate: DateTime(today.year + 2),
-      helpText: 'Available by',
+      helpText: context.text.filterAvailableBy,
     );
     if (picked == null) return;
     setState(() => _availability = 'custom');
@@ -141,7 +142,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                 ),
                 children: [
                   _Group(
-                    title: 'PROPERTY TYPE',
+                    title: context.text.filterSectionType,
                     child: reference.when(
                       loading: () => const _InlineLoading(),
                       error: (_, __) => const _InlineUnavailable(),
@@ -154,7 +155,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   ),
 
                   _Group(
-                    title: 'MONTHLY RENT',
+                    title: context.text.filterSectionRent,
                     child: Column(
                       children: [
                         RangeSlider(
@@ -170,7 +171,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                         _RangeCaption(
                           low: HmMoney.format(0),
                           middle: '${_short(_priceRange.start)} – '
-                              '${_priceRange.end >= _maxPrice ? 'Any' : _short(_priceRange.end)}',
+                              '${_priceRange.end >= _maxPrice ? context.text.prefsAny : _short(_priceRange.end)}',
                           high: '${_short(_maxPrice)}+',
                         ),
                       ],
@@ -178,11 +179,11 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   ),
 
                   _Group(
-                    title: 'BEDROOMS',
+                    title: context.text.filterSectionBedrooms,
                     child: HmSegmentedPills<int?>(
-                      options: const [
-                        (null, 'Any'),
-                        (0, 'Studio'),
+                      options: [
+                        (null, context.text.prefsAny),
+                        (0, context.text.prefsStudio),
                         (1, '1'),
                         (2, '2'),
                         (3, '3'),
@@ -194,16 +195,16 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   ),
 
                   _Group(
-                    title: 'BATHROOMS',
+                    title: context.text.filterSectionBathrooms,
                     child: HmSegmentedPills<int?>(
-                      options: const [(null, 'Any'), (1, '1'), (2, '2'), (3, '3'), (4, '4+')],
+                      options: [(null, context.text.prefsAny), (1, '1'), (2, '2'), (3, '3'), (4, '4+')],
                       value: _draft.bathrooms,
                       onChanged: (value) => _edit((draft) => draft.copyWith(bathrooms: value)),
                     ),
                   ),
 
                   _Group(
-                    title: 'FLOOR AREA',
+                    title: context.text.filterSectionArea,
                     child: Column(
                       children: [
                         RangeSlider(
@@ -219,7 +220,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                         _RangeCaption(
                           low: '0 sqm',
                           middle: '${_areaRange.start.round()} sqm – '
-                              '${_areaRange.end >= _maxArea ? 'Any' : '${_areaRange.end.round()} sqm'}',
+                              '${_areaRange.end >= _maxArea ? context.text.prefsAny : '${_areaRange.end.round()} sqm'}',
                           high: '${_maxArea.round()} sqm',
                         ),
                       ],
@@ -227,7 +228,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   ),
 
                   _Group(
-                    title: 'AMENITIES',
+                    title: context.text.filterSectionAmenities,
                     child: reference.when(
                       loading: () => const _InlineLoading(),
                       error: (_, __) => const _InlineUnavailable(),
@@ -245,16 +246,16 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   ),
 
                   _Group(
-                    title: 'AVAILABILITY',
+                    title: context.text.filterSectionAvailability,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         HmSegmentedPills<String>(
-                          options: const [
-                            ('any', 'Any Time'),
-                            ('immediately', 'Immediately'),
-                            ('this_month', 'This Month'),
-                            ('custom', 'Custom Date'),
+                          options: [
+                            ('any', context.text.filterAnyTime),
+                            ('immediately', context.text.prefsTimelineNow),
+                            ('this_month', context.text.filterThisMonth),
+                            ('custom', context.text.filterCustomDate),
                           ],
                           value: _availability,
                           onChanged: (value) =>
@@ -263,7 +264,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                         if (_availability == 'custom' && _draft.availableBy != null) ...[
                           const SizedBox(height: HmSpace.md),
                           Text(
-                            'Available by ${_formatDate(_draft.availableBy!)}',
+                            context.text.filterAvailableOn(_formatDate(_draft.availableBy!)),
                             style: HmText.caption,
                           ),
                         ],
@@ -309,17 +310,17 @@ class _Header extends StatelessWidget {
               shape: const CircleBorder(),
               child: IconButton(
                 icon: const Icon(Icons.close, size: 18),
-                tooltip: 'Close filters',
+                tooltip: context.text.filterClose,
                 onPressed: onClose,
               ),
             ),
             Expanded(
-              child: Text('Filters', style: HmText.title, textAlign: TextAlign.center),
+              child: Text(context.text.filterTitle, style: HmText.title, textAlign: TextAlign.center),
             ),
             TextButton(
               onPressed: onReset,
               style: TextButton.styleFrom(foregroundColor: HmColors.error),
-              child: const Text('Reset'),
+              child: Text(context.text.filterReset),
             ),
           ],
         ),
@@ -352,7 +353,7 @@ class _Group extends StatelessWidget {
       );
 }
 
-/// "All" plus one pill per type. "All" is not a type — it is the absence of
+/// context.text.listingsAll plus one pill per type. context.text.listingsAll is not a type — it is the absence of
 /// the filter — so selecting it clears rather than sets.
 class _PropertyTypes extends StatelessWidget {
   const _PropertyTypes({
@@ -371,7 +372,7 @@ class _PropertyTypes extends StatelessWidget {
         runSpacing: HmSpace.md,
         children: [
           HmChoicePill(
-            label: 'All',
+            label: context.text.listingsAll,
             dense: true,
             selected: selected == null,
             onTap: () => onSelected(null),
@@ -401,7 +402,7 @@ class _AmenityGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (amenities.isEmpty) {
-      return Text('No amenities recorded yet.', style: HmText.caption);
+      return Text(context.text.filterNoAmenities, style: HmText.caption);
     }
 
     return LayoutBuilder(
@@ -455,11 +456,10 @@ class _VerifiedToggle extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Verified Properties Only', style: HmText.heading),
+                    Text(context.text.filterVerifiedOnly, style: HmText.heading),
                     const SizedBox(height: HmSpace.xs),
                     Text(
-                      'Show only properties whose landlord or broker HomeMate '
-                      'has identified.',
+                      context.text.filterVerifiedOnlyHelp,
                       style: HmText.caption,
                     ),
                   ],
@@ -504,15 +504,13 @@ class _Footer extends ConsumerWidget {
                   children: [
                     Text(
                       preview.maybeWhen(
-                        data: (page) => page.total == 1
-                            ? '1 property matches'
-                            : '${page.total} properties match',
-                        orElse: () => 'Counting…',
+                        data: (page) => context.text.filterMatches(page.total),
+                        orElse: () => context.text.filterCounting,
                       ),
                       style: HmText.heading,
                     ),
                     const SizedBox(height: HmSpace.xxs),
-                    Text('Based on current filters', style: HmText.caption),
+                    Text(context.text.filterBasedOn, style: HmText.caption),
                   ],
                 ),
               ),
@@ -528,7 +526,7 @@ class _Footer extends ConsumerWidget {
                   // width floor.
                   minimumSize: const Size(0, 52),
                 ),
-                child: const Text('Show Results'),
+                child: Text(context.text.filterShow),
               ),
             ],
           ),
@@ -577,7 +575,7 @@ class _InlineUnavailable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        'Could not load these options — the other filters still work.',
+        context.text.filterOptionsFailed,
         style: HmText.caption,
       );
 }

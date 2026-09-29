@@ -17,6 +17,7 @@ import '../../shared/journey_providers.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
 import '../../shared/service_fee_card.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-005. One listing, in full.
 ///
@@ -93,13 +94,13 @@ class _LoadedState extends ConsumerState<_Loaded> {
           backgroundColor: HmColors.bgPrimary,
           leading: _CircleButton(
             icon: Icons.arrow_back,
-            tooltip: 'Back',
+            tooltip: context.text.back,
             onPressed: () => context.pop(),
           ),
           actions: [
             _CircleButton(
               icon: _saved ? Icons.favorite : Icons.favorite_outline,
-              tooltip: _saved ? 'Remove from saved' : 'Save this property',
+              tooltip: _saved ? context.text.savedRemove : context.text.savedAdd,
               colour: _saved ? HmColors.error : null,
               onPressed: _toggleSaved,
             ),
@@ -157,7 +158,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
                   Expanded(child: Text(property.priceLabel, style: HmText.price)),
                   if (detail.monthlyTotal > (property.price ?? 0))
                     Text(
-                      '${HmMoney.format(detail.monthlyTotal, currency: property.currency)} all in',
+                      context.text.propertyAllIn(HmMoney.format(detail.monthlyTotal, currency: property.currency)),
                       style: HmText.caption,
                     ),
                 ],
@@ -175,7 +176,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
               if (detail.amenities.isNotEmpty) ...[
                 const SizedBox(height: HmSpace.huge),
                 _Section(
-                  title: 'Amenities',
+                  title: context.text.wizardAmenities,
                   child: Wrap(
                     spacing: HmSpace.md,
                     runSpacing: HmSpace.md,
@@ -193,7 +194,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
               if (property.hasLocation) ...[
                 const SizedBox(height: HmSpace.huge),
                 _Section(
-                  title: 'Location',
+                  title: context.text.wizardStepLocation,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -230,7 +231,7 @@ class _LoadedState extends ConsumerState<_Loaded> {
               if ((detail.houseRules ?? '').isNotEmpty) ...[
                 const SizedBox(height: HmSpace.huge),
                 _Section(
-                  title: 'House rules',
+                  title: context.text.wizardHouseRules,
                   child: Text(detail.houseRules!, style: HmText.body),
                 ),
               ],
@@ -275,7 +276,7 @@ class _Section extends StatelessWidget {
       );
 }
 
-/// "About this property", with a Read more that only appears when there is
+/// context.text.propertyAbout, with a Read more that only appears when there is
 /// more to read.
 class _About extends StatefulWidget {
   const _About({required this.description});
@@ -294,14 +295,13 @@ class _AboutState extends State<_About> {
     final description = (widget.description ?? '').trim();
 
     return _Section(
-      title: 'About this property',
+      title: context.text.propertyAbout,
       child: description.isEmpty
           // The heading stays even with nothing under it: a listing with no
           // description should read as "the landlord did not write one", not
           // as a section the app forgot to build.
           ? Text(
-              'The landlord has not written a description yet. Ask them '
-              'anything you need to know when you enquire.',
+              context.text.propertyNoDescription,
               style: HmText.body.copyWith(color: HmColors.textSecondary),
             )
           : Column(
@@ -321,7 +321,7 @@ class _AboutState extends State<_About> {
                   TextButton(
                     onPressed: () => setState(() => _expanded = !_expanded),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                    child: Text(_expanded ? 'Show less' : 'Read more'),
+                    child: Text(_expanded ? context.text.propertyShowLess : context.text.propertyReadMore),
                   ),
               ],
             ),
@@ -372,7 +372,7 @@ class _ContactCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name ?? 'Listed by HomeMate',
+                  name ?? context.text.propertyListedByHomeMate,
                   style: HmText.label.copyWith(fontSize: 15),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -387,7 +387,7 @@ class _ContactCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         detail.contactVerified
-                            ? 'Verified ${detail.contactSubtitle}'
+                            ? context.text.propertyVerifiedContact(detail.contactSubtitle)
                             : detail.contactSubtitle,
                         style: HmText.caption,
                         maxLines: 1,
@@ -399,9 +399,7 @@ class _ContactCard extends StatelessWidget {
                 if (detail.contactActiveListings > 0) ...[
                   const SizedBox(height: HmSpace.xxs),
                   Text(
-                    detail.contactActiveListings == 1
-                        ? '1 active listing'
-                        : '${detail.contactActiveListings} active listings',
+                    context.text.propertyActiveListings(detail.contactActiveListings),
                     style: HmText.caption,
                   ),
                 ],
@@ -413,7 +411,7 @@ class _ContactCard extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => context.push(Routes.inquiryForm(detail.summary.id)),
             icon: const Icon(Icons.chat_bubble_outline, size: 16),
-            label: const Text('Chat'),
+            label: Text(context.text.propertyChat),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: HmSpace.xl),
               minimumSize: const Size(0, 38),
@@ -442,58 +440,55 @@ class _PriceBreakdown extends StatelessWidget {
     String money(double value) => HmMoney.format(value, currency: currency);
 
     return _Section(
-      title: 'Price Breakdown',
+      title: context.text.propertyPriceBreakdown,
       child: Column(
         children: [
-          _Row(label: 'Monthly rent', value: money(detail.summary.price ?? 0)),
+          _Row(label: context.text.partnerExampleRent, value: money(detail.summary.price ?? 0)),
           for (final charge in detail.monthlyCharges)
             _Row(label: charge.name, value: money(charge.amount)),
           if (detail.monthlyTotal > (detail.summary.price ?? 0)) ...[
             const Divider(height: HmSpace.huge),
-            _Row(label: 'Monthly total', value: money(detail.monthlyTotal), emphasised: true),
+            _Row(label: context.text.propertyMonthlyTotal, value: money(detail.monthlyTotal), emphasised: true),
           ],
 
           const Divider(height: HmSpace.huge),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text('Before you move in', style: HmText.label),
+            child: Text(context.text.propertyBeforeMoveIn, style: HmText.label),
           ),
           const SizedBox(height: HmSpace.md),
 
           if (detail.depositAmount case final deposit?)
             _Row(
-              label: 'Security deposit'
-                  '${detail.depositMonths == null ? '' : ' · ${_months(detail.depositMonths!)}'}',
+              label: _withMonths(context.text.propertyDeposit, detail.depositMonths, context.text),
               value: money(deposit),
             ),
           if (detail.advanceRentAmount case final advance?)
             _Row(
-              label: 'Rent in advance'
-                  '${detail.advanceRentMonths == null ? '' : ' · ${_months(detail.advanceRentMonths!)}'}',
+              label: _withMonths(context.text.propertyAdvance, detail.advanceRentMonths, context.text),
               value: money(advance),
             )
           else
-            _Row(label: 'First month’s rent', value: money(detail.summary.price ?? 0)),
+            _Row(label: context.text.propertyFirstMonth, value: money(detail.summary.price ?? 0)),
           for (final charge in detail.oneOffCharges)
             _Row(
-              label: '${charge.name}${charge.isRefundable ? ' (refundable)' : ''}',
+              label: charge.isRefundable ? context.text.propertyRefundable(charge.name) : charge.name,
               value: money(charge.amount),
             ),
           if (detail.serviceFee case final fee? when fee.isCharged)
             _Row(
-              label: 'HomeMate fee · ${fee.percentageLabel} of a month',
+              label: context.text.propertyFeeLine(fee.percentageLabel),
               value: money(fee.amount),
               highlighted: true,
             ),
 
           const Divider(height: HmSpace.huge),
-          _Row(label: 'Total to move in', value: money(detail.moveInTotal), emphasised: true),
+          _Row(label: context.text.propertyMoveInTotal, value: money(detail.moveInTotal), emphasised: true),
           const SizedBox(height: HmSpace.md),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'An estimate from what the landlord has listed. The exact figures '
-              'are shown at checkout, once the landlord accepts your enquiry.',
+              context.text.propertyEstimate,
               style: HmText.caption,
             ),
           ),
@@ -502,9 +497,11 @@ class _PriceBreakdown extends StatelessWidget {
     );
   }
 
-  static String _months(double value) {
-    final whole = value == value.roundToDouble() ? value.toStringAsFixed(0) : '$value';
-    return '$whole month${value == 1 ? '' : 's'}';
+  /// "Security deposit · 2 months", or the bare label when no term is set.
+  static String _withMonths(String label, double? months, AppText text) {
+    if (months == null) return label;
+    final whole = months == months.roundToDouble() ? months.toStringAsFixed(0) : '$months';
+    return '$label · ${text.listingMonths(whole)}';
   }
 }
 
@@ -517,7 +514,7 @@ class _PaymentOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _Section(
-        title: 'Payment Options',
+        title: context.text.propertyPaymentOptions,
         child: Wrap(
           spacing: HmSpace.md,
           runSpacing: HmSpace.md,
@@ -572,7 +569,8 @@ class _HowItWorks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final step = detail.isAccepted ? 2 : (detail.hasOpenInquiry ? 1 : 0);
-    const steps = ['Enquire', 'Landlord accepts', 'Pay', 'Payment verified'];
+    final text = context.text;
+    final steps = [text.propertyEnquire, text.propertyStepAccepts, text.propertyStepPay, text.propertyStepVerified];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -582,7 +580,7 @@ class _HowItWorks extends StatelessWidget {
           const SizedBox(height: HmSpace.huge),
         ],
         _Section(
-          title: 'How to rent it',
+          title: context.text.propertyHowToRent,
           child: Column(
             children: [
               for (var i = 0; i < steps.length; i++)
@@ -711,7 +709,7 @@ class _Counter extends StatelessWidget {
                 Text(
                   '${index + 1} / $total',
                   style: const TextStyle(color: Colors.white, fontSize: 12),
-                  semanticsLabel: 'Photo ${index + 1} of $total. Open all photos',
+                  semanticsLabel: context.text.propertyPhotoOf(index + 1, total),
                 ),
               ],
             ),
@@ -785,11 +783,11 @@ class _FactStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final facts = <(IconData, String, String)>[
-      if (property.bedrooms != null) (Icons.bed_outlined, '${property.bedrooms}', 'Beds'),
-      if (property.bathrooms != null) (Icons.shower_outlined, '${property.bathrooms}', 'Baths'),
+      if (property.bedrooms != null) (Icons.bed_outlined, '${property.bedrooms}', context.text.propertyBeds),
+      if (property.bathrooms != null) (Icons.shower_outlined, '${property.bathrooms}', context.text.propertyBaths),
       if (property.sizeSqm != null) (Icons.square_foot, '${property.sizeSqm!.round()}', 'sqm'),
       if ((detail.parkingSpaces ?? 0) > 0)
-        (Icons.local_parking_outlined, '${detail.parkingSpaces}', 'Parking'),
+        (Icons.local_parking_outlined, '${detail.parkingSpaces}', context.text.propertyParking),
     ];
     if (facts.isEmpty) return const SizedBox.shrink();
 
@@ -827,16 +825,16 @@ class _Terms extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <Widget>[
       if (detail.paymentFrequency != null)
-        _Row(label: 'Rent paid', value: HmStatusChip.humanise(detail.paymentFrequency!)),
+        _Row(label: context.text.propertyRentPaid, value: HmStatusChip.humanise(detail.paymentFrequency!)),
       if (detail.minLeaseMonths != null)
-        _Row(label: 'Minimum stay', value: '${detail.minLeaseMonths} months'),
+        _Row(label: context.text.propertyMinStay, value: context.text.listingMonths(detail.minLeaseMonths!)),
       if (detail.noticePeriodDays != null)
-        _Row(label: 'Notice period', value: '${detail.noticePeriodDays} days'),
+        _Row(label: context.text.leaseNotice, value: context.text.leaseNoticeDays(detail.noticePeriodDays!)),
       if (detail.petsAllowed != null)
-        _Row(label: 'Pets', value: detail.petsAllowed! ? 'Allowed' : 'Not allowed'),
+        _Row(label: context.text.propertyPets, value: detail.petsAllowed! ? context.text.propertyPetsAllowed : context.text.propertyPetsNotAllowed),
       if (detail.availableFrom != null)
         _Row(
-          label: 'Available from',
+          label: context.text.listingAvailableFrom,
           value: '${detail.availableFrom!.day}/${detail.availableFrom!.month}'
               '/${detail.availableFrom!.year}',
         ),
@@ -844,7 +842,7 @@ class _Terms extends StatelessWidget {
     if (rows.isEmpty && (detail.terms ?? '').isEmpty) return const SizedBox.shrink();
 
     return _Section(
-      title: 'Renting terms',
+      title: context.text.propertyTerms,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -944,9 +942,9 @@ class _Row extends StatelessWidget {
 }
 
 /// The pinned actions. There is one road to this home: enquire, and once the
-/// landlord accepts, pay. So the bar offers exactly the next step — "Enquire"
-/// before anything has been asked, "View enquiry" while the landlord decides,
-/// and "Pay to secure it" once they have said yes. Whether the customer may
+/// landlord accepts, pay. So the bar offers exactly the next step — context.text.propertyEnquire
+/// before anything has been asked, context.text.propertyViewEnquiry while the landlord decides,
+/// and context.text.propertyPayToSecure once they have said yes. Whether the customer may
 /// pay is the server's answer ([checkoutEligibilityProvider]), never the
 /// app's guess.
 class _Actions extends ConsumerWidget {
@@ -984,10 +982,10 @@ class _Actions extends ConsumerWidget {
                     icon: const Icon(Icons.lock_outline, size: 18),
                     label: Text(
                       blocked
-                          ? 'Someone is paying for this'
+                          ? context.text.propertySomeonePaying
                           : eligibility!.hasStarted
-                              ? 'Continue payment'
-                              : 'Pay to secure it',
+                              ? context.text.propertyContinuePayment
+                              : context.text.propertyPayToSecure,
                     ),
                   ),
                 ),
@@ -998,12 +996,12 @@ class _Actions extends ConsumerWidget {
                 child: detail.myInquiryId != null
                     ? OutlinedButton.icon(
                         icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: const Text('View enquiry'),
+                        label: Text(context.text.propertyViewEnquiry),
                         onPressed: () => context.push(Routes.inquiry(detail.myInquiryId!)),
                       )
                     : FilledButton.icon(
                         icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: const Text('Enquire'),
+                        label: Text(context.text.propertyEnquire),
                         onPressed: () => context.push(Routes.inquiryForm(propertyId)),
                       ),
               ),

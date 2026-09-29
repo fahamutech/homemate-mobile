@@ -15,6 +15,7 @@ import '../../shared/journey_models.dart';
 import '../../shared/journey_providers.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-012b. One tenancy, managed.
 ///
@@ -32,7 +33,7 @@ class RentalDetailScreen extends ConsumerWidget {
     final rental = ref.watch(rentalProvider(bookingId));
 
     return HmScaffold(
-      title: 'Rental Details',
+      title: context.text.rentalTitle,
       padded: false,
       backgroundColor: HmColors.bgSecondary,
       body: HmAsync(
@@ -54,7 +55,7 @@ class _Loaded extends ConsumerWidget {
 
   /// "1st of every month" — derived from when the lease began, because that is
   /// the day rent recurs on.
-  String _dueDayLabel(Rental rental) {
+  String _dueDayLabel(AppText text, Rental rental) {
     final start = rental.leaseStartDate;
     if (start == null) return HmStatusChip.humanise(rental.paymentFrequency ?? 'monthly');
     final day = start.day;
@@ -64,7 +65,7 @@ class _Loaded extends ConsumerWidget {
       3 || 23 => 'rd',
       _ => 'th',
     };
-    return '$day$suffix of every month';
+    return text.rentalDueDay(day, suffix);
   }
 
   @override
@@ -79,7 +80,7 @@ class _Loaded extends ConsumerWidget {
 
         PropertyImage(mediaId: rental.coverMediaId, height: 180),
         const SizedBox(height: HmSpace.xl),
-        Text(rental.propertyTitle ?? 'Your home', style: HmText.title.copyWith(fontSize: 19)),
+        Text(rental.propertyTitle ?? context.text.rentalYourHome, style: HmText.title.copyWith(fontSize: 19)),
         if (rental.propertyAddress != null) ...[
           const SizedBox(height: HmSpace.sm),
           Row(
@@ -93,20 +94,20 @@ class _Loaded extends ConsumerWidget {
         const SizedBox(height: HmSpace.huge),
 
         HmCard(
-          title: 'Financial Summary',
+          title: context.text.rentalFinancial,
           child: Column(
             children: [
               HmDetailRow(
-                label: 'Monthly Rent',
+                label: context.text.rentalMonthlyRent,
                 value: HmMoney.format(rental.monthlyRent, currency: rental.currency),
               ),
               HmDetailRow(
-                label: 'Security Deposit',
+                label: context.text.rentalDeposit,
                 value: HmMoney.format(rental.depositAmount, currency: rental.currency),
               ),
-              HmDetailRow(label: 'Payment Due', value: _dueDayLabel(rental)),
+              HmDetailRow(label: context.text.rentalPaymentDue, value: _dueDayLabel(context.text, rental)),
               HmDetailRow(
-                label: 'Next Payment',
+                label: context.text.rentalNextPayment,
                 value: rental.nextPaymentDate == null
                     ? '—'
                     : _dayFormat.format(rental.nextPaymentDate!),
@@ -114,7 +115,7 @@ class _Loaded extends ConsumerWidget {
               ),
               if (rental.amountOutstanding > 0)
                 HmDetailRow(
-                  label: 'Outstanding',
+                  label: context.text.tenancyOutstanding,
                   value: HmMoney.format(rental.amountOutstanding, currency: rental.currency),
                   valueColor: HmColors.warning,
                 ),
@@ -123,27 +124,27 @@ class _Loaded extends ConsumerWidget {
         ),
         const SizedBox(height: HmSpace.huge),
 
-        const HmSectionHeader(title: 'Lease Agreement'),
+        HmSectionHeader(title: context.text.rentalLease),
         HmCard(
           child: Column(
             children: [
               HmDetailRow(
-                label: 'Lease Period',
+                label: context.text.rentalLeasePeriod,
                 value: rental.leaseStartDate == null || rental.leaseEndDate == null
                     ? '—'
                     : '${DateFormat('MMM yyyy').format(rental.leaseStartDate!)} – '
                         '${DateFormat('MMM yyyy').format(rental.leaseEndDate!)}',
               ),
               HmDetailRow(
-                label: 'Lease Type',
+                label: context.text.rentalLeaseType,
                 value: switch (rental.leaseType) {
-                  'periodic' => 'Periodic',
-                  'month_to_month' => 'Month to Month',
-                  _ => 'Fixed Term',
+                  'periodic' => context.text.leaseTypePeriodic,
+                  'month_to_month' => context.text.rentalTypeMonthly,
+                  _ => context.text.rentalTypeFixed,
                 },
               ),
-              HmDetailRow(label: 'Landlord', value: rental.landlordName ?? '—'),
-              HmDetailRow(label: 'Contact', value: rental.landlordPhone ?? '—'),
+              HmDetailRow(label: context.text.roleLandlord, value: rental.landlordName ?? '—'),
+              HmDetailRow(label: context.text.leaseContact, value: rental.landlordPhone ?? '—'),
               const SizedBox(height: HmSpace.xl),
               _ContractButton(rental: rental),
             ],
@@ -152,12 +153,12 @@ class _Loaded extends ConsumerWidget {
         const SizedBox(height: HmSpace.huge),
 
         HmSectionHeader(
-          title: 'Payment History',
-          action: detail.payments.isEmpty ? null : 'View All',
+          title: context.text.rentalHistory,
+          action: detail.payments.isEmpty ? null : context.text.rentalViewAll,
           onAction: detail.payments.isEmpty ? null : () => context.go(Routes.activity),
         ),
         if (detail.payments.isEmpty)
-          Text('No payments recorded yet.', style: HmText.caption)
+          Text(context.text.rentalNoPayments, style: HmText.caption)
         else
           HmCard(
             padding: const EdgeInsets.symmetric(vertical: HmSpace.md, horizontal: HmSpace.xxl),
@@ -171,15 +172,15 @@ class _Loaded extends ConsumerWidget {
         const SizedBox(height: HmSpace.huge),
 
         if (detail.amenities.isNotEmpty) ...[
-          const HmSectionHeader(title: 'Included Utilities & Extras'),
+          HmSectionHeader(title: context.text.rentalIncluded),
           _Amenities(amenities: detail.amenities),
           const SizedBox(height: HmSpace.huge),
         ],
 
         if (detail.timeline.isNotEmpty) ...[
           HmSectionHeader(
-            title: 'Journey Timeline',
-            action: 'See All',
+            title: context.text.rentalJourney,
+            action: context.text.commonSeeAllTitle,
             onAction: () => context.push(Routes.propertyActivity(rental.propertyId ?? '')),
           ),
           HmCard(
@@ -218,15 +219,17 @@ class _Loaded extends ConsumerWidget {
 
         if (rental.exitWindowOpensOn != null)
           HmNotice(
-            message: '${rental.noticePeriodDays ?? 90} days notice required. '
-                'Exit window opens ${_dayFormat.format(rental.exitWindowOpensOn!)}.',
+            message: context.text.rentalNoticeRequired(
+              rental.noticePeriodDays ?? 90,
+              _dayFormat.format(rental.exitWindowOpensOn!),
+            ),
           ),
         const SizedBox(height: HmSpace.huge),
 
         FilledButton.icon(
           onPressed: () => _requestRenewal(context, rental),
           icon: const Icon(Icons.autorenew, size: 18),
-          label: const Text('Request Renewal'),
+          label: Text(context.text.rentalRequestRenewal),
         ),
       ],
     );
@@ -247,13 +250,12 @@ class _Loaded extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Request a renewal', style: HmText.heading),
+              Text(context.text.rentalRenewalTitle, style: HmText.heading),
               const SizedBox(height: HmSpace.xl),
               Text(
                 rental.leaseEndDate == null
-                    ? 'Ask your landlord to extend this tenancy.'
-                    : 'This lease runs to ${_dayFormat.format(rental.leaseEndDate!)}. '
-                        'Renewal is agreed with your landlord directly.',
+                    ? context.text.rentalRenewalAsk
+                    : context.text.rentalRenewalBody(_dayFormat.format(rental.leaseEndDate!)),
                 style: HmText.body,
               ),
               const SizedBox(height: HmSpace.huge),
@@ -267,7 +269,7 @@ class _Loaded extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(rental.landlordName ?? 'Landlord', style: HmText.label),
+                            Text(rental.landlordName ?? context.text.roleLandlord, style: HmText.label),
                             Text(rental.landlordPhone!, style: HmText.caption),
                           ],
                         ),
@@ -280,7 +282,7 @@ class _Loaded extends ConsumerWidget {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => Navigator.of(sheetContext).pop(),
-                  child: const Text('Got it'),
+                  child: Text(context.text.rentalGotIt),
                 ),
               ),
             ],
@@ -304,23 +306,23 @@ class _QuickActions extends StatelessWidget {
           Expanded(
             child: _Action(
               icon: Icons.calendar_month_outlined,
-              label: 'Schedule',
-              onTap: () => _notYet(context, 'Scheduling with your landlord'),
+              label: context.text.rentalSchedule,
+              onTap: () => _notYet(context, context.text.rentalScheduling),
             ),
           ),
           const SizedBox(width: HmSpace.md),
           Expanded(
             child: _Action(
               icon: Icons.help_outline,
-              label: 'Report Issue',
-              onTap: () => _notYet(context, 'Reporting a maintenance issue'),
+              label: context.text.rentalReport,
+              onTap: () => _notYet(context, context.text.rentalReporting),
             ),
           ),
           const SizedBox(width: HmSpace.md),
           Expanded(
             child: _Action(
               icon: Icons.logout_outlined,
-              label: 'Request Exit',
+              label: context.text.rentalRequestExit,
               onTap: () => _exitNotice(context, rental),
             ),
           ),
@@ -330,16 +332,15 @@ class _QuickActions extends StatelessWidget {
   /// Better than a control that silently does nothing: it says what it will be
   /// and how to do the same thing today.
   static void _notYet(BuildContext context, String what) =>
-      HmFeedback.info(context, '$what is coming soon. Call your landlord in the meantime.');
+      HmFeedback.info(context, context.text.rentalComingSoon(what));
 
   static void _exitNotice(BuildContext context, Rental rental) {
     final opens = rental.exitWindowOpensOn;
     HmFeedback.info(
       context,
       opens == null
-          ? 'Give your landlord ${rental.noticePeriodDays ?? 90} days notice before leaving.'
-          : 'Notice can be given from ${DateFormat('d MMM yyyy').format(opens)} '
-              '(${rental.noticePeriodDays ?? 90} days before the lease ends).',
+          ? context.text.rentalExitGive(rental.noticePeriodDays ?? 90)
+          : context.text.rentalExitFrom(DateFormat('d MMM yyyy').format(opens), rental.noticePeriodDays ?? 90),
     );
   }
 }
@@ -404,11 +405,11 @@ class _ContractButton extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('View Contract', style: HmText.label.copyWith(fontSize: 13)),
+                      Text(context.text.rentalViewContract, style: HmText.label.copyWith(fontSize: 13)),
                       Text(
                         rental.hasAgreement
-                            ? 'Agreement ${rental.agreementVersion ?? ''}'.trim()
-                            : 'Terms of your tenancy',
+                            ? context.text.rentalAgreement(rental.agreementVersion ?? '').trim()
+                            : context.text.rentalTerms,
                         style: HmText.caption,
                       ),
                     ],
@@ -440,14 +441,14 @@ class _PaymentRow extends StatelessWidget {
     return at == null ? payment.reference : monthFormat.format(at);
   }
 
-  String get _state {
+  String _state(AppText text) {
     if (payment.isPaid) {
       final at = payment.confirmedAt;
-      return at == null ? 'Paid' : 'Paid on ${dayFormat.format(at)}';
+      return at == null ? text.rentalStatePaid : text.rentalPaidOn(dayFormat.format(at));
     }
-    if (payment.isAwaitingVerification) return 'Under processing';
-    if (payment.status == 'failed') return payment.failureReason ?? 'Failed';
-    return 'Due';
+    if (payment.isAwaitingVerification) return text.rentalStateProcessing;
+    if (payment.status == 'failed') return payment.failureReason ?? text.rentalStateFailed;
+    return text.rentalStateDue;
   }
 
   @override
@@ -467,7 +468,7 @@ class _PaymentRow extends StatelessWidget {
                 children: [
                   Text(_period, style: HmText.label.copyWith(fontSize: 13)),
                   const SizedBox(height: HmSpace.xxs),
-                  Text(_state, style: HmText.caption.copyWith(fontSize: 12)),
+                  Text(_state(context.text), style: HmText.caption.copyWith(fontSize: 12)),
                 ],
               ),
             ),

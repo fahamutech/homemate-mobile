@@ -7,6 +7,7 @@ import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_scaffold.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// Choosing the PIN the customer will sign in with from now on.
 ///
@@ -82,13 +83,13 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
               const Icon(Icons.lock_outline_rounded, size: 44, color: HmColors.brandPrimary),
               const SizedBox(height: HmSpace.huge),
               Text(
-                widget.isReset ? 'Choose a new PIN' : 'Create your PIN',
+                widget.isReset ? context.text.pinSetupTitleReset : context.text.pinSetupTitle,
                 style: HmText.title,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: HmSpace.md),
               Text(
-                'You will use this to sign in, so we do not have to text you every time.',
+                context.text.pinSetupBody,
                 style: HmText.body,
                 textAlign: TextAlign.center,
               ),
@@ -99,7 +100,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
               _PinField(
                 key: const Key('new-pin'),
                 controller: _pin,
-                label: 'New PIN',
+                label: context.text.pinSetupNewPin,
                 enabled: !_busy,
                 autofocus: true,
                 validator: _validatePin,
@@ -108,15 +109,15 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
               _PinField(
                 key: const Key('confirm-pin'),
                 controller: _confirm,
-                label: 'Confirm PIN',
+                label: context.text.pinSetupConfirmPin,
                 enabled: !_busy,
                 onSubmitted: (_) => _submit(),
-                validator: (value) => value == _pin.text ? null : 'The two PINs do not match',
+                validator: (value) => value == _pin.text ? null : context.text.pinSetupMismatch,
               ),
 
               const SizedBox(height: HmSpace.xxl),
-              const Text(
-                'Avoid 1234, 0000 or repeated digits — those are the first ones anybody tries.',
+              Text(
+                context.text.pinSetupHint,
                 style: HmText.caption,
               ),
 
@@ -129,7 +130,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : Text(widget.isReset ? 'Save new PIN' : 'Create PIN'),
+                    : Text(widget.isReset ? context.text.pinSetupSaveNew : context.text.pinSetupCreate),
               ),
             ],
           ),
@@ -140,12 +141,12 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
 
   /// Mirrors the server's rule so the customer is told before a round trip.
   /// The server still enforces it — this is a courtesy, not the guard.
-  static String? _validatePin(String? value) {
+  String? _validatePin(String? value) {
     final pin = value ?? '';
-    if (pin.length < 4 || pin.length > 6) return 'Your PIN must be 4 to 6 digits';
-    if (RegExp(r'^(\d)\1+$').hasMatch(pin)) return 'Please choose a less predictable PIN';
+    if (pin.length < 4 || pin.length > 6) return context.text.pinSetupLength;
+    if (RegExp(r'^(\d)\1+$').hasMatch(pin)) return context.text.pinSetupPredictable;
     if (const {'1234', '4321', '123456', '654321', '2580'}.contains(pin)) {
-      return 'Please choose a less predictable PIN';
+      return context.text.pinSetupPredictable;
     }
     return null;
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
+import '../../core/i18n/app_text.dart';
 
 /// The pill the designs use everywhere a choice is made — property type,
 /// bedrooms, timeline, the home screen's category row.
@@ -246,7 +247,7 @@ class HmStepHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'STEP $step OF $of',
+            context.text.stepOf(step, of).toUpperCase(),
             style: HmText.label.copyWith(
               color: HmColors.brandPrimary,
               letterSpacing: 0.8,
