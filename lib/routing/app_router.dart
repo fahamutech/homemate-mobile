@@ -17,6 +17,7 @@ import '../features/broker/presentation/broker_intro_screen.dart';
 import '../features/landlord/presentation/confirm/confirm_listing_screen.dart';
 import '../features/landlord/presentation/landlord_home_screen.dart';
 import '../features/landlord/presentation/landlord_intro_screen.dart';
+import '../features/landlord/presentation/tenants/tenancy_lease_screen.dart';
 import '../features/landlord/presentation/tenants/tenancy_screen.dart';
 import '../features/landlord/presentation/tenants/tenants_screen.dart';
 import '../features/partner_shared/presentation/enquiries/partner_enquiries_screen.dart';
@@ -245,6 +246,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.landlordTenancy(':id'),
         builder: (_, state) => TenancyScreen(tenancyId: state.pathParameters['id']!),
+        routes: [
+          GoRoute(path: 'lease', builder: (_, state) => TenancyLeaseScreen(tenancyId: state.pathParameters['id']!)),
+        ],
       ),
 
       // The five tabs keep their own navigation stacks, so moving between them

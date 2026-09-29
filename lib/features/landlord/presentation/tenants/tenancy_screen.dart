@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/i18n/app_text.dart';
@@ -8,10 +9,12 @@ import '../../../../design/widgets/hm_async.dart';
 import '../../../../design/widgets/hm_badge.dart';
 import '../../../../design/widgets/hm_button.dart';
 import '../../../../design/widgets/hm_key_value.dart';
+import '../../../../design/widgets/hm_list_tile.dart';
 import '../../../../design/widgets/hm_money.dart';
 import '../../../../design/widgets/hm_note.dart';
 import '../../../../design/widgets/hm_section.dart';
 import '../../../../design/widgets/hm_top_bar.dart';
+import '../../../../routing/routes.dart';
 import '../../../partner_shared/presentation/contact_buttons.dart';
 import '../../../partner_shared/presentation/enquiries/customer_avatar_initials.dart';
 import '../../../partner_shared/presentation/enquiries/enquiry_copy.dart' show firstName;
@@ -95,6 +98,13 @@ class TenancyScreen extends ConsumerWidget {
                       if ((tenancy.agreementReference ?? '').isNotEmpty)
                         HmKeyValue(label: text.tenancyAgreement, value: tenancy.agreementReference!),
                     ]),
+                  ),
+                  const SizedBox(height: HmSpace.md),
+                  HmListTile(
+                    icon: Icons.description_outlined,
+                    title: text.leaseTitle,
+                    boxed: true,
+                    onTap: () => context.push(Routes.landlordTenancyLease(tenancy.id)),
                   ),
                   const SizedBox(height: HmSpace.xl),
                   HmCard(

@@ -65,10 +65,10 @@ void main() {
         ],
       );
     });
-    expect(find.text('Fee share → broker'), findsOneWidget);
+    expect(find.text('Fee share to the broker'), findsOneWidget);
     expect(find.text('TZS 540,000'), findsOneWidget);
     expect(find.text("HomeMate's share"), findsOneWidget);
     expect(find.text('On hold: the payment is being re-checked'), findsOneWidget);
-    expect(find.text('Rent and deposit → landlord'), findsNothing, reason: 'that line is the landlord’s own');
+    expect(find.text('Rent and deposit to the landlord'), findsNothing, reason: 'that line is the landlord’s own');
   });
 }

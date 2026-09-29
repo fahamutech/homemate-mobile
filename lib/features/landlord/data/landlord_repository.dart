@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../shared/journey_models.dart' show LeaseAgreement;
+import 'landlord_lease.dart';
 import 'listing_confirmation.dart';
 import 'tenancy.dart';
 
@@ -15,6 +17,9 @@ abstract class TenanciesRepository {
   Future<Tenancy> get(String id);
   Future<Tenancy> moveIn(String id, {required DateTime date});
   Future<Tenancy> end(String id, {required DateTime date, String? reason});
+
+  /// LND-033: the lease behind a tenancy.
+  Future<LeaseAgreement> lease(String id);
 }
 
 class HttpConfirmationsRepository implements ConfirmationsRepository {
@@ -57,4 +62,7 @@ class HttpTenanciesRepository implements TenanciesRepository {
   @override
   Future<Tenancy> end(String id, {required DateTime date, String? reason}) async => Tenancy.fromJson(
       await _api.post('/app/landlord/tenancies/$id/end', body: {'date': isoDay(date), 'reason': reason}));
+
+  @override
+  Future<LeaseAgreement> lease(String id) async => leaseFromLandlordJson(await _api.get('/app/landlord/tenancies/$id/lease'));
 }
