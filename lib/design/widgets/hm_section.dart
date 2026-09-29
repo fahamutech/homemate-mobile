@@ -227,25 +227,30 @@ class HmCard extends StatelessWidget {
   final String? title;
   final EdgeInsets? padding;
 
+  // A Material rather than a decorated box, so a ListTile or switch inside
+  // the card paints its ink on the card itself.
   @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: padding ?? const EdgeInsets.all(HmSpace.xxl),
-        decoration: BoxDecoration(
-          color: HmColors.bgPrimary,
+  Widget build(BuildContext context) => Material(
+        color: HmColors.bgPrimary,
+        shape: RoundedRectangleBorder(
           borderRadius: HmRadius.card,
-          border: Border.all(color: HmColors.borderDefault),
+          side: const BorderSide(color: HmColors.borderDefault),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (title != null) ...[
-              Text(title!, style: HmText.heading.copyWith(fontSize: 15)),
-              const SizedBox(height: HmSpace.xl),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          width: double.infinity,
+          padding: padding ?? const EdgeInsets.all(HmSpace.xxl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (title != null) ...[
+                Text(title!, style: HmText.heading.copyWith(fontSize: 15)),
+                const SizedBox(height: HmSpace.xl),
+              ],
+              child,
             ],
-            child,
-          ],
+          ),
         ),
       );
 }

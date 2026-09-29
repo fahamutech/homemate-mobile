@@ -12,11 +12,28 @@ import '../features/auth/presentation/profile_setup_screen.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/dev/widget_catalogue_screen.dart';
-import '../features/partner_shared/presentation/landlord_confirm_placeholder.dart';
-import '../features/partner_shared/presentation/partner_home_placeholder.dart';
+import '../features/broker/presentation/broker_home_screen.dart';
+import '../features/broker/presentation/broker_intro_screen.dart';
+import '../features/landlord/presentation/confirm/confirm_listing_screen.dart';
+import '../features/landlord/presentation/landlord_home_screen.dart';
+import '../features/landlord/presentation/landlord_intro_screen.dart';
+import '../features/landlord/presentation/tenants/tenancy_screen.dart';
+import '../features/landlord/presentation/tenants/tenants_screen.dart';
+import '../features/partner_shared/presentation/enquiries/partner_enquiries_screen.dart';
+import '../features/partner_shared/presentation/enquiries/partner_enquiry_screen.dart';
+import '../features/partner_shared/presentation/money/earning_detail_screen.dart';
+import '../features/partner_shared/presentation/money/earnings_screen.dart';
+import '../features/partner_shared/presentation/money/payouts_screen.dart';
+import '../features/partner_shared/presentation/listings/listing_sent_screen.dart';
+import '../features/partner_shared/presentation/listings/partner_listing_screen.dart';
+import '../features/partner_shared/presentation/listings/partner_listings_screen.dart';
+import '../features/partner_shared/presentation/listings/wizard/listing_wizard_screen.dart';
+import '../features/partner_shared/presentation/listings/wizard/wizard_step.dart';
+import '../features/partner_shared/presentation/setup/application_status_screen.dart';
+import '../features/partner_shared/presentation/setup/partner_setup_screen.dart';
+import '../features/partner_shared/presentation/setup/setup_step.dart';
 import '../features/partner_shared/presentation/partner_profile_screen.dart';
 import '../features/partner_shared/presentation/partner_shell.dart';
-import '../features/partner_shared/presentation/partner_tab_placeholder.dart';
 import '../features/roles/data/app_role.dart';
 import '../features/roles/presentation/choose_role_screen.dart';
 import '../features/roles/presentation/earn_screen.dart';
@@ -40,7 +57,6 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/property/presentation/gallery_screen.dart';
 import '../features/property/presentation/property_screen.dart';
 import '../features/saved/presentation/saved_screen.dart';
-import '../core/i18n/app_text.dart';
 import 'app_shell.dart';
 import 'deep_links.dart';
 import 'role_redirect.dart';
@@ -75,26 +91,65 @@ class _AuthRefresh extends ChangeNotifier {
 /// A deep link opened while signed out, kept until sign-in finishes.
 final pendingDeepLinkProvider = Provider<PendingDeepLink>((_) => PendingDeepLink());
 
-/// A partner shell: five branches in the tab order of `nav_tabs.dart`. The
-/// first is the role's home and the last its profile; the middle three are
-/// placeholders the broker (T09) and landlord (T10) workspaces replace.
-StatefulShellRoute _partnerShell(AppRole role, List<(String, String Function(AppText)?)> tabs) =>
+/// A partner shell: five branches in the tab order of `nav_tabs.dart`, each
+/// a path and the screen at its root.
+StatefulShellRoute _partnerShell(AppRole role, List<(String, Widget Function(BuildContext))> tabs) =>
     StatefulShellRoute.indexedStack(
       builder: (_, __, shell) => PartnerShell(role: role, shell: shell),
       branches: [
-        for (final (index, (path, title)) in tabs.indexed)
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: path,
-              builder: (context, _) => switch (index) {
-                0 => PartnerHomePlaceholder(role: role),
-                4 => PartnerProfileScreen(role: role),
-                _ => PartnerTabPlaceholder(role: role, title: title!(context.text)),
-              },
-            ),
-          ]),
+        for (final (path, screen) in tabs)
+          StatefulShellBranch(routes: [GoRoute(path: path, builder: (context, _) => screen(context))]),
       ],
     );
+
+/// A partner's listings outside the tabs: add, open, edit and "sent".
+/// `new` is listed before `:id` so it is not read as an id.
+List<GoRoute> _partnerListingRoutes(AppRole role) => [
+      GoRoute(path: Routes.partnerListingNew(role), builder: (_, __) => ListingWizardScreen(role: role)),
+      GoRoute(
+        path: '${Routes.partnerListings(role)}/:id',
+        builder: (_, state) => PartnerListingScreen(role: role, listingId: state.pathParameters['id']!),
+        routes: [
+          GoRoute(
+            path: 'edit',
+            builder: (_, state) => ListingWizardScreen(
+              role: role,
+              listingId: state.pathParameters['id'],
+              initialStep: WizardStep.fromName(state.uri.queryParameters['step']) ?? WizardStep.basics,
+            ),
+          ),
+          GoRoute(
+            path: 'sent',
+            builder: (_, state) => ListingSentScreen(role: role, listingId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+    ];
+
+/// An enquiry, an earning and the payouts, over the tabs.
+List<GoRoute> _partnerWorkRoutes(AppRole role) => [
+      GoRoute(
+        path: Routes.partnerEnquiry(role, ':id'),
+        builder: (_, state) => PartnerEnquiryScreen(role: role, enquiryId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.partnerEarning(role, ':id'),
+        builder: (_, state) => EarningDetailScreen(role: role, earningId: state.pathParameters['id']!),
+      ),
+      GoRoute(path: Routes.partnerPayouts(role), builder: (_, __) => PayoutsScreen(role: role)),
+    ];
+
+/// The setup screens every partner role has, outside the tabs.
+List<GoRoute> _partnerSetupRoutes(AppRole role) => [
+      GoRoute(
+        path: Routes.partnerSetup(role),
+        builder: (_, state) => PartnerSetupScreen(
+          role: role,
+          initialStep: SetupStep.fromName(state.uri.queryParameters['step']) ?? SetupStep.details,
+        ),
+      ),
+      GoRoute(path: Routes.partnerApplication(role), builder: (_, __) => ApplicationStatusScreen(role: role)),
+    ];
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _AuthRefresh(ref);
@@ -157,7 +212,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.earn, builder: (_, __) => const EarnScreen()),
       GoRoute(
         path: '${Routes.landlordConfirmPrefix}:propertyId',
-        builder: (_, state) => LandlordConfirmPlaceholder(propertyId: state.pathParameters['propertyId']!),
+        builder: (_, state) => ConfirmListingScreen(propertyId: state.pathParameters['propertyId']!),
       ),
       // The SMS link with its host already taken off by the platform.
       GoRoute(
@@ -165,19 +220,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         redirect: (_, state) => Routes.landlordConfirm(state.pathParameters['propertyId']!),
       ),
       _partnerShell(AppRole.broker, [
-        (Routes.brokerHome, null),
-        (Routes.brokerListings, (AppText text) => text.navListings),
-        (Routes.brokerEnquiries, (AppText text) => text.navEnquiries),
-        (Routes.brokerEarnings, (AppText text) => text.navEarnings),
-        (Routes.brokerProfile, null),
+        (Routes.brokerHome, (_) => const BrokerHomeScreen()),
+        (Routes.brokerListings, (_) => const PartnerListingsScreen(role: AppRole.broker)),
+        (Routes.brokerEnquiries, (_) => const PartnerEnquiriesScreen(role: AppRole.broker)),
+        (Routes.brokerEarnings, (_) => const EarningsScreen(role: AppRole.broker)),
+        (Routes.brokerProfile, (_) => const PartnerProfileScreen(role: AppRole.broker)),
       ]),
+      GoRoute(path: Routes.partnerIntro(AppRole.broker), builder: (_, __) => const BrokerIntroScreen()),
+      ..._partnerSetupRoutes(AppRole.broker),
+      ..._partnerListingRoutes(AppRole.broker),
+      ..._partnerWorkRoutes(AppRole.broker),
       _partnerShell(AppRole.landlord, [
-        (Routes.landlordHome, null),
-        (Routes.landlordHomes, (AppText text) => text.navHomes),
-        (Routes.landlordTenants, (AppText text) => text.navTenants),
-        (Routes.landlordMoney, (AppText text) => text.navMoney),
-        (Routes.landlordProfile, null),
+        (Routes.landlordHome, (_) => const LandlordHomeScreen()),
+        (Routes.landlordHomes, (_) => const PartnerListingsScreen(role: AppRole.landlord)),
+        (Routes.landlordTenants, (_) => const TenantsScreen()),
+        (Routes.landlordMoney, (_) => const EarningsScreen(role: AppRole.landlord)),
+        (Routes.landlordProfile, (_) => const PartnerProfileScreen(role: AppRole.landlord)),
       ]),
+      GoRoute(path: Routes.partnerIntro(AppRole.landlord), builder: (_, __) => const LandlordIntroScreen()),
+      ..._partnerSetupRoutes(AppRole.landlord),
+      ..._partnerListingRoutes(AppRole.landlord),
+      ..._partnerWorkRoutes(AppRole.landlord),
+      GoRoute(path: Routes.landlordEnquiries, builder: (_, __) => const PartnerEnquiriesScreen(role: AppRole.landlord)),
+      GoRoute(
+        path: Routes.landlordTenancy(':id'),
+        builder: (_, state) => TenancyScreen(tenancyId: state.pathParameters['id']!),
+      ),
 
       // The five tabs keep their own navigation stacks, so moving between them
       // does not throw away where you were.

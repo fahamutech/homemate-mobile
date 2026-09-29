@@ -95,6 +95,37 @@ class Routes {
   static const landlordMoney = '/landlord/money';
   static const landlordProfile = '/landlord/profile';
 
+  /// A landlord answers enquiries on the homes they listed; there is no tab
+  /// for them, so "Needs you" and the home link here.
+  static const landlordEnquiries = '/landlord/enquiries';
+
+  // Partner setup (BRK/LND-001, -002), outside the shell's tabs but inside
+  // its path, so the role redirect keeps them in the partner's space.
+  static String partnerIntro(Object role) => '/${_name(role)}/intro';
+  static String partnerSetup(Object role, {String? step}) =>
+      '/${_name(role)}/setup${step == null ? '' : '?step=$step'}';
+  static String partnerApplication(Object role) => '/${_name(role)}/application';
+
+  static String _name(Object role) => role is Enum ? role.name : '$role';
+
+  // A partner's listings: the broker's "Listings" tab, the landlord's "Homes".
+  static String partnerListings(Object role) => _name(role) == 'landlord' ? landlordHomes : brokerListings;
+  static String partnerListing(Object role, String id) => '${partnerListings(role)}/$id';
+  static String partnerListingNew(Object role) => '${partnerListings(role)}/new';
+  static String partnerListingEdit(Object role, String id, {String? step}) =>
+      '${partnerListings(role)}/$id/edit${step == null ? '' : '?step=$step'}';
+  static String partnerListingSent(Object role, String id) => '${partnerListings(role)}/$id/sent';
+
+  static String partnerEnquiry(Object role, String id) => '/${_name(role)}/enquiries/$id';
+
+  // Money: the broker's "Earnings" tab, the landlord's "Money".
+  static String partnerMoney(Object role) => _name(role) == 'landlord' ? landlordMoney : brokerEarnings;
+  static String partnerEarning(Object role, String id) => '${partnerMoney(role)}/$id';
+  static String partnerPayouts(Object role) => '/${_name(role)}/payouts';
+
+  /// LND-031/033: one tenancy.
+  static String landlordTenancy(String id) => '$landlordTenants/$id';
+
   /// LND-003, from the SMS link `homemate://landlord/confirm/:propertyId`.
   static String landlordConfirm(String propertyId) => '/landlord/confirm/$propertyId';
   static const landlordConfirmPrefix = '/landlord/confirm/';

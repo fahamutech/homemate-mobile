@@ -83,15 +83,17 @@ class HmRadioCard extends StatelessWidget {
                               color: HmColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            subtitle,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              height: 18 / 13,
-                              color: HmColors.textSecondary,
+                          if (subtitle.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              subtitle,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                height: 18 / 13,
+                                color: HmColors.textSecondary,
+                              ),
                             ),
-                          ),
+                          ],
                           if (badge != null) ...[
                             const SizedBox(height: HmSpace.sm),
                             badge!,

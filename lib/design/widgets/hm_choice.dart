@@ -108,12 +108,16 @@ class HmSegmentedPills<T> extends StatelessWidget {
     required this.options,
     required this.value,
     required this.onChanged,
+    this.optionKey,
   });
 
   /// Value / label pairs, in the order they should read.
   final List<(T, String)> options;
   final T value;
   final ValueChanged<T> onChanged;
+
+  /// A key for each option's tap target, for a screen that is driven by tests.
+  final Key Function(T option)? optionKey;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -130,6 +134,7 @@ class HmSegmentedPills<T> extends StatelessWidget {
                   button: true,
                   selected: option == value,
                   child: InkWell(
+                    key: optionKey?.call(option),
                     onTap: () => onChanged(option),
                     borderRadius: BorderRadius.circular(HmRadius.sm),
                     child: Container(

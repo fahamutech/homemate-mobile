@@ -134,11 +134,17 @@ class RoleController extends StateNotifier<RoleState> {
 
   /// Opens a role's home. An *active* role the token does not act in yet is
   /// switched on the server first, because the partner routes read the
-  /// token's role; a partner role still being set up opens locally.
+  /// token's role. A partner role still being set up opens with the token
+  /// acting as customer: the partner routes then go by `X-Partner-Role`,
+  /// which they ignore while the token acts as another partner role.
   Future<void> open(AppRole role) async {
     final active = role == AppRole.customer || (state.held(role)?.isActive ?? false);
-    if (active && state.lastActiveRole != role) {
-      final switched = await _repository.setActiveRole(role);
+    final tokenRole = active ? role : AppRole.customer;
+    final needsSwitch = active
+        ? state.lastActiveRole != role
+        : (state.lastActiveRole?.isPartner ?? false);
+    if (needsSwitch) {
+      final switched = await _repository.setActiveRole(tokenRole);
       await _auth.replaceToken(switched.token);
       state = state.copyWith(lastActiveRole: switched.activeRole);
     }

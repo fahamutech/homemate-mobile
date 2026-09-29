@@ -128,10 +128,15 @@ class HmButton extends StatelessWidget {
             ],
           );
 
+    // Its own node, so its label never merges into the card or list around
+    // it; and, since the InkWell below is excluded, the tap is declared here
+    // for screen readers.
     final button = Semantics(
+      container: true,
       button: true,
       enabled: enabled,
       label: label,
+      onTap: enabled ? onPressed : null,
       excludeSemantics: true,
       child: Material(
         color: colours.fill,

@@ -70,10 +70,17 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
+      // A broker who has not started yet meets the broker intro (BRK-001).
+      expect(router.state.matchedLocation, Routes.partnerIntro(AppRole.broker));
+      expect(find.text('List the homes you know'), findsOneWidget);
+      expect(harness.roles.switches, isEmpty, reason: 'no broker role to switch the token to yet');
+
+      // Closing it lands on the broker shell with its own tabs.
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
       expect(router.state.matchedLocation, Routes.brokerHome);
       expect(tabLabels(tester), ['Home', 'Listings', 'Enquiries', 'Earnings', 'Profile']);
       expect(find.text('Finish setting up your Broker account to start.'), findsOneWidget);
-      expect(harness.roles.switches, isEmpty, reason: 'no broker role to switch the token to yet');
     });
 
     testWidgets('Let my own home → the landlord shell', (tester) async {
@@ -84,6 +91,12 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
+      // A landlord who has not started yet meets the landlord intro (LND-001).
+      expect(router.state.matchedLocation, Routes.partnerIntro(AppRole.landlord));
+      expect(find.text('List your home, or let a broker do it'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
       expect(router.state.matchedLocation, Routes.landlordHome);
       expect(tabLabels(tester), ['Home', 'Homes', 'Tenants', 'Money', 'Profile']);
     });
@@ -92,7 +105,8 @@ void main() {
       final harness = TestHarness();
       await harness.rolePreferences.setStartedAs('cust-1', AppRole.landlord);
       final router = await launch(tester, harness, customer: newAccount);
-      expect(router.state.matchedLocation, Routes.landlordHome);
+      expect(router.state.matchedLocation, Routes.partnerIntro(AppRole.landlord));
+      expect(find.text('How will you use HomeMate?'), findsNothing);
     });
   });
 
@@ -145,6 +159,11 @@ void main() {
       // Same phone, a new launch.
       final again = await launch(tester, harness, customer: returning);
       expect(again.state.matchedLocation, Routes.brokerHome);
+      // Unmount inside the test so Riverpod's disposal tick runs here.
+      await tester.pumpWidget(const SizedBox());
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
     });
   });
 
@@ -184,7 +203,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-      expect(router.state.matchedLocation, Routes.landlordHome);
+      expect(router.state.matchedLocation, Routes.partnerIntro(AppRole.landlord));
     });
 
     testWidgets('a role already on the account cannot be added again', (tester) async {

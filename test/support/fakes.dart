@@ -25,6 +25,12 @@ import 'package:homemate_mobile/features/shared/journey_models.dart';
 import 'package:homemate_mobile/features/shared/journey_repository.dart';
 import 'package:homemate_mobile/features/shared/models.dart';
 
+import 'landlord_fakes.dart';
+import 'partner_fakes.dart';
+
+export 'landlord_fakes.dart';
+export 'partner_fakes.dart';
+
 /// A whole backend, in memory.
 ///
 /// The app talks to two repositories and an auth repository, so a fake of each
@@ -305,6 +311,8 @@ class FakeCatalogueRepository implements CatalogueRepository {
         parentId: 'region-dar',
       ),
     ],
+    banks: [ReferenceItem(id: 'bank-crdb', name: 'CRDB Bank', code: 'crdb')],
+    mobileMoneyProviders: ['mpesa', 'mixx_by_yas', 'airtel_money', 'halopesa'],
     wards: [
       ReferenceItem(
         id: 'ward-masaki',
@@ -569,9 +577,11 @@ class TestHarness {
     FakeJourneyRepository? journey,
     FakeLocationService? location,
     FakeRoleRepository? roles,
+    FakeIdentityRepository? identity,
     this.locale = AppLocale.english,
   })  : auth = auth ?? FakeAuthRepository(),
         roles = roles ?? FakeRoleRepository(),
+        identity = identity ?? FakeIdentityRepository(),
         catalogue = catalogue ?? FakeCatalogueRepository(),
         activity = activity ?? FakeActivityRepository(),
         journey = journey ?? FakeJourneyRepository(),
@@ -582,6 +592,21 @@ class TestHarness {
   final FakeActivityRepository activity;
   final FakeJourneyRepository journey;
   final FakeRoleRepository roles;
+
+  // The partner workspaces (T09/T10).
+  final FakeIdentityRepository identity;
+  /// Starts from the same roles the role repository holds, so an active
+  /// broker there is an active broker here.
+  late final FakeOnboardingRepository onboarding = FakeOnboardingRepository(identity: identity)
+    ..statuses.addAll({for (final r in roles.roles) if (r.role.isPartner) r.role.name: r.status});
+  final FakeListingsRepository listings = FakeListingsRepository();
+  final FakeEnquiriesRepository enquiries = FakeEnquiriesRepository();
+  final FakeMoneyRepository money = FakeMoneyRepository();
+  final FakeConfirmationsRepository confirmations = FakeConfirmationsRepository();
+  final FakeTenanciesRepository tenancies = FakeTenanciesRepository();
+  final FakePhotoSource photos = FakePhotoSource();
+  final FakeWebpEncoder webp = FakeWebpEncoder();
+  final FakeContactLauncher contact = FakeContactLauncher();
   final InMemoryRolePreferenceStore rolePreferences = InMemoryRolePreferenceStore();
 
   /// Defaults to `unknown` — nobody has been asked — which is the state the
@@ -604,6 +629,16 @@ class TestHarness {
         locationServiceProvider.overrideWithValue(location),
         sessionStoreProvider.overrideWithValue(store),
         roleRepositoryProvider.overrideWithValue(roles),
+        identityRepositoryProvider.overrideWithValue(identity),
+        onboardingRepositoryProvider.overrideWithValue(onboarding),
+        listingsRepositoryProvider.overrideWithValue(listings),
+        enquiriesRepositoryProvider.overrideWithValue(enquiries),
+        moneyRepositoryProvider.overrideWithValue(money),
+        confirmationsRepositoryProvider.overrideWithValue(confirmations),
+        tenanciesRepositoryProvider.overrideWithValue(tenancies),
+        photoSourceProvider.overrideWithValue(photos),
+        webpEncoderProvider.overrideWithValue(webp),
+        contactLauncherProvider.overrideWithValue(contact),
         rolePreferenceStoreProvider.overrideWithValue(rolePreferences),
         localeStoreProvider.overrideWithValue(InMemoryLocaleStore(locale)),
       ];

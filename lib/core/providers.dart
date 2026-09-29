@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/data/auth_controller.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/session_store.dart';
+import '../features/landlord/data/landlord_repository.dart';
+import '../features/partner_shared/data/enquiries_repository.dart';
+import '../features/partner_shared/data/listings_repository.dart';
+import '../features/partner_shared/data/money_repository.dart';
+import '../features/partner_shared/data/onboarding_repository.dart';
 import '../features/profile/data/identity_repository.dart';
 import '../features/roles/data/role_controller.dart';
 import '../features/roles/data/role_preference_store.dart';
@@ -12,6 +17,9 @@ import '../features/shared/catalogue_repository.dart';
 import '../features/shared/journey_repository.dart';
 import '../features/shared/models.dart';
 import 'config/env.dart';
+import 'contact/contact_launcher.dart';
+import 'media/photo_source.dart';
+import 'media/webp_encoder.dart';
 import 'network/api_client.dart';
 
 /// The composition root.
@@ -33,6 +41,12 @@ class _ControllerSession implements SessionSource {
 
   @override
   String? get token => _ref.read(authControllerProvider.notifier).token;
+
+  @override
+  String? get partnerRole {
+    final role = _ref.read(roleControllerProvider).current;
+    return (role?.isPartner ?? false) ? role!.name : null;
+  }
 
   @override
   Future<void> onSessionRejected() =>
@@ -84,6 +98,38 @@ final roleControllerProvider = StateNotifierProvider<RoleController, RoleState>(
   }, fireImmediately: true);
   return controller;
 });
+
+/// The camera and gallery, behind an interface a test can replace.
+final photoSourceProvider = Provider<PhotoSource>((ref) => ImagePickerPhotoSource());
+
+final contactLauncherProvider = Provider<ContactLauncher>((ref) => UrlContactLauncher());
+
+final webpEncoderProvider = Provider<WebpEncoder>((ref) => WebpEncoder.platformDefault());
+
+// The partner workspaces (broker T09, landlord T10).
+final onboardingRepositoryProvider = Provider<OnboardingRepository>(
+  (ref) => HttpOnboardingRepository(ref.watch(apiClientProvider)),
+);
+
+final listingsRepositoryProvider = Provider<ListingsRepository>(
+  (ref) => HttpListingsRepository(ref.watch(apiClientProvider)),
+);
+
+final enquiriesRepositoryProvider = Provider<EnquiriesRepository>(
+  (ref) => HttpEnquiriesRepository(ref.watch(apiClientProvider)),
+);
+
+final moneyRepositoryProvider = Provider<MoneyRepository>(
+  (ref) => HttpMoneyRepository(ref.watch(apiClientProvider)),
+);
+
+final confirmationsRepositoryProvider = Provider<ConfirmationsRepository>(
+  (ref) => HttpConfirmationsRepository(ref.watch(apiClientProvider)),
+);
+
+final tenanciesRepositoryProvider = Provider<TenanciesRepository>(
+  (ref) => HttpTenanciesRepository(ref.watch(apiClientProvider)),
+);
 
 final catalogueRepositoryProvider = Provider<CatalogueRepository>(
   (ref) => HttpCatalogueRepository(ref.watch(apiClientProvider), baseUrl: Env.apiBaseUrl),

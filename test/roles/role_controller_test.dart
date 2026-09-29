@@ -101,6 +101,22 @@ void main() {
     expect(harness.roles.switches, isEmpty);
   });
 
+  test('opening a role under review while the token acts as another partner switches it back to customer', () async {
+    // The partner routes ignore X-Partner-Role while the token acts as a
+    // partner, so a landlord applicant must not be acting as broker.
+    final harness = TestHarness(
+      roles: FakeRoleRepository(roles: const [
+        AccountRole(role: AppRole.customer, status: 'active'),
+        AccountRole(role: AppRole.broker, status: 'active'),
+        AccountRole(role: AppRole.landlord, status: 'pending_review'),
+      ], lastActiveRole: AppRole.broker),
+    );
+    final container = await signIn(harness);
+    await container.read(roleControllerProvider.notifier).open(AppRole.landlord);
+    expect(harness.roles.switches, [AppRole.customer]);
+    expect(container.read(roleControllerProvider).current, AppRole.landlord);
+  });
+
   test('a refused switch keeps ROL-001 on screen rather than opening a home', () async {
     final harness = TestHarness(roles: _RefusingRoles());
     final container = await signIn(harness);
