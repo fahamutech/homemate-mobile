@@ -14,7 +14,12 @@ import '../features/auth/presentation/splash_screen.dart';
 import '../features/dev/widget_catalogue_screen.dart';
 import '../features/broker/presentation/broker_home_screen.dart';
 import '../features/broker/presentation/broker_intro_screen.dart';
+import '../features/partner_shared/presentation/enquiries/partner_enquiries_screen.dart';
+import '../features/partner_shared/presentation/enquiries/partner_enquiry_screen.dart';
 import '../features/partner_shared/presentation/landlord_confirm_placeholder.dart';
+import '../features/partner_shared/presentation/money/earning_detail_screen.dart';
+import '../features/partner_shared/presentation/money/earnings_screen.dart';
+import '../features/partner_shared/presentation/money/payouts_screen.dart';
 import '../features/partner_shared/presentation/listings/listing_sent_screen.dart';
 import '../features/partner_shared/presentation/listings/partner_listing_screen.dart';
 import '../features/partner_shared/presentation/listings/partner_listings_screen.dart';
@@ -120,6 +125,19 @@ List<GoRoute> _partnerListingRoutes(AppRole role) => [
       ),
     ];
 
+/// An enquiry, an earning and the payouts, over the tabs.
+List<GoRoute> _partnerWorkRoutes(AppRole role) => [
+      GoRoute(
+        path: Routes.partnerEnquiry(role, ':id'),
+        builder: (_, state) => PartnerEnquiryScreen(role: role, enquiryId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.partnerEarning(role, ':id'),
+        builder: (_, state) => EarningDetailScreen(role: role, earningId: state.pathParameters['id']!),
+      ),
+      GoRoute(path: Routes.partnerPayouts(role), builder: (_, __) => PayoutsScreen(role: role)),
+    ];
+
 /// The setup screens every partner role has, outside the tabs.
 List<GoRoute> _partnerSetupRoutes(AppRole role) => [
       GoRoute(
@@ -203,13 +221,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       _partnerShell(AppRole.broker, [
         (Routes.brokerHome, (_) => const BrokerHomeScreen()),
         (Routes.brokerListings, (_) => const PartnerListingsScreen(role: AppRole.broker)),
-        (Routes.brokerEnquiries, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navEnquiries)),
-        (Routes.brokerEarnings, (context) => PartnerTabPlaceholder(role: AppRole.broker, title: context.text.navEarnings)),
+        (Routes.brokerEnquiries, (_) => const PartnerEnquiriesScreen(role: AppRole.broker)),
+        (Routes.brokerEarnings, (_) => const EarningsScreen(role: AppRole.broker)),
         (Routes.brokerProfile, (_) => const PartnerProfileScreen(role: AppRole.broker)),
       ]),
       GoRoute(path: Routes.partnerIntro(AppRole.broker), builder: (_, __) => const BrokerIntroScreen()),
       ..._partnerSetupRoutes(AppRole.broker),
       ..._partnerListingRoutes(AppRole.broker),
+      ..._partnerWorkRoutes(AppRole.broker),
       _partnerShell(AppRole.landlord, [
         (Routes.landlordHome, (_) => const PartnerHomePlaceholder(role: AppRole.landlord)),
         (Routes.landlordHomes, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navHomes)),

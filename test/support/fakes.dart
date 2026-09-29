@@ -602,6 +602,7 @@ class TestHarness {
   final FakeMoneyRepository money = FakeMoneyRepository();
   final FakePhotoSource photos = FakePhotoSource();
   final FakeWebpEncoder webp = FakeWebpEncoder();
+  final FakeContactLauncher contact = FakeContactLauncher();
   final InMemoryRolePreferenceStore rolePreferences = InMemoryRolePreferenceStore();
 
   /// Defaults to `unknown` — nobody has been asked — which is the state the
@@ -631,6 +632,7 @@ class TestHarness {
         moneyRepositoryProvider.overrideWithValue(money),
         photoSourceProvider.overrideWithValue(photos),
         webpEncoderProvider.overrideWithValue(webp),
+        contactLauncherProvider.overrideWithValue(contact),
         rolePreferenceStoreProvider.overrideWithValue(rolePreferences),
         localeStoreProvider.overrideWithValue(InMemoryLocaleStore(locale)),
       ];

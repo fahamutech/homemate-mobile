@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:homemate_mobile/core/contact/contact_launcher.dart';
 import 'package:homemate_mobile/core/media/photo_source.dart';
 import 'package:homemate_mobile/core/media/picked_photo.dart';
 import 'package:homemate_mobile/core/media/webp_encoder.dart';
@@ -511,5 +512,23 @@ class FakeWebpEncoder implements WebpEncoder {
   Future<Uint8List> encode(Uint8List bytes, {int maxSide = 1600}) async {
     encoded++;
     return bytes;
+  }
+}
+
+/// Records calls and chats instead of leaving the app.
+class FakeContactLauncher implements ContactLauncher {
+  final List<String> calls = [];
+  final List<String> chats = [];
+
+  @override
+  Future<bool> call(String phone) async {
+    calls.add(phone);
+    return true;
+  }
+
+  @override
+  Future<bool> whatsApp(String phone, {String? message}) async {
+    chats.add(phone);
+    return true;
   }
 }

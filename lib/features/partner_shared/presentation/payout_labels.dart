@@ -20,3 +20,12 @@ String payoutAccountLine(PayoutAccount? account, {String Function(String code)? 
       : payoutProviderLabel(account.provider);
   return '$name •••• $tail'.trim();
 }
+
+/// "M-Pesa •••• 5678" from what the payouts screen gets: the number is
+/// already masked by the server.
+String maskedAccountLine({String? method, String? provider, String? masked, String Function(String code)? bankName}) {
+  final name = method == 'bank'
+      ? (bankName?.call(provider ?? '') ?? provider ?? '')
+      : payoutProviderLabel(provider);
+  return '$name ${masked ?? ''}'.trim();
+}

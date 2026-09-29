@@ -10,6 +10,7 @@ import '../../../design/widgets/hm_top_bar.dart';
 import '../../roles/data/app_role.dart';
 import '../../roles/presentation/role_copy.dart';
 import '../../roles/presentation/switch_role_sheet.dart';
+import 'profile/partner_account_rows.dart';
 
 /// The partner Profile tab: who is signed in, in which role, how to switch
 /// role (ROL-002) and how to sign out of every role on this phone.
@@ -58,6 +59,7 @@ class PartnerProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: HmSpace.huge),
+          PartnerAccountRows(role: role),
           ...children,
           HmListTile(
             icon: Icons.swap_horiz_rounded,
