@@ -7,6 +7,7 @@ import '../../../design/widgets/hm_async.dart';
 import '../../discovery/data/search_providers.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-005b. Every photo of one listing, full bleed.
 ///
@@ -61,9 +62,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           data: (property) {
             final media = property.media;
             if (media.isEmpty) {
-              return const Center(
+              return Center(
                 child: Text(
-                  'This listing has no photos yet.',
+                  context.text.galleryEmpty,
                   style: TextStyle(color: Colors.white70),
                 ),
               );
@@ -124,7 +125,7 @@ class _Header extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: HmSpace.xxl, vertical: HmSpace.md),
         child: Row(
           children: [
-            _RoundButton(icon: Icons.close, tooltip: 'Close photos', onPressed: onClose),
+            _RoundButton(icon: Icons.close, tooltip: context.text.galleryClose, onPressed: onClose),
             Expanded(
               child: Column(
                 children: [
@@ -246,7 +247,7 @@ class _Thumbnails extends StatelessWidget {
             return Semantics(
               button: true,
               selected: selected,
-              label: 'Photo ${position + 1} of ${media.length}',
+              label: context.text.galleryPhotoOf(position + 1, media.length),
               child: GestureDetector(
                 onTap: () => onSelected(position),
                 child: AnimatedContainer(
@@ -285,12 +286,12 @@ class _Hint extends StatelessWidget {
             color: Colors.white12,
             borderRadius: BorderRadius.circular(HmRadius.pill),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.zoom_out_map, size: 15, color: Colors.white70),
               SizedBox(width: HmSpace.md),
-              Text('Pinch to zoom', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              Text(context.text.galleryPinch, style: TextStyle(color: Colors.white70, fontSize: 13)),
             ],
           ),
         ),

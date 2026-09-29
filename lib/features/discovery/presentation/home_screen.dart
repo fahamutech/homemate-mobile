@@ -20,6 +20,7 @@ import '../../shared/property_card.dart';
 import '../../shared/property_image.dart';
 import '../data/search_providers.dart';
 import 'near_me_prompt.dart';
+import '../../shared/property_facts.dart';
 
 /// CUS-001. What is waiting for you, then what is available, then what is
 /// close by.
@@ -347,7 +348,7 @@ class _CategoryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Nothing to choose between until the dictionaries arrive; an "All" chip
+    // Nothing to choose between until the dictionaries arrive; an context.text.listingsAll chip
     // on its own is a control that does nothing.
     if (types.isEmpty) return const SizedBox.shrink();
 
@@ -363,7 +364,7 @@ class _CategoryChips extends StatelessWidget {
           itemBuilder: (_, index) {
             if (index == 0) {
               return HmChoicePill(
-                label: 'All',
+                label: context.text.listingsAll,
                 dense: true,
                 selected: selected == null,
                 onTap: () => onSelected(null),
@@ -491,7 +492,7 @@ class _NearbyCardState extends ConsumerState<_NearbyCard> {
                     const SizedBox(height: HmSpace.md),
                     Row(
                       children: [
-                        Flexible(child: Text(_facts(property), style: HmText.caption)),
+                        Flexible(child: Text(propertyFacts(context.text, property, areaUnit: 'sqm').join(' • '), style: HmText.caption)),
                         if (property.distanceMetres != null) ...[
                           const SizedBox(width: HmSpace.md),
                           DistanceLabel(metres: property.distanceMetres),
@@ -509,7 +510,7 @@ class _NearbyCardState extends ConsumerState<_NearbyCard> {
               ),
               IconButton(
                 onPressed: _toggle,
-                tooltip: _saved ? 'Remove from saved' : 'Save this property',
+                tooltip: _saved ? context.text.savedRemove : context.text.savedAdd,
                 icon: Icon(
                   _saved ? Icons.favorite : Icons.favorite_outline,
                   size: 20,
@@ -523,11 +524,7 @@ class _NearbyCardState extends ConsumerState<_NearbyCard> {
     );
   }
 
-  static String _facts(PropertySummary property) => [
-        if (property.bedrooms != null) '${property.bedrooms} Bed',
-        if (property.bathrooms != null) '${property.bathrooms} Bath',
-        if (property.sizeSqm != null) '${property.sizeSqm!.round()} sqm',
-      ].join(' • ');
+
 }
 
 /// The short list of things that need the customer, with the money first.
@@ -542,7 +539,7 @@ class _MyActivity extends StatelessWidget {
       if (summary.amountOutstanding > 0)
         _ActivityTile(
           icon: Icons.account_balance_wallet_outlined,
-          label: 'To pay',
+          label: context.text.activityToPay,
           value: HmMoney.format(summary.amountOutstanding),
           accent: HmColors.warning,
           onTap: () => context.go(Routes.activity),
@@ -550,7 +547,7 @@ class _MyActivity extends StatelessWidget {
       if (summary.paymentsAwaitingVerification > 0)
         _ActivityTile(
           icon: Icons.hourglass_top_outlined,
-          label: 'Being checked',
+          label: context.text.earningsBeingChecked,
           value: '${summary.paymentsAwaitingVerification}',
           accent: HmColors.info,
           onTap: () => context.go(Routes.activity),
@@ -558,7 +555,7 @@ class _MyActivity extends StatelessWidget {
       if (summary.openInquiries > 0)
         _ActivityTile(
           icon: Icons.question_answer_outlined,
-          label: 'Enquiries',
+          label: context.text.navEnquiries,
           value: '${summary.openInquiries}',
           accent: HmColors.brandPrimary,
           onTap: () => context.go(Routes.inquiries),
@@ -574,10 +571,10 @@ class _MyActivity extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(HmSpace.xxl, 0, HmSpace.md, HmSpace.md),
           child: Row(
             children: [
-              Expanded(child: Text('My Activity', style: HmText.title.copyWith(fontSize: 19))),
+              Expanded(child: Text(context.text.homeMyActivity, style: HmText.title.copyWith(fontSize: 19))),
               TextButton(
                 onPressed: () => context.go(Routes.activity),
-                child: const Text('See All'),
+                child: Text(context.text.commonSeeAllTitle),
               ),
             ],
           ),

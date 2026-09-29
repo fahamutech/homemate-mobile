@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/config/env.dart';
 import '../../../core/i18n/app_text.dart';
+import '../../../core/links/link_opener.dart';
+import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_money.dart';
@@ -15,7 +19,7 @@ import '../../shared/journey_models.dart';
 /// the parties, the term and the document; when one has not, it still shows
 /// the terms agreed at booking — binding whether or not anybody has produced
 /// a PDF — and says plainly that the document is not ready.
-class LeaseDetails extends StatelessWidget {
+class LeaseDetails extends ConsumerWidget {
   const LeaseDetails({super.key, required this.lease});
 
   final LeaseAgreement lease;
@@ -29,8 +33,9 @@ class LeaseDetails extends StatelessWidget {
       };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final text = context.text;
+    final document = documentUri(lease.documentUrl, apiBaseUrl: Env.apiBaseUrl);
     String day(DateTime? value) => value == null ? '—' : _dayFormat.format(value);
     return ListView(
       padding: const EdgeInsets.fromLTRB(HmSpace.xxl, HmSpace.xxl, HmSpace.xxl, HmSpace.section),
@@ -91,12 +96,18 @@ class LeaseDetails extends StatelessWidget {
         const SizedBox(height: HmSpace.huge),
         FilledButton.icon(
           // Disabled rather than hidden: a document is part of this and is
-          // simply not ready yet.
-          onPressed: lease.hasDocument ? () => HmFeedback.info(context, text.leaseOpening) : null,
+          // simply not ready yet (or its link is not one we will open).
+          onPressed: document == null ? null : () => _open(context, ref, document),
           icon: const Icon(Icons.download_outlined, size: 18),
-          label: Text(lease.hasDocument ? text.leaseDownload : text.leasePdfNotReady),
+          label: Text(document != null ? text.leaseDownload : text.leasePdfNotReady),
         ),
       ],
     );
+  }
+
+  Future<void> _open(BuildContext context, WidgetRef ref, Uri document) async {
+    final text = context.text;
+    final opened = await ref.read(linkOpenerProvider).open(document).catchError((_) => false);
+    if (!opened && context.mounted) HmFeedback.info(context, text.leaseOpenFailed);
   }
 }

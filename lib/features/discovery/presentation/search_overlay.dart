@@ -16,6 +16,7 @@ import '../../shared/models.dart';
 import '../../shared/property_image.dart';
 import '../data/search_providers.dart';
 import 'filter_sheet.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-002a. The search overlay.
 ///
@@ -181,7 +182,7 @@ class _SearchOverlayState extends ConsumerState<SearchOverlay> {
 
   List<Widget> _browsing() => [
         if (_recent.isNotEmpty) ...[
-          const _GroupTitle('RECENT SEARCHES'),
+          _GroupTitle(context.text.overlayRecent),
           for (final term in _recent)
             _Suggestion(
               icon: Icons.history,
@@ -194,26 +195,26 @@ class _SearchOverlayState extends ConsumerState<SearchOverlay> {
               alignment: Alignment.centerLeft,
               child: TextButton(
                 onPressed: _forgetRecent,
-                child: const Text('Clear recent searches'),
+                child: Text(context.text.overlayClearRecent),
               ),
             ),
           ),
           const _GroupDivider(),
         ],
-        const _GroupTitle('POPULAR AREAS'),
+        _GroupTitle(context.text.overlayPopular),
         _PopularAreas(onSelected: _submit),
         const _GroupDivider(),
-        const _GroupTitle('FEATURED PROPERTIES'),
+        _GroupTitle(context.text.overlayFeatured),
         const _FeaturedRow(),
       ];
 
   // --- something typed -------------------------------------------------------
 
   List<Widget> _suggesting() => [
-        const _GroupTitle('LOCATIONS'),
+        _GroupTitle(context.text.overlayLocations),
         _LocationMatches(query: _query, onSelected: _submit),
         const _GroupDivider(),
-        const _GroupTitle('PROPERTIES'),
+        _GroupTitle(context.text.overlayProperties),
         _PropertyMatches(query: _query),
       ];
 }
@@ -246,7 +247,7 @@ class _SearchBar extends StatelessWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.arrow_back),
-              tooltip: 'Close search',
+              tooltip: context.text.overlayClose,
               onPressed: onBack,
             ),
             Expanded(
@@ -261,13 +262,13 @@ class _SearchBar extends StatelessWidget {
                 onChanged: onChanged,
                 onSubmitted: onSubmitted,
                 decoration: InputDecoration(
-                  hintText: 'Search area, title or reference',
+                  hintText: context.text.overlayHint,
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: controller.text.isEmpty
                       ? null
                       : IconButton(
                           icon: const Icon(Icons.close),
-                          tooltip: 'Clear search',
+                          tooltip: context.text.searchClear,
                           onPressed: onClear,
                         ),
                 ),
@@ -303,7 +304,7 @@ class _FilterButton extends StatelessWidget {
                   size: 22,
                   // The count is announced rather than only drawn, so the dot
                   // is not the only way to know a filter is on.
-                  semanticLabel: count > 0 ? 'Filters, $count active' : 'Filters',
+                  semanticLabel: count > 0 ? context.text.overlayFiltersActive(count) : context.text.filterTitle,
                   color: count > 0 ? HmColors.brandPrimary : HmColors.textSecondary,
                 ),
               ),
@@ -342,7 +343,7 @@ class _LocationMatches extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (results) {
         if (results.isEmpty) {
-          return const _Empty('No places match that.');
+          return _Empty(context.text.overlayNoPlaces);
         }
         return Column(
           children: [
@@ -372,9 +373,9 @@ class _PropertyMatches extends ConsumerWidget {
 
     return results.when(
       loading: () => const _InlineLoading(),
-      error: (_, __) => const _Empty('Could not search just now.'),
+      error: (_, __) => _Empty(context.text.overlayFailed),
       data: (page) {
-        if (page.isEmpty) return const _Empty('No homes match that yet.');
+        if (page.isEmpty) return _Empty(context.text.overlayNoHomes);
         return Column(
           children: [
             for (final property in page.items.take(5))

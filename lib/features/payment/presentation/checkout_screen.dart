@@ -19,6 +19,8 @@ import '../../shared/journey_models.dart';
 import '../../shared/journey_providers.dart';
 import '../../shared/service_fee_card.dart';
 import 'hold_banner.dart';
+import '../../../core/i18n/app_text.dart';
+import 'checkout_labels.dart';
 
 /// CUS-011 and CUS-014 — reserving a home and paying for it.
 ///
@@ -58,14 +60,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     return HmScaffold(
-      title: 'Checkout',
+      title: context.text.checkoutTitle,
       padded: false,
       backgroundColor: HmColors.bgSecondary,
       body: FutureBuilder<CheckoutSession>(
         future: _session,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const HmLoading(label: 'Reserving this home for you…');
+            return HmLoading(label: context.text.checkoutReserving);
           }
           if (snapshot.hasError) {
             return _CheckoutBlocked(error: snapshot.error!, onRetry: _retry);
@@ -102,7 +104,7 @@ class _CheckoutBlocked extends StatelessWidget {
           ),
           const SizedBox(height: HmSpace.xxl),
           Text(
-            isHeld ? 'Someone is paying for this home' : 'This home cannot be paid for',
+            isHeld ? context.text.checkoutHeld : context.text.checkoutCannotPay,
             style: HmText.heading,
             textAlign: TextAlign.center,
           ),
@@ -113,11 +115,11 @@ class _CheckoutBlocked extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: HmSpace.huge),
-          FilledButton(onPressed: onRetry, child: const Text('Try again')),
+          FilledButton(onPressed: onRetry, child: Text(context.text.retry)),
           const SizedBox(height: HmSpace.md),
           TextButton(
             onPressed: () => Navigator.of(context).maybePop(),
-            child: const Text('Keep looking'),
+            child: Text(context.text.checkoutKeepLooking),
           ),
         ],
       ),
@@ -171,17 +173,17 @@ class _CheckoutState extends ConsumerState<_Checkout> {
   Future<void> _pay() async {
     final method = _method;
     if (method == null) {
-      setState(() => _error = 'Choose how you want to pay');
+      setState(() => _error = context.text.checkoutChooseMethod);
       return;
     }
     if (method.needsPhoneNumber && _phoneController.text.trim().length < 9) {
-      setState(() => _error = 'Enter the mobile money number to charge');
+      setState(() => _error = context.text.checkoutEnterNumber);
       return;
     }
 
     final payment = _summary.payable;
     if (payment == null) {
-      setState(() => _error = 'There is nothing left to pay for this home');
+      setState(() => _error = context.text.checkoutNothingLeft);
       return;
     }
 
@@ -257,13 +259,12 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                 if (_expired) ...[
                   const SizedBox(height: HmSpace.xl),
                   HmNotice(
-                    message: 'Your ten minutes are up, so this home is open to other '
-                        'customers again. Nothing has been charged.',
+                    message: context.text.checkoutExpired,
                     icon: Icons.lock_open_outlined,
                     colour: HmColors.error,
                     action: FilledButton(
                       onPressed: widget.onRetry,
-                      child: const Text('Hold it again'),
+                      child: Text(context.text.checkoutHoldAgain),
                     ),
                   ),
                 ],
@@ -275,27 +276,27 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                 const SizedBox(height: HmSpace.huge),
 
                 HmCard(
-                  title: 'Reservation Details',
+                  title: context.text.checkoutReservation,
                   child: Column(
                     children: [
                       HmDetailRow(
-                        label: 'Property',
-                        value: booking.propertyTitle ?? 'Your home',
+                        label: context.text.leaseProperty,
+                        value: booking.propertyTitle ?? context.text.rentalYourHome,
                       ),
                       HmDetailRow(
-                        label: 'Move-in Date',
+                        label: context.text.checkoutMoveIn,
                         value: booking.moveInDate == null
-                            ? 'To be agreed'
+                            ? context.text.checkoutToBeAgreed
                             : DateFormat('d MMM yyyy').format(booking.moveInDate!),
                       ),
                       HmDetailRow(
-                        label: 'Lease Duration',
+                        label: context.text.checkoutLeaseDuration,
                         value: booking.leaseMonths == null
                             ? '—'
-                            : '${booking.leaseMonths} Months',
+                            : context.text.listingMonths(booking.leaseMonths!),
                       ),
                       HmDetailRow(
-                        label: 'Monthly Rent',
+                        label: context.text.rentalMonthlyRent,
                         value: HmMoney.format(booking.monthlyRent, currency: _currency),
                       ),
                     ],
@@ -304,7 +305,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                 const SizedBox(height: HmSpace.xl),
 
                 HmCard(
-                  title: 'Cost Breakdown',
+                  title: context.text.checkoutBreakdown,
                   child: Column(
                     children: [
                       for (final line in _summary.breakdown)
@@ -333,7 +334,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                           ),
                       const Divider(height: HmSpace.huge),
                       HmDetailRow(
-                        label: 'Total Payment Due',
+                        label: context.text.checkoutTotalDue,
                         value: _summary.totalLabel,
                         emphasise: true,
                         valueColor: HmColors.brandPrimary,
@@ -347,15 +348,14 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                 ],
                 const SizedBox(height: HmSpace.huge),
 
-                const HmSectionHeader(title: 'Select Payment Method'),
+                HmSectionHeader(title: context.text.checkoutSelectMethod),
                 HmAsync(
                   value: methods,
                   onRetry: () =>
                       ref.invalidate(paymentMethodsProvider(widget.session.hold.propertyId)),
                   emptyWhen: (list) => list.isEmpty,
-                  empty: const HmNotice(
-                    message: 'No payment methods are configured for this listing yet. '
-                        'Please contact the landlord or try again shortly.',
+                  empty: HmNotice(
+                    message: context.text.checkoutNoMethods,
                     colour: HmColors.info,
                     icon: Icons.info_outline,
                   ),
@@ -380,7 +380,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                 if (_method?.needsPhoneNumber ?? false) ...[
                   const SizedBox(height: HmSpace.md),
                   HmCard(
-                    title: '${_method!.name} Registered Number',
+                    title: context.text.checkoutRegisteredNumber(_method!.name),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -403,7 +403,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                             const SizedBox(width: HmSpace.md),
                             Expanded(
                               child: Text(
-                                'You will receive a ${_method!.name} prompt on your phone.',
+                                context.text.checkoutPrompt(_method!.name),
                                 style: HmText.caption,
                               ),
                             ),
@@ -416,8 +416,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
 
                 const SizedBox(height: HmSpace.huge),
                 HmNotice(
-                  message: 'The amount is verified by HomeMate. Never send money outside '
-                      'the app, and never to an account the landlord gives you directly.',
+                  message: context.text.checkoutSafety,
                   icon: Icons.verified_user_outlined,
                   colour: HmColors.info,
                 ),
@@ -456,12 +455,12 @@ class _CheckoutState extends ConsumerState<_Checkout> {
                                   color: HmColors.textOnBrand,
                                 ),
                               )
-                            : Text('Pay ${_summary.totalLabel}'),
+                            : Text(context.text.checkoutPay(_summary.totalLabel)),
                       ),
                     ),
                     const SizedBox(height: HmSpace.md),
                     Text(
-                      'This home is yours once we verify your payment.',
+                      context.text.checkoutYoursOnceVerified,
                       style: HmText.caption.copyWith(fontSize: 11),
                       textAlign: TextAlign.center,
                     ),
@@ -494,7 +493,7 @@ class _AmountBox extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              'TOTAL AMOUNT DUE',
+              context.text.checkoutTotalCaps,
               style: HmText.caption.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.6,
@@ -564,7 +563,7 @@ class _MethodTile extends StatelessWidget {
                       children: [
                         Text(option.name, style: HmText.label.copyWith(fontSize: 14)),
                         const SizedBox(height: HmSpace.xxs),
-                        Text(option.kindLabel, style: HmText.caption),
+                        Text(paymentKindLabel(context.text, option.kind), style: HmText.caption),
                       ],
                     ),
                   ),

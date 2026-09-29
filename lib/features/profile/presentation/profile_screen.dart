@@ -26,7 +26,7 @@ class ProfileScreen extends ConsumerWidget {
     final summary = ref.watch(activitySummaryProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(context.text.navProfile)),
       body: ListView(
         padding: const EdgeInsets.all(HmSpace.xxl),
         children: [
@@ -56,7 +56,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: HmSpace.huge),
             Row(
               children: [
-                const Text('Identity', style: HmText.caption),
+                Text(context.text.partnerStepIdentity, style: HmText.caption),
                 const SizedBox(width: HmSpace.md),
                 HmStatusChip(customer.kycStatus, dense: true),
               ],
@@ -68,39 +68,39 @@ class ProfileScreen extends ConsumerWidget {
           if (summary != null)
             Row(
               children: [
-                _Stat(label: 'Favourites', value: '${summary.savedCount}'),
-                _Stat(label: 'Enquiries', value: '${summary.openInquiries}'),
-                _Stat(label: 'Rentals', value: '${summary.activeBookings}'),
+                _Stat(label: context.text.customerProfileFavourites, value: '${summary.savedCount}'),
+                _Stat(label: context.text.navEnquiries, value: '${summary.openInquiries}'),
+                _Stat(label: context.text.customerProfileRentals, value: '${summary.activeBookings}'),
               ],
             ),
 
           const SizedBox(height: HmSpace.section),
           const WorkWithHomeMateSection(),
-          const Text('Account', style: HmText.label),
+          Text(context.text.customerProfileAccount, style: HmText.label),
           const SizedBox(height: HmSpace.md),
           _Item(
             icon: Icons.person_outline,
-            label: 'Edit your details',
+            label: context.text.partnerActionEditDetails,
             onTap: () => context.push(Routes.profileEdit),
           ),
           _Item(
             icon: Icons.verified_user_outlined,
-            label: 'Identity verification',
+            label: context.text.profileIdentity,
             onTap: () => context.push(Routes.identity),
           ),
           _Item(
             icon: Icons.tune,
-            label: 'What you are looking for',
+            label: context.text.prefsTitle,
             onTap: () => context.push(Routes.preferences),
           ),
           _Item(
             icon: Icons.lock_outline,
-            label: 'Change PIN',
+            label: context.text.customerProfileChangePin,
             onTap: () => _changePin(context, ref),
           ),
           _Item(
             icon: Icons.notifications_outlined,
-            label: 'Notifications',
+            label: context.text.notifications,
             onTap: () => context.push('${Routes.home}/notifications'),
           ),
           // Stays after "Not now" on the home card: this is where to find it later.
@@ -112,24 +112,24 @@ class ProfileScreen extends ConsumerWidget {
             ),
 
           const SizedBox(height: HmSpace.huge),
-          const Text('Support', style: HmText.label),
+          Text(context.text.customerProfileSupport, style: HmText.label),
           const SizedBox(height: HmSpace.md),
           _Item(
             icon: Icons.help_outline,
-            label: 'Help & support',
-            onTap: () => HmFeedback.info(context, 'Call 0800 000 000 or email help@homemate.co.tz'),
+            label: context.text.profileHelp,
+            onTap: () => HmFeedback.info(context, context.text.profileHelpBody),
           ),
           _Item(
             icon: Icons.description_outlined,
-            label: 'Terms & privacy',
-            onTap: () => HmFeedback.info(context, 'Available at homemate.co.tz/terms'),
+            label: context.text.customerProfileTerms,
+            onTap: () => HmFeedback.info(context, context.text.customerProfileTermsAt),
           ),
 
           const SizedBox(height: HmSpace.huge),
           OutlinedButton.icon(
             onPressed: () => _signOut(context, ref),
             icon: const Icon(Icons.logout, size: 18),
-            label: const Text('Sign out'),
+            label: Text(context.text.partnerSignOut),
             style: OutlinedButton.styleFrom(foregroundColor: HmColors.error),
           ),
 
@@ -151,17 +151,17 @@ class ProfileScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text('You will need your PIN to sign back in.'),
+        title: Text(context.text.customerProfileSignOutQ),
+        content: Text(context.text.customerProfileSignOutBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Stay'),
+            child: Text(context.text.customerProfileStay),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: FilledButton.styleFrom(backgroundColor: HmColors.error),
-            child: const Text('Sign out'),
+            child: Text(context.text.partnerSignOut),
           ),
         ],
       ),
@@ -176,23 +176,23 @@ class ProfileScreen extends ConsumerWidget {
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Change your PIN'),
+        title: Text(context.text.customerProfileChangePinTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _PinInput(controller: current, label: 'Current PIN', autofocus: true),
+            _PinInput(controller: current, label: context.text.customerProfileCurrentPin, autofocus: true),
             const SizedBox(height: HmSpace.xxl),
-            _PinInput(controller: next, label: 'New PIN'),
+            _PinInput(controller: next, label: context.text.pinSetupNewPin),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.text.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Save'),
+            child: Text(context.text.save),
           ),
         ],
       ),
@@ -205,7 +205,7 @@ class ProfileScreen extends ConsumerWidget {
               pin: next.text,
               confirmPin: next.text,
             );
-        if (context.mounted) HmFeedback.success(context, 'Your PIN has been changed');
+        if (context.mounted) HmFeedback.success(context, context.text.customerProfilePinChanged);
       } on ApiException catch (error) {
         if (context.mounted) HmFeedback.failure(context, error);
       }

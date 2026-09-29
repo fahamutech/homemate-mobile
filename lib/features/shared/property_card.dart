@@ -9,6 +9,8 @@ import '../../routing/app_router.dart';
 import '../discovery/data/search_providers.dart';
 import 'models.dart';
 import 'property_image.dart';
+import '../../core/i18n/app_text.dart';
+import 'property_facts.dart';
 
 /// Which way round the card is laid out.
 enum PropertyCardLayout {
@@ -206,11 +208,7 @@ class _PropertyCardState extends ConsumerState<PropertyCard> {
 
   /// "3 Bed · 2 Bath · 95 m²" — the design's run-on line, which fits where
   /// three icon-and-number pairs would not.
-  static String _factsLine(PropertySummary property) => [
-        if (property.bedrooms != null) '${property.bedrooms} Bed',
-        if (property.bathrooms != null) '${property.bathrooms} Bath',
-        if (property.sizeSqm != null) '${property.sizeSqm!.round()} m²',
-      ].join(' · ');
+  String _factsLine(PropertySummary property) => propertyFacts(context.text, property).join(' · ');
 
   Widget _vertical(PropertySummary property) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,7 +292,7 @@ class _SaveButton extends StatelessWidget {
         shape: const CircleBorder(),
         child: IconButton(
           // The label says what tapping does, not what the icon looks like.
-          tooltip: saved ? 'Remove from saved' : 'Save this property',
+          tooltip: saved ? context.text.savedRemove : context.text.savedAdd,
           onPressed: onPressed,
           iconSize: dense ? 16 : 20,
           padding: dense ? const EdgeInsets.all(HmSpace.md) : null,

@@ -7,6 +7,7 @@ import '../../../design/widgets/hm_async.dart';
 import '../../../routing/app_router.dart';
 import '../../inquiry/data/inquiry_providers.dart';
 import '../../inquiry/presentation/inquiries_screen.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-016. The Activity tab.
 ///
@@ -23,7 +24,7 @@ class ActivityScreen extends ConsumerWidget {
     final inquiries = ref.watch(inquiriesProvider(null));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My activity')),
+      appBar: AppBar(title: Text(context.text.activityTitle)),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(inquiriesProvider(null)),
         child: ListView(
@@ -31,15 +32,15 @@ class ActivityScreen extends ConsumerWidget {
           children: [
             _Shortcut(
               icon: Icons.vpn_key_outlined,
-              label: 'My Rentals',
-              caption: 'Homes you have paid for, your lease and rent history',
+              label: context.text.rentalsTitle,
+              caption: context.text.activityRentalsCaption,
               onTap: () => context.push(Routes.rentals),
             ),
             const SizedBox(height: HmSpace.huge),
-            const Text('Your enquiries', style: HmText.heading),
+            Text(context.text.activityYourEnquiries, style: HmText.heading),
             const SizedBox(height: HmSpace.xs),
-            const Text(
-              'Once the landlord accepts, pay to secure the home. It is yours when we verify the payment.',
+            Text(
+              context.text.activityHowItWorks,
               style: HmText.caption,
             ),
             const SizedBox(height: HmSpace.xl),
@@ -52,12 +53,12 @@ class ActivityScreen extends ConsumerWidget {
                 child: HmLoading(),
               ),
               empty: HmEmpty(
-                title: 'No enquiries yet',
-                message: 'Find a home you like and send an enquiry. Everything that follows appears here.',
+                title: context.text.enquiriesNone,
+                message: context.text.activityEmptyBody,
                 icon: Icons.question_answer_outlined,
                 action: OutlinedButton(
                   onPressed: () => context.go(Routes.search),
-                  child: const Text('Find a home'),
+                  child: Text(context.text.rentalsFind),
                 ),
               ),
               data: (page) => Column(

@@ -9,6 +9,7 @@ import '../../../design/widgets/hm_feedback.dart';
 import '../../../design/widgets/hm_scaffold.dart';
 import '../../../routing/app_router.dart';
 import 'phone_field.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-006d. The only route back in when the PIN is gone: prove the phone
 /// again with a code.
@@ -59,7 +60,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
       if (!challenge.wasSent) {
         // No account for that number. The customer is told the same thing
         // either way, so nothing is revealed.
-        HmFeedback.info(context, 'If that number has an account, a code is on its way.');
+        HmFeedback.info(context, context.text.forgotPinSent);
         context.go(Routes.signIn);
         return;
       }
@@ -78,7 +79,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
   @override
   Widget build(BuildContext context) {
     return HmScaffold(
-      title: 'Forgot PIN',
+      title: context.text.forgotPinTitle,
       onBack: () => context.go(Routes.signIn),
       backgroundColor: HmColors.bgPrimary,
       body: SingleChildScrollView(
@@ -88,10 +89,10 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: HmSpace.huge),
-              Text('Reset your PIN', style: HmText.title),
+              Text(context.text.forgotPinHeading, style: HmText.title),
               const SizedBox(height: HmSpace.md),
               Text(
-                'We will text a code to your number so you can choose a new one.',
+                context.text.forgotPinBody,
                 style: HmText.body,
               ),
               const SizedBox(height: HmSpace.section),
@@ -111,7 +112,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Send code'),
+                    : Text(context.text.sendCode),
               ),
             ],
           ),

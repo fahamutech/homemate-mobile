@@ -254,7 +254,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           )
                         : Center(
                             child: Text(
-                              _error ?? 'Enter your PIN',
+                              _error ?? context.text.pinEnter,
                               style: _error == null
                                   ? HmText.caption
                                   : HmText.caption.copyWith(color: HmColors.error),
@@ -274,7 +274,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             // A PIN nobody can remember must not be a dead end: the same
             // number re-verified by SMS gets a new one.
             actionIcon: Icons.help_outline,
-            actionLabel: 'Forgot your PIN',
+            actionLabel: context.text.pinForgot,
             onAction: () => _requestOtp(phoneNumber, purpose: 'reset_pin'),
           ),
           const SizedBox(height: HmSpace.md),

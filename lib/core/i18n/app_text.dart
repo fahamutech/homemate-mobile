@@ -756,7 +756,460 @@ class AppText {
   String leaseAcceptedOnVersion(Object date, Object version) => _s('lease.acceptedOnVersion', {'date': date, 'version': version});
   String get leaseDownload => _s('lease.download');
   String get leasePdfNotReady => _s('lease.pdfNotReady');
-  String get leaseOpening => _s('lease.opening');
+  String get leaseOpenFailed => _s('lease.openFailed');
+
+  // --- Forgot PIN (AUTH) -----------------------------------------------------
+  String get forgotPinSent => _s('forgotPin.sent');
+  String get forgotPinTitle => _s('forgotPin.title');
+  String get forgotPinHeading => _s('forgotPin.heading');
+  String get forgotPinBody => _s('forgotPin.body');
+
+  // --- Sign-in code (AUTH) ---------------------------------------------------
+  String get otpEnterCode => _s('otp.enterCode');
+  String get otpResent => _s('otp.resent');
+  String get otpTitle => _s('otp.title');
+  String get otpHeading => _s('otp.heading');
+  String otpSentTo(Object phone) => _s('otp.sentTo', {'phone': phone});
+  String get otpVerify => _s('otp.verify');
+  String otpResendIn(Object seconds) => _s('otp.resendIn', {'seconds': seconds});
+  String get otpSendAnother => _s('otp.sendAnother');
+
+  // --- PIN setup (AUTH) ------------------------------------------------------
+  String get pinSetupTitleReset => _s('pinSetup.titleReset');
+  String get pinSetupTitle => _s('pinSetup.title');
+  String get pinSetupBody => _s('pinSetup.body');
+  String get pinSetupNewPin => _s('pinSetup.newPin');
+  String get pinSetupConfirmPin => _s('pinSetup.confirmPin');
+  String get pinSetupMismatch => _s('pinSetup.mismatch');
+  String get pinSetupHint => _s('pinSetup.hint');
+  String get pinSetupSaveNew => _s('pinSetup.saveNew');
+  String get pinSetupCreate => _s('pinSetup.create');
+  String get pinSetupLength => _s('pinSetup.length');
+  String get pinSetupPredictable => _s('pinSetup.predictable');
+
+  // --- Errors and shared widgets ---------------------------------------------
+  String get errorOffline => _s('error.offline');
+  String get errorTimeout => _s('error.timeout');
+  String get errorUnexpected => _s('error.unexpected');
+  String errorAnnounce(Object message) => _s('error.announce', {'message': message});
+  String get commonNothingYet => _s('common.nothingYet');
+  String get notFoundMessage => _s('notFound.message');
+  String get notFoundGoHome => _s('notFound.goHome');
+  String get pinEnter => _s('pin.enter');
+  String get pinForgot => _s('pin.forgot');
+  String get pinDeleteDigit => _s('pin.deleteDigit');
+  String feeTitle(Object amount) => _s('fee.title', {'amount': amount});
+  String feeIncludedNow(Object percent) => _s('fee.includedNow', {'percent': percent});
+  String feeInFirstPayment(Object percent) => _s('fee.inFirstPayment', {'percent': percent});
+  String get feeYouSave => _s('fee.youSave');
+
+  // --- Profile setup (AUTH) --------------------------------------------------
+  String get profileSetupTitle => _s('profileSetup.title');
+  String get profileSetupBackStep => _s('profileSetup.backStep');
+  String get profileSetupSkipForNow => _s('profileSetup.skipForNow');
+  String get profileSetupComplete => _s('profileSetup.complete');
+  String get profileSetupDobHelp => _s('profileSetup.dobHelp');
+  String get photoTake => _s('photo.take');
+  String get photoFromGallery => _s('photo.fromGallery');
+  String get photoSaved => _s('photo.saved');
+  String get profileFieldFullName => _s('profileField.fullName');
+  String get profileFieldNameRequired => _s('profileField.nameRequired');
+  String get profileFieldNameHint => _s('profileField.nameHint');
+  String get profileFieldDob => _s('profileField.dob');
+  String get profileFieldDobPlaceholder => _s('profileField.dobPlaceholder');
+  String get profileFieldGender => _s('profileField.gender');
+  String get genderMale => _s('gender.male');
+  String get genderFemale => _s('gender.female');
+  String get genderOther => _s('gender.other');
+  String get profileFieldPhone => _s('profileField.phone');
+  String get profileFieldPhoneHelp => _s('profileField.phoneHelp');
+  String get profileFieldEmail => _s('profileField.email');
+  String get profileFieldEmailInvalid => _s('profileField.emailInvalid');
+  String get profileFieldEmailHelp => _s('profileField.emailHelp');
+  String get photoTapToChange => _s('photo.tapToChange');
+  String get profileSetupOptionsFailed => _s('profileSetup.optionsFailed');
+  String get prefsLocation => _s('prefs.location');
+  String get prefsAnywhere => _s('prefs.anywhere');
+  String get prefsPropertyType => _s('prefs.propertyType');
+  String get prefsBedrooms => _s('prefs.bedrooms');
+  String get prefsStudio => _s('prefs.studio');
+  String get prefsBudget => _s('prefs.budget');
+  String get prefsTimeline => _s('prefs.timeline');
+  String get prefsTimelineNow => _s('prefs.timeline.now');
+  String get prefsTimelineTwoWeeks => _s('prefs.timeline.twoWeeks');
+  String get prefsTimelineMonth => _s('prefs.timeline.month');
+  String get prefsTimelineFlexible => _s('prefs.timeline.flexible');
+  String get prefsAmenities => _s('prefs.amenities');
+  String get prefsAny => _s('prefs.any');
+  String get identitySent => _s('identity.sent');
+  String get identityPhotographId => _s('identity.photographId');
+  String get identityExistingPhoto => _s('identity.existingPhoto');
+  String get profileSetupAlmostDone => _s('profileSetup.almostDone');
+  String get profileSetupVerifyToUnlock => _s('profileSetup.verifyToUnlock');
+  String get identityIdTitle => _s('identity.idTitle');
+  String get identityIdSubtitle => _s('identity.idSubtitle');
+  String get identityUpload => _s('identity.upload');
+  String get identitySelfieTitle => _s('identity.selfieTitle');
+  String get identitySelfieSubtitle => _s('identity.selfieSubtitle');
+  String get identityTakePhoto => _s('identity.takePhoto');
+  String get profileSetupSkipVerification => _s('profileSetup.skipVerification');
+  String get profileSetupAgree => _s('profileSetup.agree');
+  String get identityBadgeVerified => _s('identity.badge.verified');
+  String get identityBadgeInReview => _s('identity.badge.inReview');
+  String get identityBadgeRejected => _s('identity.badge.rejected');
+  String get identityBadgeNotVerified => _s('identity.badge.notVerified');
+  String get profileEditSaved => _s('profileEdit.saved');
+  String get profileEditSave => _s('profileEdit.save');
+
+  // --- Filters (DSC) ---------------------------------------------------------
+  String filterAvailableOn(Object date) => _s('filter.availableOn', {'date': date});
+  String get filterAvailableBy => _s('filter.availableBy');
+  String get filterSectionType => _s('filter.section.type');
+  String get filterSectionRent => _s('filter.section.rent');
+  String get filterSectionBedrooms => _s('filter.section.bedrooms');
+  String get filterSectionBathrooms => _s('filter.section.bathrooms');
+  String get filterSectionArea => _s('filter.section.area');
+  String get filterSectionAmenities => _s('filter.section.amenities');
+  String get filterSectionAvailability => _s('filter.section.availability');
+  String get filterAnyTime => _s('filter.anyTime');
+  String get filterThisMonth => _s('filter.thisMonth');
+  String get filterCustomDate => _s('filter.customDate');
+  String get filterClose => _s('filter.close');
+  String get filterTitle => _s('filter.title');
+  String get filterReset => _s('filter.reset');
+  String get filterNoAmenities => _s('filter.noAmenities');
+  String get filterVerifiedOnly => _s('filter.verifiedOnly');
+  String get filterVerifiedOnlyHelp => _s('filter.verifiedOnlyHelp');
+  String get filterCounting => _s('filter.counting');
+  String get filterBasedOn => _s('filter.basedOn');
+  String get filterShow => _s('filter.show');
+  String get filterOptionsFailed => _s('filter.optionsFailed');
+
+  // --- Filters (DSC) counts --------------------------------------------------
+  String filterMatches(Object count) => _plural('filter.matches', count);
+
+  // --- Property facts --------------------------------------------------------
+  String factBeds(Object count) => _s('fact.beds', {'count': count});
+  String factBaths(Object count) => _s('fact.baths', {'count': count});
+
+  // --- Home (DSC) ------------------------------------------------------------
+  String get savedRemove => _s('saved.remove');
+  String get savedAdd => _s('saved.add');
+  String get activityToPay => _s('activity.toPay');
+  String get homeMyActivity => _s('home.myActivity');
+  String get commonSeeAllTitle => _s('common.seeAllTitle');
+
+  // --- Search counts (DSC) ---------------------------------------------------
+  String searchHomes(Object count) => _plural('search.homes', count);
+
+  // --- Search (DSC) ----------------------------------------------------------
+  String get searchSearching => _s('search.searching');
+  String get searchList => _s('search.list');
+  String get searchMap => _s('search.map');
+  String get searchNoMatch => _s('search.noMatch');
+  String get searchWiden => _s('search.widen');
+  String get searchTryDifferent => _s('search.tryDifferent');
+  String get searchClearFilters => _s('search.clearFilters');
+  String searchLabelWith(Object query) => _s('search.labelWith', {'query': query});
+  String get searchPlaceholder => _s('search.placeholder');
+  String get searchClear => _s('search.clear');
+  String searchFiltersCount(Object count) => _s('search.filtersCount', {'count': count});
+
+  // --- Search overlay (DSC) --------------------------------------------------
+  String get overlayRecent => _s('overlay.recent');
+  String get overlayClearRecent => _s('overlay.clearRecent');
+  String get overlayPopular => _s('overlay.popular');
+  String get overlayFeatured => _s('overlay.featured');
+  String get overlayLocations => _s('overlay.locations');
+  String get overlayProperties => _s('overlay.properties');
+  String get overlayClose => _s('overlay.close');
+  String get overlayHint => _s('overlay.hint');
+  String overlayFiltersActive(Object count) => _s('overlay.filtersActive', {'count': count});
+  String get overlayNoPlaces => _s('overlay.noPlaces');
+  String get overlayFailed => _s('overlay.failed');
+  String get overlayNoHomes => _s('overlay.noHomes');
+
+  // --- Property counts (DSC) -------------------------------------------------
+  String propertyActiveListings(Object count) => _plural('property.activeListings', count);
+
+  // --- Property (DSC) lines --------------------------------------------------
+  String get propertyDeposit => _s('property.deposit');
+  String get propertyAdvance => _s('property.advance');
+  String propertyRefundable(Object name) => _s('property.refundable', {'name': name});
+  String get propertyStepAccepts => _s('property.step.accepts');
+  String get propertyStepPay => _s('property.step.pay');
+  String get propertyStepVerified => _s('property.step.verified');
+
+  // --- Property (DSC) --------------------------------------------------------
+  String propertyAllIn(Object amount) => _s('property.allIn', {'amount': amount});
+  String get propertyAbout => _s('property.about');
+  String get propertyNoDescription => _s('property.noDescription');
+  String get propertyShowLess => _s('property.showLess');
+  String get propertyReadMore => _s('property.readMore');
+  String get propertyListedByHomeMate => _s('property.listedByHomeMate');
+  String propertyVerifiedContact(Object role) => _s('property.verifiedContact', {'role': role});
+  String get propertyChat => _s('property.chat');
+  String get propertyPriceBreakdown => _s('property.priceBreakdown');
+  String get propertyMonthlyTotal => _s('property.monthlyTotal');
+  String get propertyBeforeMoveIn => _s('property.beforeMoveIn');
+  String get propertyFirstMonth => _s('property.firstMonth');
+  String propertyFeeLine(Object percent) => _s('property.feeLine', {'percent': percent});
+  String get propertyMoveInTotal => _s('property.moveInTotal');
+  String get propertyEstimate => _s('property.estimate');
+  String get propertyPaymentOptions => _s('property.paymentOptions');
+  String get propertyHowToRent => _s('property.howToRent');
+  String propertyPhotoOf(Object n, Object total) => _s('property.photoOf', {'n': n, 'total': total});
+  String get propertyBeds => _s('property.beds');
+  String get propertyBaths => _s('property.baths');
+  String get propertyParking => _s('property.parking');
+  String get propertyRentPaid => _s('property.rentPaid');
+  String get propertyMinStay => _s('property.minStay');
+  String get propertyPets => _s('property.pets');
+  String get propertyPetsAllowed => _s('property.petsAllowed');
+  String get propertyPetsNotAllowed => _s('property.petsNotAllowed');
+  String get propertyTerms => _s('property.terms');
+  String get propertySomeonePaying => _s('property.someonePaying');
+  String get propertyContinuePayment => _s('property.continuePayment');
+  String get propertyPayToSecure => _s('property.payToSecure');
+  String get propertyViewEnquiry => _s('property.viewEnquiry');
+  String get propertyEnquire => _s('property.enquire');
+
+  // --- Gallery (DSC) ---------------------------------------------------------
+  String get galleryEmpty => _s('gallery.empty');
+  String get galleryClose => _s('gallery.close');
+  String galleryPhotoOf(Object n, Object total) => _s('gallery.photoOf', {'n': n, 'total': total});
+  String get galleryPinch => _s('gallery.pinch');
+
+  // --- Rental detail (RNT) ---------------------------------------------------
+  String rentalDueDay(Object day, Object suffix) => _s('rental.dueDay', {'day': day, 'suffix': suffix});
+  String rentalNoticeRequired(Object days, Object date) => _s('rental.noticeRequired', {'days': days, 'date': date});
+  String rentalRenewalBody(Object date) => _s('rental.renewalBody', {'date': date});
+  String rentalComingSoon(Object what) => _s('rental.comingSoon', {'what': what});
+  String rentalExitGive(Object days) => _s('rental.exitGive', {'days': days});
+  String rentalExitFrom(Object date, Object days) => _s('rental.exitFrom', {'date': date, 'days': days});
+  String rentalAgreement(Object version) => _s('rental.agreement', {'version': version});
+  String rentalPaidOn(Object date) => _s('rental.paidOn', {'date': date});
+  String get rentalStatePaid => _s('rental.state.paid');
+  String get rentalStateProcessing => _s('rental.state.processing');
+  String get rentalStateFailed => _s('rental.state.failed');
+  String get rentalStateDue => _s('rental.state.due');
+
+  // --- Rental detail (RNT) labels --------------------------------------------
+  String get rentalTitle => _s('rental.title');
+  String get rentalYourHome => _s('rental.yourHome');
+  String get rentalFinancial => _s('rental.financial');
+  String get rentalMonthlyRent => _s('rental.monthlyRent');
+  String get rentalDeposit => _s('rental.deposit');
+  String get rentalPaymentDue => _s('rental.paymentDue');
+  String get rentalNextPayment => _s('rental.nextPayment');
+  String get rentalLease => _s('rental.lease');
+  String get rentalLeasePeriod => _s('rental.leasePeriod');
+  String get rentalLeaseType => _s('rental.leaseType');
+  String get rentalTypeMonthly => _s('rental.type.monthly');
+  String get rentalTypeFixed => _s('rental.type.fixed');
+  String get rentalHistory => _s('rental.history');
+  String get rentalViewAll => _s('rental.viewAll');
+  String get rentalNoPayments => _s('rental.noPayments');
+  String get rentalIncluded => _s('rental.included');
+  String get rentalJourney => _s('rental.journey');
+  String get rentalRequestRenewal => _s('rental.requestRenewal');
+  String get rentalRenewalTitle => _s('rental.renewalTitle');
+  String get rentalRenewalAsk => _s('rental.renewalAsk');
+  String get rentalGotIt => _s('rental.gotIt');
+  String get rentalSchedule => _s('rental.schedule');
+  String get rentalScheduling => _s('rental.scheduling');
+  String get rentalReport => _s('rental.report');
+  String get rentalReporting => _s('rental.reporting');
+  String get rentalRequestExit => _s('rental.requestExit');
+  String get rentalViewContract => _s('rental.viewContract');
+  String get rentalTerms => _s('rental.terms');
+
+  // --- Rentals (RNT) ---------------------------------------------------------
+  String rentalsFrom(Object date) => _s('rentals.from', {'date': date});
+  String rentalsUntil(Object date) => _s('rentals.until', {'date': date});
+
+  // --- Rentals list (RNT) ----------------------------------------------------
+  String get rentalsTitle => _s('rentals.title');
+  String get rentalsEmpty => _s('rentals.empty');
+  String get rentalsEmptyBody => _s('rentals.emptyBody');
+  String get rentalsFind => _s('rentals.find');
+  String rentalsRemaining(Object time) => _s('rentals.remaining', {'time': time});
+
+  // --- Rentals remaining (RNT) -----------------------------------------------
+  String get rentalsActive => _s('rentals.active');
+
+  // --- Saved counts (CUS) ----------------------------------------------------
+  String savedItems(Object count) => _plural('saved.items', count);
+
+  // --- Saved (CUS) -----------------------------------------------------------
+  String get savedSubtitle => _s('saved.subtitle');
+  String get savedEmptyBody => _s('saved.emptyBody');
+  String get savedBrowse => _s('saved.browse');
+  String get savedActiveRents => _s('saved.activeRents');
+  String get savedFavorites => _s('saved.favorites');
+  String get savedFavoritesEmpty => _s('saved.favoritesEmpty');
+  String get savedRecentInquiries => _s('saved.recentInquiries');
+  String get savedInquiriesEmpty => _s('saved.inquiriesEmpty');
+  String savedNextPayment(Object date) => _s('saved.nextPayment', {'date': date});
+  String savedInquiredOn(Object date) => _s('saved.inquiredOn', {'date': date});
+
+  // --- Activity (CUS) --------------------------------------------------------
+  String get activityTitle => _s('activity.title');
+  String get activityRentalsCaption => _s('activity.rentalsCaption');
+  String get activityYourEnquiries => _s('activity.yourEnquiries');
+  String get activityHowItWorks => _s('activity.howItWorks');
+  String get enquiriesNone => _s('enquiries.none');
+  String get activityEmptyBody => _s('activity.emptyBody');
+
+  // --- Property activity (CUS) -----------------------------------------------
+  String get pactivityEmptyBody => _s('pactivity.emptyBody');
+
+  // --- Notifications (CUS) ---------------------------------------------------
+  String get notificationsMarkAll => _s('notifications.markAll');
+  String get notificationsEmpty => _s('notifications.empty');
+  String get notificationsEmptyBody => _s('notifications.emptyBody');
+
+  // --- Enquiries list (CUS) --------------------------------------------------
+  String get inquiriesTitle => _s('inquiries.title');
+  String get inquiriesEmptyBody => _s('inquiries.emptyBody');
+
+  // --- Identity & preferences (CUS) ------------------------------------------
+  String get prefsSaved => _s('prefs.saved');
+  String get prefsTitle => _s('prefs.title');
+
+  // --- Profile (CUS) ---------------------------------------------------------
+  String get customerProfileFavourites => _s('customerProfile.favourites');
+  String get customerProfileRentals => _s('customerProfile.rentals');
+  String get customerProfileAccount => _s('customerProfile.account');
+  String get customerProfileChangePin => _s('customerProfile.changePin');
+  String get customerProfileSupport => _s('customerProfile.support');
+  String get customerProfileTerms => _s('customerProfile.terms');
+  String get customerProfileTermsAt => _s('customerProfile.termsAt');
+  String get customerProfileSignOutQ => _s('customerProfile.signOutQ');
+  String get customerProfileSignOutBody => _s('customerProfile.signOutBody');
+  String get customerProfileStay => _s('customerProfile.stay');
+  String get customerProfileChangePinTitle => _s('customerProfile.changePinTitle');
+  String get customerProfileCurrentPin => _s('customerProfile.currentPin');
+  String get customerProfilePinChanged => _s('customerProfile.pinChanged');
+
+  // --- Payment (PAY) lines ---------------------------------------------------
+  String paymentConfirmed(Object amount) => _s('payment.confirmed', {'amount': amount});
+  String paymentConfirmedOn(Object amount, Object date) => _s('payment.confirmedOn', {'amount': amount, 'date': date});
+  String get paymentAccountNumber => _s('payment.accountNumber');
+  String get paymentPayToNumber => _s('payment.payToNumber');
+
+  // --- Payment (PAY) ---------------------------------------------------------
+  String get paymentTitle => _s('payment.title');
+  String get paymentThanks => _s('payment.thanks');
+  String get paymentConfirmTitle => _s('payment.confirmTitle');
+  String get paymentConfirmBody => _s('payment.confirmBody');
+  String get paymentCodeLabel => _s('payment.codeLabel');
+  String get paymentCodeHint => _s('payment.codeHint');
+  String get paymentIHavePaid => _s('payment.iHavePaid');
+  String get paymentOnlyOnce => _s('payment.onlyOnce');
+  String get paymentHowTo => _s('payment.howTo');
+  String get paymentPayTo => _s('payment.payTo');
+  String get paymentAccountName => _s('payment.accountName');
+  String get paymentReference => _s('payment.reference');
+  String get paymentQuoteReference => _s('payment.quoteReference');
+  String paymentCopy(Object label) => _s('payment.copy', {'label': label});
+  String paymentCopied(Object label) => _s('payment.copied', {'label': label});
+  String get paymentPreparing => _s('payment.preparing');
+  String get paymentPreparingBody => _s('payment.preparingBody');
+  String get paymentChecking => _s('payment.checking');
+  String get paymentCheckingBody => _s('payment.checkingBody');
+  String paymentYourCode(Object code) => _s('payment.yourCode', {'code': code});
+  String get paymentReceived => _s('payment.received');
+  String paymentReceipt(Object reference) => _s('payment.receipt', {'reference': reference});
+  String get paymentFailed => _s('payment.failed');
+  String get paymentContactSupport => _s('payment.contactSupport');
+
+  // --- Checkout (PAY) --------------------------------------------------------
+  String get checkoutTitle => _s('checkout.title');
+  String get checkoutReserving => _s('checkout.reserving');
+  String get checkoutHeld => _s('checkout.held');
+  String get checkoutCannotPay => _s('checkout.cannotPay');
+  String get checkoutKeepLooking => _s('checkout.keepLooking');
+  String get checkoutChooseMethod => _s('checkout.chooseMethod');
+  String get checkoutEnterNumber => _s('checkout.enterNumber');
+  String get checkoutNothingLeft => _s('checkout.nothingLeft');
+  String get checkoutExpired => _s('checkout.expired');
+  String get checkoutHoldAgain => _s('checkout.holdAgain');
+  String get checkoutReservation => _s('checkout.reservation');
+  String get checkoutMoveIn => _s('checkout.moveIn');
+  String get checkoutToBeAgreed => _s('checkout.toBeAgreed');
+  String get checkoutLeaseDuration => _s('checkout.leaseDuration');
+  String get checkoutBreakdown => _s('checkout.breakdown');
+  String get checkoutTotalDue => _s('checkout.totalDue');
+  String get checkoutSelectMethod => _s('checkout.selectMethod');
+  String get checkoutNoMethods => _s('checkout.noMethods');
+  String checkoutRegisteredNumber(Object method) => _s('checkout.registeredNumber', {'method': method});
+  String checkoutPrompt(Object method) => _s('checkout.prompt', {'method': method});
+  String get checkoutSafety => _s('checkout.safety');
+  String checkoutPay(Object amount) => _s('checkout.pay', {'amount': amount});
+  String get checkoutYoursOnceVerified => _s('checkout.yoursOnceVerified');
+  String get checkoutTotalCaps => _s('checkout.totalCaps');
+
+  // --- Enquiry form (INQ) default --------------------------------------------
+  String get inquiryFormDefaultMessage => _s('inquiryForm.defaultMessage');
+  String inquiryDetailWaiting(Object days) => _s('inquiryDetail.waiting', {'days': days});
+  String inquiryDetailDeclinedWhy(Object reason) => _s('inquiryDetail.declinedWhy', {'reason': reason});
+
+  // --- Enquiry form (INQ) ----------------------------------------------------
+  String get inquiryFormSent => _s('inquiryForm.sent');
+  String get inquiryFormTitle => _s('inquiryForm.title');
+  String get inquiryFormMessage => _s('inquiryForm.message');
+  String get inquiryFormMessageRequired => _s('inquiryForm.messageRequired');
+  String get inquiryFormMessageHint => _s('inquiryForm.messageHint');
+  String get inquiryFormMoveIn => _s('inquiryForm.moveIn');
+  String get inquiryFormChooseDate => _s('inquiryForm.chooseDate');
+  String get inquiryFormPeople => _s('inquiryForm.people');
+  String get inquiryFormBudget => _s('inquiryForm.budget');
+  String get inquiryFormReach => _s('inquiryForm.reach');
+  String get inquiryFormInApp => _s('inquiryForm.inApp');
+  String get inquiryFormSend => _s('inquiryForm.send');
+
+  // --- Enquiry detail (INQ) --------------------------------------------------
+  String get inquiryDetailWithdrawQ => _s('inquiryDetail.withdrawQ');
+  String get inquiryDetailWithdrawBody => _s('inquiryDetail.withdrawBody');
+  String get inquiryDetailKeep => _s('inquiryDetail.keep');
+  String get inquiryDetailWithdraw => _s('inquiryDetail.withdraw');
+  String get inquiryDetailWithdrawn => _s('inquiryDetail.withdrawn');
+  String get inquiryDetailTitle => _s('inquiryDetail.title');
+  String get inquiryDetailTimeline => _s('inquiryDetail.timeline');
+  String get inquiryDetailAsked => _s('inquiryDetail.asked');
+  String get inquiryDetailReplied => _s('inquiryDetail.replied');
+  String get inquiryDetailWithdrawEnquiry => _s('inquiryDetail.withdrawEnquiry');
+  String get inquiryDetailReminderSent => _s('inquiryDetail.reminderSent');
+  String get inquiryDetailDeclined => _s('inquiryDetail.declined');
+  String get inquiryDetailFindAnother => _s('inquiryDetail.findAnother');
+  String get inquiryDetailVerified => _s('inquiryDetail.verified');
+  String get inquiryDetailViewRental => _s('inquiryDetail.viewRental');
+  String get inquiryDetailVerifying => _s('inquiryDetail.verifying');
+  String get inquiryDetailWithLandlord => _s('inquiryDetail.withLandlord');
+  String get inquiryDetailNudge => _s('inquiryDetail.nudge');
+  String get inquiryDetailOneADay => _s('inquiryDetail.oneADay');
+  String get inquiryDetailSomeonePaying => _s('inquiryDetail.someonePaying');
+  String get inquiryDetailPayNow => _s('inquiryDetail.payNow');
+
+  // --- Checkout reasons and methods (PAY) ------------------------------------
+  String get checkoutReasonAccepted => _s('checkout.reason.accepted');
+  String get checkoutReasonBooking => _s('checkout.reason.booking');
+  String get checkoutReasonBlocked => _s('checkout.reason.blocked');
+  String get checkoutReasonPending => _s('checkout.reason.pending');
+  String get checkoutReasonEnquireFirst => _s('checkout.reason.enquireFirst');
+  String get paymentKindMobileMoney => _s('payment.kind.mobileMoney');
+  String get paymentKindCard => _s('payment.kind.card');
+  String get paymentKindBank => _s('payment.kind.bank');
+  String get paymentKindCash => _s('payment.kind.cash');
+  String get holdExpired => _s('hold.expired');
+  String get holdHeld => _s('hold.held');
+  String get holdExpiredBody => _s('hold.expiredBody');
+  String get holdHeldBody => _s('hold.heldBody');
+  String holdMinutesLeft(Object minutes) => _s('hold.minutesLeft', {'minutes': minutes});
+  String get holdUnderAMinute => _s('hold.underAMinute');
+  String get promptSayWhy => _s('prompt.sayWhy');
+  String get phoneInvalid => _s('phone.invalid');
 }
 
 /// Hands [AppText] to the widget tree through `Localizations`, so a language

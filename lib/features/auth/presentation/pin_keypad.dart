@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../design/tokens.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// The dots above a PIN keypad.
 ///
@@ -101,7 +102,7 @@ class PinKeypad extends StatelessWidget {
             _Key(label: '0', onPressed: enabled ? () => _press('0') : null),
             _Key(
               icon: Icons.backspace_outlined,
-              semanticLabel: 'Delete the last digit',
+              semanticLabel: context.text.pinDeleteDigit,
               onPressed: enabled
                   ? () {
                       HapticFeedback.selectionClick();

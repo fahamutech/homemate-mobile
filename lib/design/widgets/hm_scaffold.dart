@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
+import '../../core/i18n/app_text.dart';
 
 /// Every screen's outer shell.
 ///
@@ -52,7 +53,7 @@ class HmScaffold extends StatelessWidget {
                   leading: showBack && (canPop || onBack != null)
                       ? IconButton(
                           icon: const Icon(Icons.arrow_back),
-                          tooltip: 'Back',
+                          tooltip: context.text.back,
                           onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                         )
                       : null,

@@ -9,6 +9,7 @@ import '../../shared/property_card.dart';
 import '../data/search_providers.dart';
 import 'filter_sheet.dart';
 import 'results_map.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-002 / CUS-003. The same search, shown as a list or on a map.
 ///
@@ -81,16 +82,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   Expanded(
                     child: Text(
                       results.maybeWhen(
-                        data: (page) => page.total == 1 ? '1 home' : '${page.total} homes',
-                        orElse: () => 'Searching…',
+                        data: (page) => context.text.searchHomes(page.total),
+                        orElse: () => context.text.searchSearching,
                       ),
                       style: HmText.caption,
                     ),
                   ),
                   SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment(value: false, icon: Icon(Icons.view_list_outlined), label: Text('List')),
-                      ButtonSegment(value: true, icon: Icon(Icons.map_outlined), label: Text('Map')),
+                    segments: [
+                      ButtonSegment(value: false, icon: Icon(Icons.view_list_outlined), label: Text(context.text.searchList)),
+                      ButtonSegment(value: true, icon: Icon(Icons.map_outlined), label: Text(context.text.searchMap)),
                     ],
                     selected: {_mapView},
                     showSelectedIcon: false,
@@ -107,15 +108,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 onRetry: () => ref.invalidate(searchResultsProvider(filters)),
                 emptyWhen: (page) => page.isEmpty,
                 empty: HmEmpty(
-                  title: 'Nothing matches that',
+                  title: context.text.searchNoMatch,
                   message: filters.activeCount > 0
-                      ? 'Try widening your filters or searching a different area.'
-                      : 'Try a different area or price.',
+                      ? context.text.searchWiden
+                      : context.text.searchTryDifferent,
                   icon: Icons.search_off_outlined,
                   action: filters.activeCount > 0
                       ? OutlinedButton(
                           onPressed: () => ref.read(searchFiltersProvider.notifier).clear(),
-                          child: const Text('Clear filters'),
+                          child: Text(context.text.searchClearFilters),
                         )
                       : null,
                 ),
@@ -159,7 +160,7 @@ class _QueryBar extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: text.isEmpty ? 'Search homes' : 'Search: $text',
+      label: text.isEmpty ? context.text.homeSearchSemantics : context.text.searchLabelWith(text),
       child: InkWell(
         onTap: onTap,
         borderRadius: HmRadius.card,
@@ -176,7 +177,7 @@ class _QueryBar extends StatelessWidget {
               const SizedBox(width: HmSpace.xl),
               Expanded(
                 child: Text(
-                  text.isEmpty ? 'Area, title or reference' : text,
+                  text.isEmpty ? context.text.searchPlaceholder : text,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: text.isEmpty
@@ -187,7 +188,7 @@ class _QueryBar extends StatelessWidget {
               if (text.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
-                  tooltip: 'Clear search',
+                  tooltip: context.text.searchClear,
                   onPressed: onClear,
                 ),
             ],
@@ -211,7 +212,7 @@ class _FilterButton extends StatelessWidget {
           onPressed: onPressed,
           icon: const Icon(Icons.tune, size: 18),
           // The number is part of the button's name, so it is announced too.
-          label: Text(count > 0 ? 'Filters ($count)' : 'Filters'),
+          label: Text(count > 0 ? context.text.searchFiltersCount(count) : context.text.filterTitle),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(0, 52),
             padding: const EdgeInsets.symmetric(horizontal: HmSpace.xxl),

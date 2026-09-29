@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/network/api_exception.dart';
 import '../tokens.dart';
+import '../../core/i18n/app_text.dart';
+import '../../core/network/error_text.dart';
 
 /// Telling the user how an action went.
 ///
@@ -15,7 +16,7 @@ class HmFeedback {
 
   static void failure(BuildContext context, Object error) => _show(
         context,
-        error is ApiException ? error.message : ApiException.unexpected().message,
+        errorText(context.text, error),
         HmColors.error,
         Icons.error_outline,
       );
@@ -70,7 +71,7 @@ class HmInlineError extends StatelessWidget {
               message!,
               // Announced by a screen reader the moment it appears, rather
               // than only being found by someone re-reading the form.
-              semanticsLabel: 'Error: ${message!}',
+              semanticsLabel: context.text.errorAnnounce(message!),
               style: HmText.caption.copyWith(color: HmColors.error),
             ),
           ),

@@ -10,6 +10,7 @@ import '../../../routing/app_router.dart';
 import '../../shared/models.dart';
 import '../../shared/property_image.dart';
 import '../data/inquiry_providers.dart';
+import '../../../core/i18n/app_text.dart';
 
 /// CUS-007c. Every enquiry the customer has sent.
 class InquiriesScreen extends ConsumerWidget {
@@ -20,7 +21,7 @@ class InquiriesScreen extends ConsumerWidget {
     final inquiries = ref.watch(inquiriesProvider(null));
 
     return HmScaffold(
-      title: 'My enquiries',
+      title: context.text.inquiriesTitle,
       padded: false,
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(inquiriesProvider(null)),
@@ -29,12 +30,12 @@ class InquiriesScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(inquiriesProvider(null)),
           emptyWhen: (page) => page.isEmpty,
           empty: HmEmpty(
-            title: 'No enquiries yet',
-            message: 'When you ask about a property, the conversation appears here.',
+            title: context.text.enquiriesNone,
+            message: context.text.inquiriesEmptyBody,
             icon: Icons.question_answer_outlined,
             action: OutlinedButton(
               onPressed: () => context.go(Routes.search),
-              child: const Text('Find a home'),
+              child: Text(context.text.rentalsFind),
             ),
           ),
           data: (page) => ListView.separated(
@@ -73,7 +74,7 @@ class InquiryTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        inquiry.propertyTitle ?? 'Property',
+                        inquiry.propertyTitle ?? context.text.leaseProperty,
                         style: HmText.label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
