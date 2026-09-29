@@ -39,6 +39,28 @@ void main() {
     });
   });
 
+  group('counts', () {
+    test('one is singular, in both languages', () {
+      const en = AppText(AppLocale.english);
+      const sw = AppText(AppLocale.swahili);
+      expect(en.listingMonths(1), '1 month');
+      expect(en.listingMonths(2), '2 months');
+      expect(sw.listingMonths(1), 'Mwezi 1');
+      expect(sw.listingMonths(2), 'Miezi 2');
+      expect(en.listingOpenEnquiries(1), '1 open enquiry');
+      expect(en.listingOpenEnquiries(3), '3 open enquiries');
+      expect(sw.listingOpenEnquiries(1), 'Ulizo 1 lililo wazi');
+      expect(en.enquiriesPeople(1), '1 person');
+      expect(sw.enquiriesPeople(1), 'Mtu 1');
+      expect(en.enquiriesPeople(2), '2 people');
+      expect(en.landlordConfirmMonths(1), '1 month');
+      expect(en.tenancyLeaseMonths(1), '1 month');
+      expect(sw.tenancyLeaseMonths(12), 'Miezi 12');
+      // A count that is not a whole one is plural.
+      expect(en.listingMonths(1.5), '1.5 months');
+    });
+  });
+
   group('the default', () {
     test('is Kiswahili when nothing has been chosen', () async {
       final controller = LocaleController(InMemoryLocaleStore());

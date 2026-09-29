@@ -95,6 +95,10 @@ class Routes {
   static const landlordMoney = '/landlord/money';
   static const landlordProfile = '/landlord/profile';
 
+  /// A landlord answers enquiries on the homes they listed; there is no tab
+  /// for them, so "Needs you" and the home link here.
+  static const landlordEnquiries = '/landlord/enquiries';
+
   // Partner setup (BRK/LND-001, -002), outside the shell's tabs but inside
   // its path, so the role redirect keeps them in the partner's space.
   static String partnerIntro(Object role) => '/${_name(role)}/intro';
@@ -118,6 +122,9 @@ class Routes {
   static String partnerMoney(Object role) => _name(role) == 'landlord' ? landlordMoney : brokerEarnings;
   static String partnerEarning(Object role, String id) => '${partnerMoney(role)}/$id';
   static String partnerPayouts(Object role) => '/${_name(role)}/payouts';
+
+  /// LND-031/033: one tenancy.
+  static String landlordTenancy(String id) => '$landlordTenants/$id';
 
   /// LND-003, from the SMS link `homemate://landlord/confirm/:propertyId`.
   static String landlordConfirm(String propertyId) => '/landlord/confirm/$propertyId';

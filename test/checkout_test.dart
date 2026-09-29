@@ -27,7 +27,13 @@ void main() {
       expect(harness.journey.heldPropertyIds, ['prop-1']);
       expect(find.byType(HoldBanner), findsOneWidget);
       expect(find.text('This home is held for you'), findsOneWidget);
-      expect(find.text('10:00'), findsOneWidget);
+      // The banner also counts real seconds since the hold was read (so a
+      // backgrounded app cannot show a longer hold); on a busy machine one
+      // may already have passed before the first frame.
+      expect(
+        find.byWidgetPredicate((w) => w is Text && (w.data == '10:00' || w.data == '9:59')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the countdown actually counts down', (tester) async {

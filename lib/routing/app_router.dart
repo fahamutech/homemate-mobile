@@ -14,9 +14,13 @@ import '../features/auth/presentation/splash_screen.dart';
 import '../features/dev/widget_catalogue_screen.dart';
 import '../features/broker/presentation/broker_home_screen.dart';
 import '../features/broker/presentation/broker_intro_screen.dart';
+import '../features/landlord/presentation/confirm/confirm_listing_screen.dart';
+import '../features/landlord/presentation/landlord_home_screen.dart';
+import '../features/landlord/presentation/landlord_intro_screen.dart';
+import '../features/landlord/presentation/tenants/tenancy_screen.dart';
+import '../features/landlord/presentation/tenants/tenants_screen.dart';
 import '../features/partner_shared/presentation/enquiries/partner_enquiries_screen.dart';
 import '../features/partner_shared/presentation/enquiries/partner_enquiry_screen.dart';
-import '../features/partner_shared/presentation/landlord_confirm_placeholder.dart';
 import '../features/partner_shared/presentation/money/earning_detail_screen.dart';
 import '../features/partner_shared/presentation/money/earnings_screen.dart';
 import '../features/partner_shared/presentation/money/payouts_screen.dart';
@@ -28,10 +32,8 @@ import '../features/partner_shared/presentation/listings/wizard/wizard_step.dart
 import '../features/partner_shared/presentation/setup/application_status_screen.dart';
 import '../features/partner_shared/presentation/setup/partner_setup_screen.dart';
 import '../features/partner_shared/presentation/setup/setup_step.dart';
-import '../features/partner_shared/presentation/partner_home_placeholder.dart';
 import '../features/partner_shared/presentation/partner_profile_screen.dart';
 import '../features/partner_shared/presentation/partner_shell.dart';
-import '../features/partner_shared/presentation/partner_tab_placeholder.dart';
 import '../features/roles/data/app_role.dart';
 import '../features/roles/presentation/choose_role_screen.dart';
 import '../features/roles/presentation/earn_screen.dart';
@@ -55,7 +57,6 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/property/presentation/gallery_screen.dart';
 import '../features/property/presentation/property_screen.dart';
 import '../features/saved/presentation/saved_screen.dart';
-import '../core/i18n/app_text.dart';
 import 'app_shell.dart';
 import 'deep_links.dart';
 import 'role_redirect.dart';
@@ -211,7 +212,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.earn, builder: (_, __) => const EarnScreen()),
       GoRoute(
         path: '${Routes.landlordConfirmPrefix}:propertyId',
-        builder: (_, state) => LandlordConfirmPlaceholder(propertyId: state.pathParameters['propertyId']!),
+        builder: (_, state) => ConfirmListingScreen(propertyId: state.pathParameters['propertyId']!),
       ),
       // The SMS link with its host already taken off by the platform.
       GoRoute(
@@ -230,13 +231,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       ..._partnerListingRoutes(AppRole.broker),
       ..._partnerWorkRoutes(AppRole.broker),
       _partnerShell(AppRole.landlord, [
-        (Routes.landlordHome, (_) => const PartnerHomePlaceholder(role: AppRole.landlord)),
-        (Routes.landlordHomes, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navHomes)),
-        (Routes.landlordTenants, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navTenants)),
-        (Routes.landlordMoney, (context) => PartnerTabPlaceholder(role: AppRole.landlord, title: context.text.navMoney)),
+        (Routes.landlordHome, (_) => const LandlordHomeScreen()),
+        (Routes.landlordHomes, (_) => const PartnerListingsScreen(role: AppRole.landlord)),
+        (Routes.landlordTenants, (_) => const TenantsScreen()),
+        (Routes.landlordMoney, (_) => const EarningsScreen(role: AppRole.landlord)),
         (Routes.landlordProfile, (_) => const PartnerProfileScreen(role: AppRole.landlord)),
       ]),
+      GoRoute(path: Routes.partnerIntro(AppRole.landlord), builder: (_, __) => const LandlordIntroScreen()),
       ..._partnerSetupRoutes(AppRole.landlord),
+      ..._partnerListingRoutes(AppRole.landlord),
+      ..._partnerWorkRoutes(AppRole.landlord),
+      GoRoute(path: Routes.landlordEnquiries, builder: (_, __) => const PartnerEnquiriesScreen(role: AppRole.landlord)),
+      GoRoute(
+        path: Routes.landlordTenancy(':id'),
+        builder: (_, state) => TenancyScreen(tenancyId: state.pathParameters['id']!),
+      ),
 
       // The five tabs keep their own navigation stacks, so moving between them
       // does not throw away where you were.

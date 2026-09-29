@@ -91,6 +91,12 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
+      // A landlord who has not started yet meets the landlord intro (LND-001).
+      expect(router.state.matchedLocation, Routes.partnerIntro(AppRole.landlord));
+      expect(find.text('List your home, or let a broker do it'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
       expect(router.state.matchedLocation, Routes.landlordHome);
       expect(tabLabels(tester), ['Home', 'Homes', 'Tenants', 'Money', 'Profile']);
     });
@@ -99,7 +105,8 @@ void main() {
       final harness = TestHarness();
       await harness.rolePreferences.setStartedAs('cust-1', AppRole.landlord);
       final router = await launch(tester, harness, customer: newAccount);
-      expect(router.state.matchedLocation, Routes.landlordHome);
+      expect(router.state.matchedLocation, Routes.partnerIntro(AppRole.landlord));
+      expect(find.text('How will you use HomeMate?'), findsNothing);
     });
   });
 
@@ -196,7 +203,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-      expect(router.state.matchedLocation, Routes.landlordHome);
+      expect(router.state.matchedLocation, Routes.partnerIntro(AppRole.landlord));
     });
 
     testWidgets('a role already on the account cannot be added again', (tester) async {

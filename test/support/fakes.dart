@@ -25,8 +25,10 @@ import 'package:homemate_mobile/features/shared/journey_models.dart';
 import 'package:homemate_mobile/features/shared/journey_repository.dart';
 import 'package:homemate_mobile/features/shared/models.dart';
 
+import 'landlord_fakes.dart';
 import 'partner_fakes.dart';
 
+export 'landlord_fakes.dart';
 export 'partner_fakes.dart';
 
 /// A whole backend, in memory.
@@ -600,6 +602,8 @@ class TestHarness {
   final FakeListingsRepository listings = FakeListingsRepository();
   final FakeEnquiriesRepository enquiries = FakeEnquiriesRepository();
   final FakeMoneyRepository money = FakeMoneyRepository();
+  final FakeConfirmationsRepository confirmations = FakeConfirmationsRepository();
+  final FakeTenanciesRepository tenancies = FakeTenanciesRepository();
   final FakePhotoSource photos = FakePhotoSource();
   final FakeWebpEncoder webp = FakeWebpEncoder();
   final FakeContactLauncher contact = FakeContactLauncher();
@@ -630,6 +634,8 @@ class TestHarness {
         listingsRepositoryProvider.overrideWithValue(listings),
         enquiriesRepositoryProvider.overrideWithValue(enquiries),
         moneyRepositoryProvider.overrideWithValue(money),
+        confirmationsRepositoryProvider.overrideWithValue(confirmations),
+        tenanciesRepositoryProvider.overrideWithValue(tenancies),
         photoSourceProvider.overrideWithValue(photos),
         webpEncoderProvider.overrideWithValue(webp),
         contactLauncherProvider.overrideWithValue(contact),

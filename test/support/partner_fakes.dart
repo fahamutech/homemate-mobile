@@ -208,6 +208,9 @@ class FakeListingsRepository implements ListingsRepository {
               referenceCode: l.referenceCode,
               rejectionReason: l.rejectionReason,
               coverPhotoUrl: l.photos.isEmpty ? null : '/app/media/${l.photos.first.id}/raw',
+              listedByYou: l.listedByYou,
+              listedByName: l.listedByName,
+              landlordConfirmation: l.landlordConfirmationStatus,
             ),
       ];
 
@@ -382,6 +385,11 @@ class FakeListingsRepository implements ListingsRepository {
         charges: charges ?? l.charges,
         photos: photos ?? l.photos,
         landlord: landlord ?? l.landlord,
+        brokerName: l.brokerName,
+        brokerPhone: l.brokerPhone,
+        listedByYou: l.listedByYou,
+        listedByName: l.listedByName,
+        landlordConfirmationStatus: l.landlordConfirmationStatus,
         rejectionReason: l.rejectionReason,
         createdAt: l.createdAt,
         submittedAt: submittedAt ?? l.submittedAt,

@@ -208,6 +208,7 @@ class PartnerListing {
     this.photos = const [],
     this.landlord,
     this.brokerName,
+    this.brokerPhone,
     this.listedByYou = true,
     this.listedByName,
     this.landlordConfirmationStatus,
@@ -259,6 +260,9 @@ class PartnerListing {
   final List<ListingPhoto> photos;
   final ListingLandlord? landlord;
   final String? brokerName;
+
+  /// Only for the landlord of a home a broker listed (LND-021).
+  final String? brokerPhone;
   final bool listedByYou;
   final String? listedByName;
   final String? landlordConfirmationStatus;
@@ -315,6 +319,7 @@ class PartnerListing {
         photos: readList(json['photos'], ListingPhoto.fromJson)..sort((a, b) => a.position.compareTo(b.position)),
         landlord: ListingLandlord.fromJson(json['landlord']),
         brokerName: readMap(json['broker'])['name'] as String?,
+        brokerPhone: readMap(json['broker'])['phone'] as String?,
         listedByYou: readMap(json['listedBy'])['you'] as bool? ?? true,
         listedByName: readMap(json['listedBy'])['name'] as String?,
         landlordConfirmationStatus: readMap(json['landlordConfirmation'])['status'] as String?,

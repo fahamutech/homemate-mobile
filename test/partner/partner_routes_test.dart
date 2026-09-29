@@ -4,11 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:homemate_mobile/core/providers.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
 import 'package:homemate_mobile/features/partner_shared/data/partner_listing.dart';
+import 'package:homemate_mobile/features/landlord/data/tenancy.dart';
+import 'package:homemate_mobile/features/landlord/presentation/confirm/confirm_listing_screen.dart';
+import 'package:homemate_mobile/features/landlord/presentation/landlord_intro_screen.dart';
+import 'package:homemate_mobile/features/landlord/presentation/tenants/tenancy_screen.dart';
+import 'package:homemate_mobile/features/landlord/presentation/tenants/tenants_screen.dart';
 import 'package:homemate_mobile/features/partner_shared/data/partner_enquiry.dart';
 import 'package:homemate_mobile/features/partner_shared/data/partner_money.dart';
 import 'package:homemate_mobile/features/partner_shared/presentation/enquiries/partner_enquiries_screen.dart';
 import 'package:homemate_mobile/features/partner_shared/presentation/enquiries/partner_enquiry_screen.dart';
 import 'package:homemate_mobile/features/partner_shared/presentation/listings/partner_listing_screen.dart';
+import 'package:homemate_mobile/features/partner_shared/presentation/listings/partner_listings_screen.dart';
 import 'package:homemate_mobile/features/partner_shared/presentation/money/earning_detail_screen.dart';
 import 'package:homemate_mobile/features/partner_shared/presentation/money/earnings_screen.dart';
 import 'package:homemate_mobile/features/partner_shared/presentation/money/payouts_screen.dart';
@@ -67,6 +73,48 @@ void main() {
     router.go(Routes.partnerEarning(AppRole.broker, 'e1'));
     await tester.pumpAndSettle();
     expect(find.byType(EarningDetailScreen), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
+
+  testWidgets('every landlord path opens its screen', (tester) async {
+    final harness = TestHarness(roles: FakeRoleRepository.withPartner(AppRole.landlord));
+    await harness.rolePreferences.setAlwaysOpenAs('cust-1', AppRole.landlord);
+    harness.listings.seed(const PartnerListing(id: 'p1', status: 'draft', title: 'Mikocheni'));
+    harness.tenancies.tenancies['b1'] = const Tenancy(id: 'b1', stage: TenancyStage.movingIn, tenantName: 'Neema');
+    final container = ProviderContainer(overrides: harness.overrides);
+    addTearDown(container.dispose);
+    await container.read(authControllerProvider.notifier).adopt(AuthSessionStub(
+          token: 'session-token',
+          customer: const Customer(id: 'cust-1', phoneNumber: '+255712345678', fullName: 'Amina', hasPin: true, onboardingComplete: true),
+        ));
+    final router = container.read(routerProvider);
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: testApp(router)));
+    await tester.pumpAndSettle();
+
+    for (final (path, screen) in [
+      (Routes.landlordHomes, PartnerListingsScreen),
+      (Routes.partnerListingNew(AppRole.landlord), ListingWizardScreen),
+      (Routes.partnerListing(AppRole.landlord, 'p1'), PartnerListingScreen),
+      (Routes.landlordTenants, TenantsScreen),
+      (Routes.landlordTenancy('b1'), TenancyScreen),
+      (Routes.landlordMoney, EarningsScreen),
+      (Routes.partnerPayouts(AppRole.landlord), PayoutsScreen),
+      (Routes.landlordEnquiries, PartnerEnquiriesScreen),
+      (Routes.landlordConfirm('p9'), ConfirmListingScreen),
+      (Routes.partnerIntro(AppRole.landlord), LandlordIntroScreen),
+    ]) {
+      router.go(path);
+      await tester.pumpAndSettle();
+      expect(find.byType(screen), findsOneWidget, reason: path);
+    }
+
+    router.go(Routes.partnerListingNew(AppRole.landlord));
+    await tester.pumpAndSettle();
+    expect(find.text('STEP 1 OF 5 · BASICS'), findsOneWidget, reason: 'a landlord has no landlord step');
 
     await tester.pumpWidget(const SizedBox());
     for (var i = 0; i < 5; i++) {

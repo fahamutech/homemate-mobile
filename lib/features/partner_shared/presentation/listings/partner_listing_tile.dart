@@ -36,8 +36,14 @@ class PartnerListingTile extends StatelessWidget {
       price: text.listingPerMonth(HmMoney.format(listing.price, currency: listing.currency)),
       status: HmBadge(label: listingStatusLabel(text, listing.status), tone: listingStatusTone(listing.status)),
       meta: meta,
-      listedBy: listing.listedByYou ? null : listing.listedByName,
+      listedBy: listedByLine(text, role, listing.listedByYou, listing.listedByName),
       onTap: () => context.push(Routes.partnerListing(role, listing.id)),
     );
   }
+}
+
+/// A landlord is told who listed each home; a broker only lists their own.
+String? listedByLine(AppText text, AppRole role, bool listedByYou, String? name) {
+  if (role != AppRole.landlord) return listedByYou ? null : name;
+  return listedByYou ? text.listingListedByYou : text.listingListedByBroker(name ?? '');
 }

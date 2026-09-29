@@ -22,7 +22,7 @@ import '../../data/partner_providers.dart';
 import '../partner_photo.dart';
 import 'customer_avatar_initials.dart';
 import 'decline_sheet.dart';
-import 'enquiry_contact_buttons.dart';
+import '../contact_buttons.dart';
 import 'enquiry_copy.dart';
 import 'enquiry_journey_section.dart';
 
@@ -219,7 +219,7 @@ class _CustomerCard extends StatelessWidget {
                 ],
               ]),
             ),
-            if (phone != null) EnquiryContactButtons(phone: phone),
+            if (phone != null) ContactButtons(phone: phone),
           ]),
           const SizedBox(height: HmSpace.xl),
           Row(children: [

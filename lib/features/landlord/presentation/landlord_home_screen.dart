@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/i18n/app_text.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_button.dart';
+import '../../../design/widgets/hm_list_tile.dart';
 import '../../../design/widgets/hm_section.dart';
 import '../../../design/widgets/hm_stat_card.dart';
 import '../../../routing/routes.dart';
@@ -16,17 +17,17 @@ import '../../partner_shared/presentation/money_format.dart';
 import '../../partner_shared/presentation/partner_role_header.dart';
 import '../../roles/data/app_role.dart';
 
-/// The broker's Home tab: the intro for someone who has not started, the
-/// "before verification" home while the account is checked (BRK-010b), and
-/// the working home once it is active (BRK-010).
-class BrokerHomeScreen extends StatelessWidget {
-  const BrokerHomeScreen({super.key});
+/// The landlord's Home tab (LND-010), behind the same intro and
+/// verification gate as the broker's.
+class LandlordHomeScreen extends StatelessWidget {
+  const LandlordHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const PartnerHomeGate(role: AppRole.broker, verified: _VerifiedHome());
+  Widget build(BuildContext context) => const PartnerHomeGate(role: AppRole.landlord, verified: _VerifiedHome());
 }
 
-/// BRK-010: the counts, what needs the broker, and their listings.
+/// LND-010: homes, homes let, rent paid this month; what needs the landlord
+/// (confirmations, move-ins, enquiries, payments) and their homes.
 class _VerifiedHome extends ConsumerWidget {
   const _VerifiedHome();
 
@@ -34,7 +35,7 @@ class _VerifiedHome extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = context.text;
     final summary = ref.watch(partnerSummaryProvider).valueOrNull;
-    final listings = ref.watch(partnerListingsProvider(null)).valueOrNull ?? const [];
+    final homes = ref.watch(partnerListingsProvider(null)).valueOrNull ?? const [];
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -44,7 +45,7 @@ class _VerifiedHome extends ConsumerWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          const PartnerRoleHeader(role: AppRole.broker),
+          const PartnerRoleHeader(role: AppRole.landlord),
           Padding(
             padding: const EdgeInsets.all(HmSpace.xxl),
             child: Column(
@@ -52,35 +53,43 @@ class _VerifiedHome extends ConsumerWidget {
               children: [
                 IntrinsicHeight(
                   child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Expanded(child: HmStatCard(label: text.brokerHomeLive, value: '${summary?.count('liveListings').round() ?? 0}')),
+                  Expanded(child: HmStatCard(label: text.landlordHomeHomes, value: '${summary?.count('homes').round() ?? 0}')),
                   const SizedBox(width: HmSpace.md),
-                  Expanded(child: HmStatCard(label: text.brokerHomeOpen, value: '${summary?.count('openEnquiries').round() ?? 0}')),
+                  Expanded(child: HmStatCard(label: text.landlordHomeLet, value: '${summary?.count('let').round() ?? 0}')),
                   const SizedBox(width: HmSpace.md),
                   Expanded(
                     child: HmStatCard(
-                      label: text.partnerHomeEarnedThisMonth,
-                      value: compactMoney(summary?.count('earnedThisMonth') ?? 0),
+                      label: text.landlordHomePaidThisMonth,
+                      value: compactMoney(summary?.count('paidThisMonth') ?? 0),
                       sub: 'TZS',
+                      onTap: () => context.go(Routes.landlordMoney),
                     ),
                   ),
                   ]),
                 ),
                 const SizedBox(height: HmSpace.huge),
-                NeedsYouSection(role: AppRole.broker, items: summary?.needsYou ?? const []),
+                NeedsYouSection(role: AppRole.landlord, items: summary?.needsYou ?? const []),
                 const SizedBox(height: HmSpace.xxl),
                 HmButton(
                   label: text.partnerHomeAddHome,
                   icon: Icons.add_home_outlined,
-                  onPressed: () => context.push(Routes.partnerListingNew(AppRole.broker)),
+                  onPressed: () => context.push(Routes.partnerListingNew(AppRole.landlord)),
+                ),
+                const SizedBox(height: HmSpace.md),
+                HmListTile(
+                  icon: Icons.forum_outlined,
+                  title: text.navEnquiries,
+                  boxed: true,
+                  onTap: () => context.push(Routes.landlordEnquiries),
                 ),
                 const SizedBox(height: HmSpace.huge),
                 HmSectionHeader(
-                  title: text.partnerHomeYourListings,
+                  title: text.landlordHomeYourHomes,
                   action: text.seeAll,
-                  onAction: () => context.go(Routes.brokerListings),
+                  onAction: () => context.go(Routes.landlordHomes),
                 ),
-                for (final listing in listings.take(3)) ...[
-                  PartnerListingTile(role: AppRole.broker, listing: listing),
+                for (final home in homes.take(3)) ...[
+                  PartnerListingTile(role: AppRole.landlord, listing: home),
                   const SizedBox(height: HmSpace.xl),
                 ],
               ],
