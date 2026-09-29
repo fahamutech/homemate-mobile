@@ -17,6 +17,8 @@ class HmChoicePill extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.dense = false,
+    this.showCheck = false,
+    this.count,
   });
 
   final String label;
@@ -24,6 +26,12 @@ class HmChoicePill extends StatelessWidget {
   final VoidCallback? onTap;
   final IconData? icon;
   final bool dense;
+
+  /// HM/Form/Chip's check mark, shown while selected.
+  final bool showCheck;
+
+  /// HM/Form/Chip's count bubble — "Pending 3".
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +59,10 @@ class HmChoicePill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (icon != null) ...[
+                if (showCheck && selected) ...[
+                  Icon(Icons.check_rounded, size: 16, color: foreground),
+                  const SizedBox(width: HmSpace.sm),
+                ] else if (icon != null) ...[
                   Icon(icon, size: 16, color: foreground),
                   const SizedBox(width: HmSpace.sm),
                 ],
@@ -62,6 +73,24 @@ class HmChoicePill extends StatelessWidget {
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
+                if (count != null) ...[
+                  const SizedBox(width: HmSpace.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: HmSpace.sm),
+                    decoration: BoxDecoration(
+                      color: selected ? HmColors.bgPrimary : HmColors.surfaceInput,
+                      borderRadius: BorderRadius.circular(HmRadius.pill),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: HmColors.brandPrimary,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

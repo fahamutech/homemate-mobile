@@ -42,6 +42,9 @@ class AppText {
   String get seeAll => _s('common.seeAll');
   String get change => _s('common.change');
   String get search => _s('common.search');
+  String get optional => _s('common.optional');
+  String get back => _s('common.back');
+  String stepOf(int current, int total) => _s('common.stepOf', {'current': current, 'total': total});
 
   // --- languages ------------------------------------------------------------
   String get language => _s('language.title');
@@ -78,6 +81,34 @@ class AppText {
   String get navFavourite => _s('nav.favourite');
   String get navActivity => _s('nav.activity');
   String get navProfile => _s('nav.profile');
+  String get navListings => _s('nav.listings');
+  String get navEnquiries => _s('nav.enquiries');
+  String get navEarnings => _s('nav.earnings');
+  String get navHomes => _s('nav.homes');
+  String get navTenants => _s('nav.tenants');
+  String get navMoney => _s('nav.money');
+
+  // --- widget catalogue (debug only) -----------------------------------------
+  String get devWidgetsTitle => _s('dev.widgets.title');
+  String get devWidgetsButtons => _s('dev.widgets.buttons');
+  String get devWidgetsBadges => _s('dev.widgets.badges');
+  String get devWidgetsForms => _s('dev.widgets.forms');
+  String get devWidgetsFeedback => _s('dev.widgets.feedback');
+  String get devWidgetsData => _s('dev.widgets.data');
+  String get devWidgetsPartner => _s('dev.widgets.partner');
+  String get devWidgetsTimeline => _s('dev.widgets.timeline');
+  String get devWidgetsNavigation => _s('dev.widgets.navigation');
+  String get devWidgetsOnboarding => _s('dev.widgets.onboarding');
+  String get devSampleFieldLabel => _s('dev.sample.fieldLabel');
+  String get devSampleFieldHint => _s('dev.sample.fieldHint');
+  String get devSampleFieldError => _s('dev.sample.fieldError');
+  String get devSampleNote => _s('dev.sample.note');
+  String get devSampleHome => _s('dev.sample.home');
+  String get devSampleEnquiry => _s('dev.sample.enquiry');
+  String get devSampleLive => _s('dev.sample.live');
+  String get devSamplePending => _s('dev.sample.pending');
+  String get devSampleRejected => _s('dev.sample.rejected');
+  String get devSamplePaid => _s('dev.sample.paid');
 
   // --- home -----------------------------------------------------------------
   String greeting(String? name) =>

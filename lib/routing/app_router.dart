@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import '../features/auth/presentation/pin_setup_screen.dart';
 import '../features/auth/presentation/profile_setup_screen.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
+import '../features/dev/widget_catalogue_screen.dart';
 import '../features/discovery/presentation/home_screen.dart';
 import '../features/discovery/presentation/search_overlay.dart';
 import '../features/discovery/presentation/search_screen.dart';
@@ -104,8 +106,15 @@ class Routes {
   /// and the app sat on the splash screen forever.
   static const _public = {onboarding, signIn, otp, pinSetup, forgotPin};
 
+  /// The widget catalogue (T02). Registered, and reachable signed out, only in
+  /// a debug build.
+  static const devWidgets = '/dev/widgets';
+
   static bool isPublic(String location) =>
-      _public.contains(location) || location.startsWith('$otp?') || location.startsWith('$pinSetup?');
+      _public.contains(location) ||
+      location.startsWith('$otp?') ||
+      location.startsWith('$pinSetup?') ||
+      (kDebugMode && location == devWidgets);
 }
 
 /// Rebuilds the router's redirect whenever the session changes.
@@ -169,6 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // already signed in when the app launches finishes restoring and then
       // sits on the splash forever: nothing above matches, and the fallthrough
       // is "stay where you are".
+      if (location == Routes.devWidgets) return null;
       if (Routes.isPublic(location) ||
           location == Routes.profileSetup ||
           location == Routes.splash) {
@@ -198,6 +208,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.forgotPin, builder: (_, __) => const ForgotPinScreen()),
       GoRoute(path: Routes.profileSetup, builder: (_, __) => const ProfileSetupScreen()),
+      if (kDebugMode) GoRoute(path: Routes.devWidgets, builder: (_, __) => const WidgetCatalogueScreen()),
 
       // The five tabs keep their own navigation stacks, so moving between them
       // does not throw away where you were.

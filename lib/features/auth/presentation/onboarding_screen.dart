@@ -5,6 +5,7 @@ import '../../../core/i18n/app_text.dart';
 import '../../../core/i18n/language_picker.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_scaffold.dart';
+import '../../../design/widgets/hm_slide.dart';
 import '../../../routing/app_router.dart';
 
 /// CUS-001b/c/d — the three things the app is for, before asking for a number.
@@ -46,17 +47,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // Built here rather than held in a `static const`: the slides are words,
     // and the words change when the language does.
     final pages = [
-      _Slide(
+      HmSlide(
         icon: Icons.search_rounded,
         title: text.onboardingFindTitle,
         body: text.onboardingFindBody,
       ),
-      _Slide(
+      HmSlide(
         icon: Icons.mark_chat_read_rounded,
         title: text.onboardingEnquireTitle,
         body: text.onboardingEnquireBody,
       ),
-      _Slide(
+      HmSlide(
         icon: Icons.vpn_key_rounded,
         title: text.onboardingMoveInTitle,
         body: text.onboardingMoveInBody,
@@ -91,22 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: pages,
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = 0; i < _pageCount; i++)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: HmSpace.xs),
-                  width: i == _page ? 22 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: i == _page ? HmColors.brandPrimary : HmColors.borderStrong,
-                    borderRadius: BorderRadius.circular(HmRadius.pill),
-                  ),
-                ),
-            ],
-          ),
+          HmPageDots(count: _pageCount, index: _page),
           Padding(
             padding: const EdgeInsets.all(HmSpace.huge),
             child: ElevatedButton(
@@ -118,35 +104,4 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
-}
-
-class _Slide extends StatelessWidget {
-  const _Slide({required this.icon, required this.title, required this.body});
-
-  final IconData icon;
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: HmSpace.section),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: HmColors.brandPrimarySoft,
-                borderRadius: BorderRadius.circular(HmRadius.huge),
-              ),
-              child: Icon(icon, size: 56, color: HmColors.brandPrimary),
-            ),
-            const SizedBox(height: HmSpace.section),
-            Text(title, style: HmText.title, textAlign: TextAlign.center),
-            const SizedBox(height: HmSpace.xxl),
-            Text(body, style: HmText.body, textAlign: TextAlign.center),
-          ],
-        ),
-      );
 }
