@@ -101,7 +101,7 @@ void main() {
     expect(find.text('TZS 1,800,000'), findsOneWidget);
     expect(find.text('Tenant fee (50% of one month)'), findsOneWidget);
     expect(find.text('− TZS 90,000'), findsOneWidget);
-    expect(find.text('Rent and deposit → landlord'), findsOneWidget);
+    expect(find.text('Rent and deposit to the landlord'), findsOneWidget);
     expect(find.text('TZS 5,400,000'), findsOneWidget);
     expect(find.text('Rehema Kisanga paid'), findsOneWidget);
   });

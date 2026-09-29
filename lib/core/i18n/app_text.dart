@@ -725,6 +725,38 @@ class AppText {
   String get endTenancyReasonHint => _s('endTenancy.reasonHint');
   String get earningsEmptyLandlord => _s('earnings.emptyLandlord');
   String get earningsNoteLandlord => _s('earnings.noteLandlord');
+
+  // --- Lease contract (CUS-012c / LND-033) -----------------------------------
+  String get leaseTitle => _s('lease.title');
+  String get leaseNotReady => _s('lease.notReady');
+  String get leaseParties => _s('lease.parties');
+  String get leaseTenant => _s('lease.tenant');
+  String get leaseLandlord => _s('lease.landlord');
+  String get leaseContact => _s('lease.contact');
+  String get leaseProperty => _s('lease.property');
+  String get leaseAddress => _s('lease.address');
+  String get leaseTerm => _s('lease.term');
+  String get leaseType => _s('lease.type');
+  String get leaseTypeFixed => _s('lease.type.fixed');
+  String get leaseTypePeriodic => _s('lease.type.periodic');
+  String get leaseTypeMonthly => _s('lease.type.monthly');
+  String get leaseStarts => _s('lease.starts');
+  String get leaseEnds => _s('lease.ends');
+  String get leaseDuration => _s('lease.duration');
+  String get leaseNotice => _s('lease.notice');
+  String leaseNoticeDays(Object count) => _plural('lease.noticeDays', count);
+  String get leaseMoney => _s('lease.money');
+  String get leaseRent => _s('lease.rent');
+  String get leaseDeposit => _s('lease.deposit');
+  String get leaseBookingRef => _s('lease.bookingRef');
+  String get leaseAgreementRef => _s('lease.agreementRef');
+  String get leaseTerms => _s('lease.terms');
+  String get leaseHouseRules => _s('lease.houseRules');
+  String leaseAcceptedOn(Object date) => _s('lease.acceptedOn', {'date': date});
+  String leaseAcceptedOnVersion(Object date, Object version) => _s('lease.acceptedOnVersion', {'date': date, 'version': version});
+  String get leaseDownload => _s('lease.download');
+  String get leasePdfNotReady => _s('lease.pdfNotReady');
+  String get leaseOpening => _s('lease.opening');
 }
 
 /// Hands [AppText] to the widget tree through `Localizations`, so a language

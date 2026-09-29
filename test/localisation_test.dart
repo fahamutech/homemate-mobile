@@ -61,6 +61,15 @@ void main() {
     });
   });
 
+  test('no copy leans on a symbol a phone may lack a glyph for', () {
+    // "→" needs a fallback font that Flutter web fetches at runtime; where it
+    // cannot, the reader sees an empty box. Say it in words instead.
+    for (final locale in AppLocale.values) {
+      final withArrow = [for (final e in kTranslations[locale]!.entries) if (e.value.contains('→')) e.key];
+      expect(withArrow, isEmpty, reason: '$locale');
+    }
+  });
+
   group('the default', () {
     test('is Kiswahili when nothing has been chosen', () async {
       final controller = LocaleController(InMemoryLocaleStore());

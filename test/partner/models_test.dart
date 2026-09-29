@@ -176,4 +176,16 @@ void main() {
     expect(summary.count('liveListings'), 12);
     expect(summary.needsYou.single.kind, 'enquiry');
   });
+
+  test('the details step sends the TIN under the key the server reads (tinNumber)', () {
+    final json = PartnerDetails(
+      fullName: 'Neema Kileo',
+      dateOfBirth: DateTime(1990, 4, 12),
+      nationalIdNumber: '19900412-12345-00001-23',
+      tinNumber: '123-456-789',
+      physicalAddress: 'Mikocheni',
+    ).toJson();
+    expect(json['tinNumber'], '123-456-789');
+    expect(json.containsKey('tin'), isFalse);
+  });
 }

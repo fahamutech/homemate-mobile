@@ -2,6 +2,7 @@ import 'package:homemate_mobile/core/network/api_exception.dart';
 import 'package:homemate_mobile/features/landlord/data/landlord_repository.dart';
 import 'package:homemate_mobile/features/landlord/data/listing_confirmation.dart';
 import 'package:homemate_mobile/features/landlord/data/tenancy.dart';
+import 'package:homemate_mobile/features/shared/journey_models.dart' show LeaseAgreement;
 
 ApiException _invalid(String message) => ApiException(code: 'VALIDATION_FAILED', message: message, statusCode: 400);
 
@@ -37,6 +38,11 @@ class FakeTenanciesRepository implements TenanciesRepository {
   final Map<String, Tenancy> tenancies = {};
   final List<(String, DateTime)> movedIn = [];
   final List<(String, DateTime, String?)> ended = [];
+  final Map<String, LeaseAgreement> leases = {};
+
+  @override
+  Future<LeaseAgreement> lease(String id) async =>
+      leases[id] ?? (throw ApiException(code: 'NOT_FOUND', message: 'Tenancy not found', statusCode: 404));
 
   @override
   Future<List<Tenancy>> list({TenancyStage? stage}) async =>

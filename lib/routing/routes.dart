@@ -126,6 +126,9 @@ class Routes {
   /// LND-031/033: one tenancy.
   static String landlordTenancy(String id) => '$landlordTenants/$id';
 
+  /// LND-033: the lease behind a tenancy.
+  static String landlordTenancyLease(String id) => '${landlordTenancy(id)}/lease';
+
   /// LND-003, from the SMS link `homemate://landlord/confirm/:propertyId`.
   static String landlordConfirm(String propertyId) => '/landlord/confirm/$propertyId';
   static const landlordConfirmPrefix = '/landlord/confirm/';
