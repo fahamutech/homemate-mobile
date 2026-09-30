@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_text.dart';
 import '../../../../core/providers.dart';
 import '../../../../design/tokens.dart';
 import '../../../../design/widgets/hm_async.dart';
@@ -194,7 +195,7 @@ class _ActionNeededState extends ConsumerState<_ActionNeeded> {
       ref.invalidate(applicationsProvider);
       await ref.read(roleControllerProvider.notifier).refresh();
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

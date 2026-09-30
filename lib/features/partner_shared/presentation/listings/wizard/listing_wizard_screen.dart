@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../core/i18n/app_text.dart';
 import '../../../../../core/network/api_exception.dart';
+import '../../../../../core/network/error_text.dart';
 import '../../../../../core/providers.dart';
 import '../../../../../design/tokens.dart';
 import '../../../../../design/widgets/hm_async.dart';
@@ -95,7 +96,7 @@ class _ListingWizardScreenState extends ConsumerState<ListingWizardScreen> {
       await _save(fields);
       return true;
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
       return false;
     } finally {
       if (mounted) setState(() => _busy = false);

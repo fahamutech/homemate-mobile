@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
 import '../../auth/presentation/profile_setup_screen.dart';
@@ -54,7 +55,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       HmFeedback.success(context, context.text.prefsSaved);
       context.pop();
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

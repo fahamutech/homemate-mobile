@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
@@ -95,7 +96,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       );
     } on ApiException catch (error) {
       setState(() {
-        _error = error.message;
+        _error = errorText(context.text, error);
         _code.clear();
       });
     } finally {
@@ -119,7 +120,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       // A refusal carries how long to wait, so the countdown restarts at the
       // server's number rather than the app guessing.
       if (error.retryAfterSeconds case final seconds?) _startCountdown(seconds);
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
