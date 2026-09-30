@@ -67,3 +67,14 @@ flutter:
           weight: 500
         - asset: assets/fonts/Roboto-Bold.ttf
           weight: 700
+    # The same files under the engine's own name. The web engine fetches a
+    # default "Roboto" from fonts.gstatic.com unless the font manifest already
+    # declares that family, so without this entry every web load still reached
+    # Google's CDN even though the app never draws with it.
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
