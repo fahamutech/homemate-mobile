@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
@@ -70,7 +71,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
         '&challenge=${challenge.challengeId}&purpose=reset_pin',
       );
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

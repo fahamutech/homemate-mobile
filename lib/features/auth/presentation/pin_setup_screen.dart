@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
@@ -62,7 +63,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       await ref.read(authControllerProvider.notifier).adopt(session);
       // The router redirects onward — to the profile step, or straight home.
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

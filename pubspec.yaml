@@ -1,7 +1,7 @@
 name: homemate_mobile
 description: HomeMate Africa — the customer app for finding, viewing and renting a home.
 publish_to: 'none'
-version: 1.2.0+3
+version: 1.3.0+4
 
 environment:
   sdk: ^3.9.0
@@ -61,6 +61,17 @@ flutter:
   # Bundled so the web build never downloads a font at load time (see HmFonts).
   fonts:
     - family: HomeMateRoboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+    # The same files under the engine's own name. The web engine fetches a
+    # default "Roboto" from fonts.gstatic.com unless the font manifest already
+    # declares that family, so without this entry every web load still reached
+    # Google's CDN even though the app never draws with it.
+    - family: Roboto
       fonts:
         - asset: assets/fonts/Roboto-Regular.ttf
         - asset: assets/fonts/Roboto-Medium.ttf

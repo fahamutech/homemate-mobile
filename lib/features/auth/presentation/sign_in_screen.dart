@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/app_text.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
@@ -74,12 +75,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       // The router's redirect takes it from here.
     } on ApiException catch (error) {
       setState(() {
-        _error = error.message;
+        _error = errorText(context.text, error);
         _pin = '';
       });
     } catch (_) {
       setState(() {
-        _error = ApiException.unexpected().message;
+        _error = context.text.errorUnexpected;
         _pin = '';
       });
     } finally {
@@ -110,9 +111,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         '&challenge=${challenge.challengeId}&purpose=$purpose',
       );
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } catch (_) {
-      setState(() => _error = ApiException.unexpected().message);
+      setState(() => _error = context.text.errorUnexpected);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

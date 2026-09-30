@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
 import '../features/auth/data/auth_controller.dart';
 import '../features/auth/data/auth_repository.dart';
@@ -43,19 +44,36 @@ class _ControllerSession implements SessionSource {
   @override
   String? get token => _ref.read(authControllerProvider.notifier).token;
 
+  /// Read from [activePartnerRoleProvider], never from [roleControllerProvider]:
+  /// the role controller is built from the role repository, which is built
+  /// from this client, so reading it here is a dependency cycle. Riverpod only
+  /// asserts that in debug builds, which is how every request of a local
+  /// `flutter run` failed while the release build worked.
   @override
-  String? get partnerRole {
-    final role = _ref.read(roleControllerProvider).current;
-    return (role?.isPartner ?? false) ? role!.name : null;
-  }
+  String? get partnerRole => _ref.read(activePartnerRoleProvider).value;
 
   @override
   Future<void> onSessionRejected() =>
       _ref.read(authControllerProvider.notifier).signOut();
 }
 
+/// The partner role the API client announces as `X-Partner-Role`.
+///
+/// A plain holder with no dependencies of its own, so the client can read it
+/// without depending on the role controller (see [_ControllerSession]). The
+/// role controller keeps it current.
+class ActivePartnerRole {
+  String? value;
+}
+
+final activePartnerRoleProvider = Provider<ActivePartnerRole>((ref) => ActivePartnerRole());
+
+/// The HTTP transport, overridable so a test can run the real provider graph
+/// against a mock server.
+final httpClientProvider = Provider<http.Client>((ref) => http.Client());
+
 final apiClientProvider = Provider<ApiClient>((ref) {
-  final client = ApiClient(session: _ControllerSession(ref));
+  final client = ApiClient(httpClient: ref.watch(httpClientProvider), session: _ControllerSession(ref));
   ref.onDispose(client.close);
   return client;
 });
@@ -88,6 +106,12 @@ final roleControllerProvider = StateNotifierProvider<RoleController, RoleState>(
     preferences: ref.watch(rolePreferenceStoreProvider),
     auth: ref.read(authControllerProvider.notifier),
   );
+  final activePartnerRole = ref.watch(activePartnerRoleProvider);
+  final stopMirroring = controller.addListener((state) {
+    final role = state.current;
+    activePartnerRole.value = (role?.isPartner ?? false) ? role!.name : null;
+  });
+  ref.onDispose(stopMirroring);
   ref.listen<AuthState>(authControllerProvider, (previous, next) {
     final wasSignedIn = previous?.isSignedIn ?? false;
     final samePerson = previous?.customer?.id == next.customer?.id;

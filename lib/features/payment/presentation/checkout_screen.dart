@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_async.dart';
@@ -110,7 +111,7 @@ class _CheckoutBlocked extends StatelessWidget {
           ),
           const SizedBox(height: HmSpace.md),
           Text(
-            api?.message ?? ApiException.unexpected().message,
+            errorText(context.text, error),
             style: HmText.caption,
             textAlign: TextAlign.center,
           ),
@@ -223,7 +224,7 @@ class _CheckoutState extends ConsumerState<_Checkout> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = error is ApiException ? error.message : ApiException.unexpected().message;
+        _error = errorText(context.text, error);
       });
     }
   }

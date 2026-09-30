@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_choice.dart';
@@ -61,7 +62,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (!mounted) return;
       setState(() => _step += 1);
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -980,7 +981,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       HmFeedback.success(context, context.text.profileEditSaved);
       context.pop();
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

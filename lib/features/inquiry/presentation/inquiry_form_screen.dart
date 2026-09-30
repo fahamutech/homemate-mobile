@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_text.dart';
 import '../../../core/providers.dart';
 import '../../../design/tokens.dart';
 import '../../../design/widgets/hm_feedback.dart';
@@ -93,7 +94,7 @@ class _InquiryFormScreenState extends ConsumerState<InquiryFormScreen> {
       // Replaces the form so Back does not offer to send it a second time.
       context.pushReplacement(Routes.inquiry(inquiry.id));
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

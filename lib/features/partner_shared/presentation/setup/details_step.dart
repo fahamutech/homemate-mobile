@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/i18n/app_text.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_text.dart';
 import '../../../../core/providers.dart';
 import '../../../../design/tokens.dart';
 import '../../../../design/widgets/hm_button.dart';
@@ -79,7 +80,7 @@ class _DetailsStepState extends ConsumerState<DetailsStep> {
       ref.invalidate(applicationsProvider);
       widget.onDone();
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = errorText(context.text, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
