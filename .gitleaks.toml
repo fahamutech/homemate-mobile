@@ -1,0 +1,27 @@
+# Secret-scan configuration. Everything gitleaks detects by default still applies.
+title = "homemate-mobile"
+
+[extend]
+useDefault = true
+
+# Firebase client configuration.
+#
+# The "API key" in a Firebase app's configuration is not a secret: it
+# identifies the project to Google and ships inside every installed app and
+# every web page, by design (https://firebase.google.com/docs/projects/api-keys).
+# What it can do is limited by the app registration and by Firebase's own
+# rules, not by keeping it private. gitleaks' `gcp-api-key` rule cannot tell
+# it from a server key, so it is allowed here — in these files only, and for
+# this rule only. A key of that shape anywhere else, or any other kind of
+# secret in these files, is still reported.
+#
+# The server-side FCM service-account key is a real secret and is never
+# committed: it lives outside the repository (FCM_SERVICE_ACCOUNT_FILE).
+[[allowlists]]
+description = "Firebase client config: public by design"
+targetRules = ["gcp-api-key"]
+paths = [
+  '''^android/app/google-services\.json$''',
+  '''^lib/firebase_options\.dart$''',
+  '''^web/firebase-messaging-sw\.js$''',
+]
