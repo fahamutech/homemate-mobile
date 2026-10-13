@@ -23,6 +23,9 @@ import 'links/link_opener.dart';
 import 'media/photo_source.dart';
 import 'media/webp_encoder.dart';
 import 'network/api_client.dart';
+import 'push/firebase_push_messaging.dart';
+import 'push/push_device_repository.dart';
+import 'push/push_messaging.dart';
 
 /// The composition root.
 ///
@@ -54,7 +57,7 @@ class _ControllerSession implements SessionSource {
 
   @override
   Future<void> onSessionRejected() =>
-      _ref.read(authControllerProvider.notifier).signOut();
+      _ref.read(authControllerProvider.notifier).signOut(sessionRejected: true);
 }
 
 /// The partner role the API client announces as `X-Partner-Role`.
@@ -87,6 +90,13 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
     repository: ref.watch(authRepositoryProvider),
     store: ref.watch(sessionStoreProvider),
   ),
+);
+
+/// Push notifications: the device side (FCM) and the server's list of devices.
+final pushMessagingProvider = Provider<PushMessaging>((ref) => FirebasePushMessaging());
+
+final pushDeviceRepositoryProvider = Provider<PushDeviceRepository>(
+  (ref) => ApiPushDeviceRepository(ref.watch(apiClientProvider)),
 );
 
 final roleRepositoryProvider = Provider<RoleRepository>(

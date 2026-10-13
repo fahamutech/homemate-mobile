@@ -72,6 +72,11 @@ class Env {
   /// switches that check off, since there is nothing to compare against.
   static const int buildNumber = int.fromEnvironment('APP_BUILD_NUMBER');
 
+  /// The web push certificate's public key (Firebase console → Cloud
+  /// Messaging → Web Push certificates). Optional: without it FCM uses its
+  /// default key pair. Public by design — browsers are given it.
+  static const String fcmVapidKey = String.fromEnvironment('FCM_VAPID_KEY');
+
   static const int requestTimeoutSeconds = int.fromEnvironment(
     'REQUEST_TIMEOUT_SECONDS',
     defaultValue: 20,

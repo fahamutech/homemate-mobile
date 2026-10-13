@@ -8,6 +8,7 @@ import 'core/i18n/app_text.dart';
 import 'core/i18n/locale_controller.dart';
 import 'core/i18n/translations.dart';
 import 'core/providers.dart';
+import 'core/push/push_controller.dart';
 import 'design/theme.dart';
 import 'routing/app_router.dart';
 
@@ -31,6 +32,9 @@ class _HomeMateAppState extends ConsumerState<HomeMateApp> {
     // the splash should already be on screen while it happens.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authControllerProvider.notifier).restore();
+      // Push follows the session from here on: registers after sign-in,
+      // opens tapped notifications, unregisters on sign-out.
+      ref.read(pushControllerProvider);
     });
   }
 
@@ -51,6 +55,7 @@ class _HomeMateAppState extends ConsumerState<HomeMateApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: ref.watch(routerProvider),
+      scaffoldMessengerKey: ref.watch(scaffoldMessengerKeyProvider),
       // Above the navigator, so the offer of a newer build follows the
       // customer across every screen.
       builder: (context, child) => AppUpdateBanner(child: child ?? const SizedBox.shrink()),

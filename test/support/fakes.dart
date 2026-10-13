@@ -25,11 +25,15 @@ import 'package:homemate_mobile/features/shared/journey_models.dart';
 import 'package:homemate_mobile/features/shared/journey_repository.dart';
 import 'package:homemate_mobile/features/shared/models.dart';
 
+import 'package:homemate_mobile/core/push/push_controller.dart';
+
 import 'landlord_fakes.dart';
 import 'partner_fakes.dart';
+import 'push_fakes.dart';
 
 export 'landlord_fakes.dart';
 export 'partner_fakes.dart';
+export 'push_fakes.dart';
 
 /// A whole backend, in memory.
 ///
@@ -495,32 +499,34 @@ class FakeActivityRepository implements ActivityRepository {
 
   @override
   Future<Paged<AppNotification>> notifications({
+    String? audience,
     bool unreadOnly = false,
     int limit = 20,
     int offset = 0,
   }) async {
-    final items = notificationList.where((n) => !unreadOnly || n.isUnread).toList();
+    final items =
+        notificationList.where((n) => _inInbox(n, audience) && (!unreadOnly || n.isUnread)).toList();
     return Paged(items: items, total: items.length);
   }
+
+  /// As the server does it: one role's notices plus the account-wide ones.
+  static bool _inInbox(AppNotification n, String? audience) =>
+      audience == null || n.audience == null || n.audience == audience;
+
+  @override
+  Future<int> unreadNotificationCount({String? audience}) async =>
+      notificationList.where((n) => _inInbox(n, audience) && n.isUnread).length;
 
   @override
   Future<void> markNotificationRead(String id) async {
     final index = notificationList.indexWhere((candidate) => candidate.id == id);
-    final existing = notificationList[index];
-    notificationList[index] = AppNotification(
-      id: existing.id,
-      title: existing.title,
-      kind: existing.kind,
-      createdAt: existing.createdAt,
-      body: existing.body,
-      readAt: DateTime.now(),
-    );
+    notificationList[index] = notificationList[index].markedRead();
   }
 
   @override
-  Future<void> markAllNotificationsRead() async {
+  Future<void> markAllNotificationsRead({String? audience}) async {
     for (var i = 0; i < notificationList.length; i++) {
-      await markNotificationRead(notificationList[i].id);
+      if (_inInbox(notificationList[i], audience)) notificationList[i] = notificationList[i].markedRead();
     }
   }
 
@@ -609,6 +615,8 @@ class TestHarness {
   final FakeContactLauncher contact = FakeContactLauncher();
   final FakeLinkOpener links = FakeLinkOpener();
   final InMemoryRolePreferenceStore rolePreferences = InMemoryRolePreferenceStore();
+  final FakePushMessaging push = FakePushMessaging();
+  final FakePushDeviceRepository pushDevices = FakePushDeviceRepository();
 
   /// Defaults to `unknown` — nobody has been asked — which is the state the
   /// soft-ask card exists for, and the one a fresh install is really in.
@@ -643,6 +651,8 @@ class TestHarness {
         linkOpenerProvider.overrideWithValue(links),
         rolePreferenceStoreProvider.overrideWithValue(rolePreferences),
         localeStoreProvider.overrideWithValue(InMemoryLocaleStore(locale)),
+        pushMessagingProvider.overrideWithValue(push),
+        pushDeviceRepositoryProvider.overrideWithValue(pushDevices),
       ];
 
   /// The viewport the designs were drawn for. The test default is 800x600,
@@ -704,6 +714,7 @@ Widget testApp(RouterConfig<Object> router) => Consumer(
           GlobalCupertinoLocalizations.delegate,
         ],
         routerConfig: router,
+        scaffoldMessengerKey: ref.watch(scaffoldMessengerKeyProvider),
       ),
     );
 

@@ -33,5 +33,25 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "homematetz",
+          "appId": "1:776652031067:android:d2439b7f6e35ece187ab7e",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "homematetz",
+          "configurations": {
+            "android": "1:776652031067:android:d2439b7f6e35ece187ab7e",
+            "web": "1:776652031067:web:f4747e9116c4dead87ab7e"
+          }
+        }
+      }
+    }
   }
 }

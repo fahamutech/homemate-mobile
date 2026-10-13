@@ -48,6 +48,7 @@ import '../features/inquiry/presentation/inquiry_form_screen.dart';
 import '../features/activity/presentation/activity_screen.dart';
 import '../features/activity/presentation/property_activity_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/notifications/presentation/open_notification_screen.dart';
 import '../features/payment/presentation/checkout_screen.dart';
 import '../features/payment/presentation/payment_screen.dart';
 import '../features/rental/presentation/lease_screen.dart';
@@ -139,6 +140,7 @@ List<GoRoute> _partnerWorkRoutes(AppRole role) => [
         builder: (_, state) => EarningDetailScreen(role: role, earningId: state.pathParameters['id']!),
       ),
       GoRoute(path: Routes.partnerPayouts(role), builder: (_, __) => PayoutsScreen(role: role)),
+      GoRoute(path: Routes.partnerNotifications(role), builder: (_, __) => NotificationsScreen(role: role)),
     ];
 
 /// The setup screens every partner role has, outside the tabs.
@@ -171,16 +173,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       final roles = ref.read(roleControllerProvider);
       final pending = ref.read(pendingDeepLinkProvider);
 
-      // A link from outside the app (the landlord's SMS) is held through
-      // sign-in and opened once the session is ready.
+      // A link from outside the app (the landlord's SMS, a tapped push) is
+      // held through sign-in and opened once the session and roles are ready.
+      // A tapped push carries its query, so "already there" compares it too.
       final link = deepLinkLocation(state.uri);
-      if (link != null && !auth.isSignedIn) pending.remember(link);
-      if (link != null && auth.isSignedIn && link != state.matchedLocation) return link;
+      final here = state.uri.path == Routes.openNotification
+          ? Routes.openNotificationFor(state.uri.queryParameters)
+          : state.matchedLocation;
+      if (link != null && !(auth.isSignedIn && roles.settled)) pending.remember(link);
+      if (link != null && auth.isSignedIn && roles.settled && link != here) return link;
       // Kept until the router has actually arrived: a refresh can run the
       // redirect again from the old location before this one commits.
       final target = pending.location;
       if (auth.isSignedIn && roles.settled && target != null) {
-        if (state.matchedLocation != target) return target;
+        if (here != target) return target;
         pending.take();
       }
 
@@ -189,6 +195,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
     routes: [
       GoRoute(path: Routes.splash, builder: (_, __) => const SplashScreen()),
+      GoRoute(
+        path: Routes.openNotification,
+        builder: (_, state) => OpenNotificationScreen(data: state.uri.queryParameters),
+      ),
       GoRoute(path: Routes.onboarding, builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: Routes.signIn, builder: (_, __) => const SignInScreen()),
       GoRoute(
