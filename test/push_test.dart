@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:homemate_mobile/core/providers.dart';
+import 'package:homemate_mobile/features/inquiry/data/inquiry_providers.dart';
 import 'package:homemate_mobile/core/push/push_controller.dart';
 import 'package:homemate_mobile/core/push/push_messaging.dart';
 import 'package:homemate_mobile/features/auth/data/customer.dart';
@@ -139,6 +140,21 @@ void main() {
     router.pop();
     await tester.pumpAndSettle();
     expect(router.state.matchedLocation, '${Routes.home}/notifications', reason: 'Back lands in the inbox');
+  });
+
+  testWidgets('a push refreshes what the app cached, so the reply it announces is the reply shown', (tester) async {
+    final harness = TestHarness();
+    harness.activity.inquiryList.add(fakeInquiry(status: 'accepted', response: 'Yes, it is yours.'));
+    final (_, container) = await launch(tester, harness);
+
+    // The enquiry was opened earlier and is cached with the first reply.
+    expect((await container.read(inquiryProvider('inq-1').future)).response, 'Yes, it is yours.');
+    harness.activity.inquiryList[0] = fakeInquiry(status: 'accepted', response: 'You can pay now.');
+    expect((await container.read(inquiryProvider('inq-1').future)).response, 'Yes, it is yours.', reason: 'still cached');
+
+    harness.push.arriveWhileOpen(push());
+    await tester.pumpAndSettle();
+    expect((await container.read(inquiryProvider('inq-1').future)).response, 'You can pay now.');
   });
 
   testWidgets('a broker’s push tapped as a customer switches to the broker role and opens the partner enquiry', (tester) async {

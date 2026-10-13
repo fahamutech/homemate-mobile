@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/data/auth_controller.dart';
+import '../../features/inquiry/data/inquiry_providers.dart';
 import '../../features/notifications/data/notification_providers.dart';
+import '../../features/payment/data/payment_providers.dart';
+import '../../features/shared/journey_providers.dart';
 import '../../routing/app_router.dart';
 import '../config/env.dart';
 import '../i18n/app_text.dart';
@@ -111,10 +114,21 @@ class PushController {
     await _messaging.deleteToken();
   }
 
+  /// A push means something changed on the server, so what the app already
+  /// holds about it is stale — a reply opened from a banner must show the
+  /// reply that just arrived, not the one cached from the last visit.
   void _refreshInbox() {
     _ref.invalidate(notificationsProvider);
     _ref.invalidate(unreadNotificationsProvider);
     _ref.invalidate(activitySummaryProvider);
+    _ref.invalidate(inquiriesProvider);
+    _ref.invalidate(inquiryProvider);
+    _ref.invalidate(inquiryJourneyProvider);
+    _ref.invalidate(propertyJourneyProvider);
+    _ref.invalidate(checkoutEligibilityProvider);
+    _ref.invalidate(paymentProvider);
+    _ref.invalidate(rentalsProvider);
+    _ref.invalidate(rentalProvider);
   }
 
   void _showBanner(PushMessage message) {
