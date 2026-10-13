@@ -11,15 +11,16 @@ useDefault = true
 # every web page, by design (https://firebase.google.com/docs/projects/api-keys).
 # What it can do is limited by the app registration and by Firebase's own
 # rules, not by keeping it private. gitleaks' `gcp-api-key` rule cannot tell
-# it from a server key, so it is allowed here — in these files only, and for
-# this rule only. A key of that shape anywhere else, or any other kind of
-# secret in these files, is still reported.
+# it from a server key (and, once that rule is allowed, `generic-api-key`
+# reports the same values), so both are allowed here — in these files only,
+# and for these two rules only. A key of that shape anywhere else, or any
+# other kind of secret in these files, is still reported.
 #
 # The server-side FCM service-account key is a real secret and is never
 # committed: it lives outside the repository (FCM_SERVICE_ACCOUNT_FILE).
 [[allowlists]]
 description = "Firebase client config: public by design"
-targetRules = ["gcp-api-key"]
+targetRules = ["gcp-api-key", "generic-api-key"]
 paths = [
   '''^android/app/google-services\.json$''',
   '''^lib/firebase_options\.dart$''',
