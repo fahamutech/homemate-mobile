@@ -6,7 +6,13 @@ import 'routes.dart';
 /// The SMS says `homemate://landlord/confirm/:propertyId`. On some platforms
 /// the router is handed the whole URI, on others only its path with the host
 /// taken off (`/confirm/:propertyId`), and on the web the plain path.
+///
+/// A tapped notification (`/open-notification?…`) is one too, query and all,
+/// so it is held through sign-in like the SMS link is.
 String? deepLinkLocation(Uri uri) {
+  if (uri.path == Routes.openNotification) {
+    return Routes.openNotificationFor(uri.queryParameters);
+  }
   final segments = [
     if (uri.scheme == 'homemate' && uri.host.isNotEmpty) uri.host,
     ...uri.pathSegments.where((segment) => segment.isNotEmpty),

@@ -181,7 +181,20 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(stage: _stageFor(customer), customer: customer);
   }
 
-  Future<void> signOut() async {
+  final _beforeSignOut = <Future<void> Function()>[];
+
+  /// Work that needs the session one last time — telling the server to stop
+  /// pushing to this phone. Runs on a sign-out the person chose, never on a
+  /// session the server already rejected: that one cannot make the call.
+  void addBeforeSignOut(Future<void> Function() hook) => _beforeSignOut.add(hook);
+
+  Future<void> signOut({bool sessionRejected = false}) async {
+    if (!sessionRejected && token != null) {
+      for (final hook in List.of(_beforeSignOut)) {
+        // Signing out must never wait long on the network, nor fail.
+        await hook().timeout(const Duration(seconds: 5)).catchError((Object _) {});
+      }
+    }
     token = null;
     await _store.clear();
     // The enrolment survives on purpose: signing out should land on the

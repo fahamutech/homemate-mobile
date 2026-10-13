@@ -1091,6 +1091,8 @@ class AppText {
   String get notificationsMarkAll => _s('notifications.markAll');
   String get notificationsEmpty => _s('notifications.empty');
   String get notificationsEmptyBody => _s('notifications.emptyBody');
+  String get notificationsOpen => _s('notifications.open');
+  String get notificationsOpening => _s('notifications.opening');
 
   // --- Enquiries list (CUS) --------------------------------------------------
   String get inquiriesTitle => _s('inquiries.title');

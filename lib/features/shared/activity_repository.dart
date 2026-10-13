@@ -26,9 +26,12 @@ abstract class ActivityRepository {
   Future<CustomerPayment> payment(String id);
   Future<CustomerPayment> declarePaid(String id, {String? reference, String? note});
 
-  Future<Paged<AppNotification>> notifications({bool unreadOnly, int limit, int offset});
+  /// One role's inbox when [audience] is given (`customer`, `broker` or
+  /// `landlord`), plus the notices about the account itself.
+  Future<Paged<AppNotification>> notifications({String? audience, bool unreadOnly, int limit, int offset});
+  Future<int> unreadNotificationCount({String? audience});
   Future<void> markNotificationRead(String id);
-  Future<void> markAllNotificationsRead();
+  Future<void> markAllNotificationsRead({String? audience});
 
   Future<ActivitySummary> summary();
 }
@@ -101,12 +104,14 @@ class HttpActivityRepository implements ActivityRepository {
 
   @override
   Future<Paged<AppNotification>> notifications({
+    String? audience,
     bool unreadOnly = false,
     int limit = 20,
     int offset = 0,
   }) async =>
       Paged.fromJson(
         await _api.get('/app/notifications', query: {
+          'audience': audience,
           'unreadOnly': unreadOnly ? 'true' : null,
           'limit': limit,
           'offset': offset,
@@ -120,8 +125,14 @@ class HttpActivityRepository implements ActivityRepository {
   }
 
   @override
-  Future<void> markAllNotificationsRead() async {
-    await _api.post('/app/notifications/read-all');
+  Future<int> unreadNotificationCount({String? audience}) async {
+    final json = await _api.get('/app/notifications/unread-count', query: {'audience': audience});
+    return (json['unread'] as num?)?.toInt() ?? 0;
+  }
+
+  @override
+  Future<void> markAllNotificationsRead({String? audience}) async {
+    await _api.post('/app/notifications/read-all', body: {'audience': audience});
   }
 
   @override
