@@ -666,6 +666,7 @@ class AppNotification {
     this.readAt,
     this.subjectTable,
     this.subjectId,
+    this.audience,
   });
 
   final String id;
@@ -677,7 +678,23 @@ class AppNotification {
   final String? subjectTable;
   final String? subjectId;
 
+  /// The role inbox it belongs to (`customer`, `broker`, `landlord`), or null
+  /// when it is about the account itself and shows in every inbox.
+  final String? audience;
+
   bool get isUnread => readAt == null;
+
+  AppNotification markedRead() => AppNotification(
+        id: id,
+        title: title,
+        kind: kind,
+        createdAt: createdAt,
+        body: body,
+        readAt: readAt ?? DateTime.now(),
+        subjectTable: subjectTable,
+        subjectId: subjectId,
+        audience: audience,
+      );
 
   factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
         id: json['id'] as String? ?? '',
@@ -688,6 +705,7 @@ class AppNotification {
         readAt: _date(json['read_at']),
         subjectTable: json['subject_table'] as String?,
         subjectId: json['subject_id'] as String?,
+        audience: json['audience'] as String?,
       );
 }
 

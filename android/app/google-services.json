@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "776652031067",
+    "project_id": "homematetz",
+    "storage_bucket": "homematetz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:776652031067:android:d2439b7f6e35ece187ab7e",
+        "android_client_info": {
+          "package_name": "com.fahamutech.homemate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnwKl9f2_ctRMEq7qXcyCh2rV3pJum3kk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

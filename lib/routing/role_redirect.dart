@@ -25,6 +25,8 @@ String? roleRedirect({required AuthState auth, required RoleState roles, require
   // The landlord confirmation (from the SMS) is reachable whatever role is in
   // use, and before AUTH-001 or ROL-001: it is what the person came for.
   if (location.startsWith(Routes.landlordConfirmPrefix)) return null;
+  // A tapped notification picks its own role (OpenNotificationScreen).
+  if (location == Routes.openNotification) return null;
 
   switch (roles.landing) {
     case ChooseUse():

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The brand green, behind the notification icon. -->
+    <color name="homemate_brand">#059676</color>
+    <!-- The name of the channel FCM creates for HomeMate notices, shown in the
+         phone's notification settings. Kiswahili first, as the app is. -->
+    <string name="fcm_fallback_notification_channel_label">Taarifa za HomeMate</string>
+</resources>

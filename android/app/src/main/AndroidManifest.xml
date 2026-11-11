@@ -13,6 +13,10 @@
 
     <!-- The app is perfectly usable on a device with no GPS at all, so this
          must not become an install-time filter on the Play Store. -->
+    <!-- Android 13+ asks before an app may show notifications; the app asks
+         once after sign-in (lib/core/push). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <uses-feature android:name="android.hardware.location" android:required="false"/>
     <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
     <application
@@ -50,6 +54,20 @@
                 <data android:scheme="homemate" android:host="landlord" android:pathPrefix="/confirm/" />
             </intent-filter>
         </activity>
+        <!-- Push notifications (FCM). A push that arrives while the app is in the
+             background is drawn by FCM itself, so it needs to be told the
+             channel (created from these values on first use), a monochrome
+             status-bar icon and the brand colour. The backend names the same
+             channel: ANDROID_CHANNEL_ID in fcm-push.adapter.mjs. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="homemate_default" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_homemate" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/homemate_brand" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

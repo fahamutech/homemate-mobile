@@ -16,6 +16,7 @@ import '../../partner_shared/presentation/listings/partner_listing_tile.dart';
 import '../../partner_shared/presentation/money_format.dart';
 import '../../partner_shared/presentation/partner_role_header.dart';
 import '../../roles/data/app_role.dart';
+import '../../notifications/data/notification_providers.dart';
 
 /// The landlord's Home tab (LND-010), behind the same intro and
 /// verification gate as the broker's.
@@ -41,6 +42,7 @@ class _VerifiedHome extends ConsumerWidget {
       onRefresh: () async {
         ref.invalidate(partnerSummaryProvider);
         ref.invalidate(partnerListingsProvider(null));
+        ref.invalidate(unreadNotificationsProvider(AppRole.landlord.name));
       },
       child: ListView(
         padding: EdgeInsets.zero,

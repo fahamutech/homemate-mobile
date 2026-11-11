@@ -1066,6 +1066,8 @@ const Map<String, String> _en = {
   'notifications.markAll': 'Mark all read',
   'notifications.empty': 'Nothing new',
   'notifications.emptyBody': 'Replies, confirmations and payment updates appear here.',
+  'notifications.open': 'Open',
+  'notifications.opening': 'Opening…',
 
   // --- Enquiries list (CUS) --------------------------------------------------
   'inquiries.title': 'My enquiries',
@@ -2328,6 +2330,8 @@ const Map<String, String> _sw = {
   'notifications.markAll': 'Weka zote zimesomwa',
   'notifications.empty': 'Hakuna jipya',
   'notifications.emptyBody': 'Majibu, uthibitisho na taarifa za malipo huonekana hapa.',
+  'notifications.open': 'Fungua',
+  'notifications.opening': 'Inafungua…',
 
   // --- Enquiries list (CUS) --------------------------------------------------
   'inquiries.title': 'Maombi yangu',

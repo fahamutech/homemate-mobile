@@ -123,11 +123,22 @@ class Routes {
   static String partnerEarning(Object role, String id) => '${partnerMoney(role)}/$id';
   static String partnerPayouts(Object role) => '/${_name(role)}/payouts';
 
+  /// A partner's inbox, inside the role's own path so the role redirect keeps it.
+  static String partnerNotifications(Object role) => '/${_name(role)}/notifications';
+  static String partnerProfile(Object role) => _name(role) == 'landlord' ? landlordProfile : brokerProfile;
+
   /// LND-031/033: one tenancy.
   static String landlordTenancy(String id) => '$landlordTenants/$id';
 
   /// LND-033: the lease behind a tenancy.
   static String landlordTenancyLease(String id) => '${landlordTenancy(id)}/lease';
+
+  /// Where a tapped push lands (and the PWA's notification click-through,
+  /// `#/open-notification?…`): it marks the notice read, switches to the role
+  /// it is for, and goes on to the screen it is about.
+  static const openNotification = '/open-notification';
+  static String openNotificationFor(Map<String, String> data) =>
+      Uri(path: openNotification, queryParameters: data.isEmpty ? null : data).toString();
 
   /// LND-003, from the SMS link `homemate://landlord/confirm/:propertyId`.
   static String landlordConfirm(String propertyId) => '/landlord/confirm/$propertyId';

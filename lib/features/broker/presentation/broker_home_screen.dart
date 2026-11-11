@@ -15,6 +15,7 @@ import '../../partner_shared/presentation/listings/partner_listing_tile.dart';
 import '../../partner_shared/presentation/money_format.dart';
 import '../../partner_shared/presentation/partner_role_header.dart';
 import '../../roles/data/app_role.dart';
+import '../../notifications/data/notification_providers.dart';
 
 /// The broker's Home tab: the intro for someone who has not started, the
 /// "before verification" home while the account is checked (BRK-010b), and
@@ -40,6 +41,7 @@ class _VerifiedHome extends ConsumerWidget {
       onRefresh: () async {
         ref.invalidate(partnerSummaryProvider);
         ref.invalidate(partnerListingsProvider(null));
+        ref.invalidate(unreadNotificationsProvider(AppRole.broker.name));
       },
       child: ListView(
         padding: EdgeInsets.zero,
