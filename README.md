@@ -1,8 +1,10 @@
-# HomeMate Africa — customer app
+# HomeMate Africa — the app
 
-The Flutter app customers use to find, view, book and pay for a home. It is a
-sibling of `homemate-functions` (the API) and `homemate-partner-portal` (the
-backoffice), and talks only to the API.
+The Flutter app (Android and PWA) for everyone outside the office: customers
+finding, enquiring about and paying for a home, and the brokers and landlords
+who list them. It talks only to
+[homemate-functions](https://github.com/fahamutech/homemate-functions), the
+API; HomeMate staff use [homemate-portal](https://github.com/fahamutech/homemate-portal).
 
 ## Running it
 
@@ -92,6 +94,25 @@ re-proved: first registration, a forgotten PIN, and a new device. How often a
 code may be asked for is decided in the database (`otp_quota_check`), so the
 app, a future web client and any support tool are held to the same limits.
 
+## Roles
+
+One account, one app, any of three roles: **customer**, **broker** and
+**landlord**. Everyone signs in the same way. Someone with more than one role
+picks which to open after sign-in, and switches later from the role chip on
+the home screen or from Profile. The choice is remembered on the phone, and
+signing out signs out of every role.
+
+- `features/roles/` holds the role controller and the switcher.
+- `features/partner_shared/` is the broker and landlord workspace: setup and
+  application (landlords add proof of ownership), listings, enquiries and
+  earnings.
+- `features/broker/` and `features/landlord/` hold each role's home. Landlords
+  also get their tenancies, and confirm or dispute a broker's listing of their
+  property.
+
+While a partner role is open, every request carries `X-Partner-Role`, and the
+API checks it against the roles the session holds.
+
 ## Money
 
 The app never takes payment. It shows the account details an operator
@@ -124,6 +145,35 @@ flutter drive --driver=test_driver/integration_test.dart \
   --target=integration_test/customer_journey_test.dart \
   -d chrome --dart-define-from-file=.env.json
 ```
+
+## Releases
+
+`main` is protected: changes arrive through a reviewed pull request with
+green CI. Every pull request runs the analyzer and tests and builds both
+release targets. A push to `main` then ships them:
+
+- the PWA to Firebase Hosting;
+- the signed App Bundle to the Google Play **internal** track.
+
+The version name comes from `pubspec.yaml`; bump it in the release pull
+request. The build number is the CI run number plus an offset, so it always
+increases.
+
+## Secrets
+
+This repository is public, and so is anything shipped in the app: a web build
+can be downloaded and an APK unpacked. The app holds no secret of its own.
+
+- The upload keystore, its passwords and the Play and Firebase service
+  accounts exist only as GitHub Actions secrets; CI writes them to the
+  runner's temp directory for the signing step. `android/key.properties`,
+  `*.jks`, `.env*` and service-account files are gitignored.
+- `.env.prod.json` is committed on purpose: it holds public URLs only.
+- `.github/workflows/secret-scan.yml` runs [gitleaks](https://github.com/gitleaks/gitleaks)
+  over the full history on every push and pull request.
+- If a secret is ever committed, **rotate it first**, then remove it.
+
+See [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 ## Not in this phase
 
